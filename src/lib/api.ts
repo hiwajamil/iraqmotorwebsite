@@ -1,0 +1,188 @@
+/**
+ * API client for the Express backend.
+ * In the browser we prefer the Next rewrite (`/api/backend`) to avoid CORS.
+ * On the server we call the Express origin directly.
+ */
+function resolveApiBase(): string {
+  const env = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "");
+  if (typeof window === "undefined") {
+    return env || "http://localhost:4000";
+  }
+  // Same-origin proxy through Next.js rewrites
+  return "/api/backend";
+}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+type TokenGetter = () => Promise<string | null>;
+
+let tokenGetter: TokenGetter | null = null;
+
+export function setApiTokenGetter(getter: TokenGetter) {
+  tokenGetter = getter;
+}
+
+async function headers(json = true): Promise<HeadersInit> {
+  const h: Record<string, string> = {
+    Accept: "application/json",
+  };
+  if (json) h["Content-Type"] = "application/json";
+  if (tokenGetter) {
+    const token = await tokenGetter();
+    if (token) h.Authorization = `Bearer ${token}`;
+  }
+  return h;
+}
+
+function buildUrl(path: string, query?: Record<string, string>): string {
+  const base = resolveApiBase();
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (base.startsWith("http")) {
+    const url = new URL(`${base}${normalized}`);
+    if (query) {
+      Object.entries(query).forEach(([k, v]) => {
+        if (v) url.searchParams.set(k, v);
+      });
+    }
+    return url.toString();
+  }
+  const qs = query
+    ? `?${new URLSearchParams(
+        Object.fromEntries(Object.entries(query).filter(([, v]) => Boolean(v))),
+      ).toString()}`
+    : "";
+  return `${base}${normalized}${qs === "?" ? "" : qs}`;
+}
+
+async function parse(res: Response) {
+  const text = await res.text();
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
+    }
+  }
+  if (!res.ok) {
+    const fromBody =
+      data && typeof data === "object" && "error" in data
+        ? String((data as { error: unknown }).error)
+        : null;
+    const message =
+      fromBody ||
+      (res.status === 500 || res.status === 502 || res.status === 503
+        ? "API unavailable — start the backend (port 4000) and retry"
+        : `Request failed (${res.status})`);
+    throw new ApiError(message, res.status);
+  }
+  return data;
+}
+
+export const api = {
+  get baseUrl() {
+    return resolveApiBase();
+  },
+  async get<T = unknown>(
+    path: string,
+    query?: Record<string, string>,
+    opts?: { revalidate?: number | false },
+  ) {
+    const revalidate = opts?.revalidate;
+    return parse(
+      await fetch(buildUrl(path, query), {
+        headers: await headers(),
+        ...(revalidate === false || revalidate === undefined
+          ? { cache: "no-store" as const }
+          : { next: { revalidate } }),
+      }),
+    ) as Promise<T>;
+  },
+  async post<T = unknown>(path: string, body?: unknown) {
+    return parse(
+      await fetch(buildUrl(path), {
+        method: "POST",
+        headers: await headers(),
+        body: body === undefined ? undefined : JSON.stringify(body),
+      }),
+    ) as Promise<T>;
+  },
+  async patch<T = unknown>(path: string, body?: unknown) {
+    return parse(
+      await fetch(buildUrl(path), {
+        method: "PATCH",
+        headers: await headers(),
+        body: body === undefined ? undefined : JSON.stringify(body),
+      }),
+    ) as Promise<T>;
+  },
+  async put<T = unknown>(path: string, body?: unknown) {
+    return parse(
+      await fetch(buildUrl(path), {
+        method: "PUT",
+        headers: await headers(),
+        body: body === undefined ? undefined : JSON.stringify(body),
+      }),
+    ) as Promise<T>;
+  },
+  async delete<T = unknown>(path: string) {
+    return parse(
+      await fetch(buildUrl(path), {
+        method: "DELETE",
+        headers: await headers(),
+      }),
+    ) as Promise<T>;
+  },
+  async upload<T = unknown>(path: string, file: File) {
+    const form = new FormData();
+    form.append("file", file);
+    const h = await headers(false);
+    return parse(
+      await fetch(buildUrl(path), {
+        method: "POST",
+        headers: h,
+        body: form,
+      }),
+    ) as Promise<T>;
+  },
+  async health(): Promise<{ ok: boolean; service?: string }> {
+    try {
+      return (await this.get("/health")) as { ok: boolean; service?: string };
+    } catch {
+      return { ok: false };
+    }
+  },
+};
+
+export type Car = {
+  id: string;
+  brandId?: string;
+  modelKey?: string;
+  year?: number | string;
+  priceValue?: number;
+  currencyKey?: string;
+  price?: string;
+  city?: string;
+  province?: string;
+  mileageValue?: number;
+  imageUrl?: string;
+  imageUrls?: string[];
+  status?: string;
+  description?: string;
+  sellerId?: string;
+  highestBid?: number;
+  vinNumber?: string;
+  priceMeta?: import("./car-pricing-trust").PriceMeta | null;
+  sale?: import("./car-pricing-trust").Sale | null;
+  vin?: import("./car-pricing-trust").VinSummary | null;
+  conditionReport?: import("./car-pricing-trust").ConditionReport | null;
+  [key: string]: unknown;
+};

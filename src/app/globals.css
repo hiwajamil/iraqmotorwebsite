@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --seed: #ff6b00;
+  --primary: #ea580c;
+  --primary-dark: #ff7a00;
+  --on-primary: #ffffff;
+  --surface: #fafbfd;
+  --card: #ffffff;
+  --card-low: #f8fafc;
+  --input: #f1f5f9;
+  --on-surface: #0f172a;
+  --muted: #64748b;
+  --outline: #e2e8f0;
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --background: var(--surface);
+  --foreground: var(--on-surface);
+}
+
+.dark {
+  --primary: #ff7a00;
+  --surface: #0a0a0c;
+  --card: #121215;
+  --card-low: #16161a;
+  --input: #1e1e22;
+  --on-surface: #f8fafc;
+  --muted: #94a3b8;
+  --outline: #27272a;
+  --background: var(--surface);
+  --foreground: var(--on-surface);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-input: var(--input);
+  --color-muted: var(--muted);
+  --color-outline: var(--outline);
+  --font-sans: var(--font-display);
+  --radius-control: var(--radius-control);
+  --radius-card: var(--radius-card);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-display), system-ui, sans-serif;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
