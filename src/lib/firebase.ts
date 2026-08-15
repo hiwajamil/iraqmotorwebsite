@@ -35,6 +35,10 @@ const firebaseConfig = {
   appId:
     process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
     "1:426861136448:web:8177bb2fffed65c74c2da5",
+  measurementId:
+    process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
+    process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID ||
+    "G-BCGJYXYT2R",
 };
 
 let app: FirebaseApp | undefined;

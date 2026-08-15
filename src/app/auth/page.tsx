@@ -11,6 +11,7 @@ import {
   sendPasswordResetEmail,
 } from "@/lib/firebase";
 import { api, ApiError } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/components/auth-provider";
 
 /** Keep in sync with Flutter `kSuperAdminEmail` / backend `SUPER_ADMIN_EMAILS`. */
@@ -133,29 +134,35 @@ async function signInAsSuperAdmin(
   phone: string,
   password: string,
 ) {
-  let emailFailure: unknown;
+  let lastFailure: unknown;
 
-  if (isSuperAdminEmail(email)) {
+  // The Auth user is the Gmail account. There is no 07500000000@iqmotors.app user.
+  if (isSuperAdminEmail(email) || isSuperAdminPhone(phone)) {
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      await signInWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
       return;
     } catch (err) {
       if (!isCredentialError(err)) throw err;
-      emailFailure = err;
+      lastFailure = err;
     }
   }
 
   const cleanedPhone = cleanPhoneInput(phone);
   if (cleanedPhone) {
     if (!isSuperAdminPhone(phone)) {
-      if (emailFailure) throw emailFailure;
+      if (lastFailure) throw lastFailure;
       throw new Error("Enter a valid Iraqi phone (e.g. 0750xxxxxxx)");
     }
-    await signInWithPhonePassword(auth, phone, password);
-    return;
+    try {
+      await signInWithPhonePassword(auth, phone, password);
+      return;
+    } catch (err) {
+      if (!isCredentialError(err)) throw err;
+      lastFailure = err;
+    }
   }
 
-  if (emailFailure) throw emailFailure;
+  if (lastFailure) throw lastFailure;
   await signInWithEmailAndPassword(auth, email.trim(), password);
 }
 
@@ -255,11 +262,26 @@ function AuthForm() {
         }
       } else if (isSuperAdminUser(trimmedEmail, trimmedPhone)) {
         await signInAsSuperAdmin(auth, trimmedEmail, trimmedPhone, password);
+      } else if (trimmedEmail.includes("@")) {
+        try {
+          await signInWithEmailAndPassword(auth, trimmedEmail, password);
+        } catch (err) {
+          if (!isCredentialError(err) || !isValidIraqMobile(trimmedPhone)) {
+            throw err;
+          }
+          await signInWithPhonePassword(auth, trimmedPhone, password);
+        }
       } else {
         if (!isValidIraqMobile(trimmedPhone)) {
           throw new Error("Enter a valid Iraqi phone (e.g. 0750xxxxxxx)");
         }
         await signInWithPhonePassword(auth, trimmedPhone, password);
+      }
+
+      if (mode !== "register") {
+        trackEvent("login", {
+          method: trimmedEmail.includes("@") ? "email" : "phone",
+        });
       }
 
       await redirectAfterAuth();

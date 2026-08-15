@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Noto_Kufi_Arabic } from "next/font/google";
 import { StoreProvider } from "@/store/provider";
 import { SiteHeader } from "@/components/site-header";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import "./globals.css";
 
 const display = Noto_Kufi_Arabic({
@@ -31,6 +33,9 @@ export default function RootLayout({
             © {new Date().getFullYear()} IQ Motors. All rights reserved.
           </footer>
         </StoreProvider>
+        <Suspense fallback={null}>
+          <GoogleAnalytics />
+        </Suspense>
       </body>
     </html>
   );

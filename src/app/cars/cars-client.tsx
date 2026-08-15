@@ -12,6 +12,7 @@ import {
   pickHomeBannerAd,
 } from "@/lib/ads";
 import { api, type Car } from "@/lib/api";
+import { trackEvent } from "@/lib/analytics";
 import { HOME_CITIES, HOME_STRIP_BRANDS } from "@/lib/home-data";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setBrandId, setCity, setQuery } from "@/store/slices/filtersSlice";
@@ -114,6 +115,13 @@ export default function CarsClient() {
         const items = data.items ?? [];
         setCars((prev) => (append ? [...prev, ...items] : items));
         setNextCursor(data.nextCursor ?? null);
+        if (!append && q.trim()) {
+          trackEvent("search", {
+            search_term: q.trim(),
+            item_brand: brandId || undefined,
+            item_category: city || undefined,
+          });
+        }
       } catch (e) {
         const msg =
           e instanceof Error ? e.message : "Failed to load cars from API";

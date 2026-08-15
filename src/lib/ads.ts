@@ -169,3 +169,76 @@ export function adHref(ad: Advertise): string | null {
   if (ad.phone) return `tel:${ad.phone.replace(/\s+/g, "")}`;
   return null;
 }
+
+export const AD_TYPE_LABELS: Record<AdvertiseTypeId, string> = {
+  1: "URL / phone",
+  2: "Car listing",
+  3: "Showroom",
+};
+
+export const AD_TARGET_CITIES = [
+  { key: "*", label: "Nationwide" },
+  { key: "baghdad", label: "Baghdad" },
+  { key: "erbil", label: "Erbil" },
+  { key: "sulaymaniyah", label: "Sulaymaniyah" },
+  { key: "dohuk", label: "Duhok" },
+  { key: "kirkuk", label: "Kirkuk" },
+  { key: "mosul", label: "Mosul" },
+  { key: "basra", label: "Basra" },
+  { key: "najaf", label: "Najaf" },
+  { key: "karbala", label: "Karbala" },
+  { key: "anbar", label: "Anbar" },
+  { key: "salahuddin", label: "Salahuddin" },
+  { key: "babylon", label: "Babylon" },
+  { key: "diyala", label: "Diyala" },
+  { key: "wasit", label: "Wasit" },
+  { key: "muthanna", label: "Muthanna" },
+  { key: "qadisiyyah", label: "Qadisiyyah" },
+  { key: "halabja", label: "Halabja" },
+  { key: "dhi_qar", label: "Dhi Qar" },
+  { key: "maysan", label: "Maysan" },
+] as const;
+
+export const AD_CREATIVE_SLOTS = [
+  {
+    key: "webLandscape" as const,
+    label: "Desktop home banner",
+    size: "1440×180",
+  },
+  {
+    key: "landscape" as const,
+    label: "Mobile banner / in-feed",
+    size: "1200×390",
+  },
+  {
+    key: "webSquare" as const,
+    label: "Desktop grid tile",
+    size: "750×750",
+  },
+  {
+    key: "portrait" as const,
+    label: "App / portrait tile",
+    size: "1020×1200",
+  },
+];
+
+export type AdvertiseAdmin = {
+  id: string;
+  advertiseTypeId: AdvertiseTypeId;
+  locationIds: string[];
+  title?: Partial<Record<"en" | "ar" | "ku", string>>;
+  phone?: string | null;
+  url?: string | null;
+  carId?: string | null;
+  showroomId?: string | null;
+  showroomSellerId?: string | null;
+  creatives: {
+    webLandscape?: string;
+    landscape?: string;
+    webSquare?: string;
+    portrait?: string;
+  };
+  priority?: number;
+  active?: boolean;
+  source?: "store" | "seed";
+};

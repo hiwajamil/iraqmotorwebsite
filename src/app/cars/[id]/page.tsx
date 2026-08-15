@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, type Car } from "@/lib/api";
+import { listingItemParams, trackEvent } from "@/lib/analytics";
 import { carTitle } from "@/components/car-card";
 import { PriceHistoryTimeline } from "@/components/price-history-timeline";
 import { TrustChips } from "@/components/trust-chips";
@@ -56,6 +57,7 @@ export default function CarDetailPage() {
           setActiveImage(0);
           setError(null);
           setNotFound(false);
+          trackEvent("view_item", listingItemParams(data));
         }
       } catch (e) {
         if (cancelled) return;

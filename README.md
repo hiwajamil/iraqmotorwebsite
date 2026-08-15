@@ -28,7 +28,8 @@ Requires the Express API (default `http://localhost:4000`). See [backend README]
 | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | |
-| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Optional Analytics |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Firebase Analytics measurement ID |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 gtag stream (`G-…`; same as measurement ID) |
 
 See [`.env.example`](.env.example). Use `.env.local` for local secrets (gitignored).
 
