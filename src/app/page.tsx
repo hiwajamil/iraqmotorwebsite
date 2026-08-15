@@ -1,6 +1,8 @@
 import { HomeMarketplace } from "@/components/home-marketplace";
 import { api, type Car } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 async function loadHomeData() {
   try {
     const [list, recommendedRes, trendingRes] = await Promise.all([

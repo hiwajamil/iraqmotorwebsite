@@ -1,15 +1,35 @@
 /**
  * API client for the Express backend.
- * In the browser we prefer the Next rewrite (`/api/backend`) to avoid CORS.
- * On the server we call the Express origin directly.
+ * Local browser traffic uses the Next rewrite (`/api/backend`) to avoid CORS.
+ * Production (Vercel) calls the public API directly — Vercel blocks rewrites
+ * to localhost (`DNS_HOSTNAME_RESOLVED_PRIVATE`).
  */
-function resolveApiBase(): string {
-  const env = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "");
-  if (typeof window === "undefined") {
-    return env || "http://localhost:4000";
+const PRODUCTION_API = "https://api.iraqmotors.net";
+
+function isPrivateOrigin(origin: string): boolean {
+  try {
+    const host = new URL(origin).hostname;
+    return host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
+  } catch {
+    return true;
   }
-  // Same-origin proxy through Next.js rewrites
-  return "/api/backend";
+}
+
+export function resolveApiOrigin(): string {
+  const env = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "";
+  const hosted = Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
+  if (env && !isPrivateOrigin(env)) return env;
+  if (hosted) return PRODUCTION_API;
+  return env || "http://localhost:4000";
+}
+
+function resolveApiBase(): string {
+  const origin = resolveApiOrigin();
+  if (typeof window === "undefined") return origin;
+  if (process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+    return "/api/backend";
+  }
+  return origin;
 }
 
 export class ApiError extends Error {

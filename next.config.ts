@@ -1,8 +1,24 @@
 import type { NextConfig } from "next";
 
-const API_ORIGIN =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ||
-  "http://localhost:4000";
+const PRODUCTION_API = "https://api.iraqmotors.net";
+
+function resolveApiOrigin(): string {
+  const env = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "";
+  const hosted = Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
+  try {
+    if (env) {
+      const host = new URL(env).hostname;
+      const privateHost =
+        host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
+      if (!privateHost) return env;
+    }
+  } catch {
+    // fall through
+  }
+  return hosted ? PRODUCTION_API : env || "http://localhost:4000";
+}
+
+const API_ORIGIN = resolveApiOrigin();
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["10.201.1.99", "localhost", "127.0.0.1"],
