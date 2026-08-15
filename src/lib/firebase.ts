@@ -18,13 +18,23 @@ import {
   type User,
 } from "firebase/auth";
 
+/** Public web config (same as Flutter `DefaultFirebaseOptions.web`). Env vars override. */
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey:
+    process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
+    "AIzaSyBYX6e-32IsAo28XPhBPlZGlRjS01cUSHA",
+  authDomain:
+    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ||
+    "iqmotors-d588d.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "iqmotors-d588d",
+  storageBucket:
+    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
+    "iqmotors-d588d.firebasestorage.app",
+  messagingSenderId:
+    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "426861136448",
+  appId:
+    process.env.NEXT_PUBLIC_FIREBASE_APP_ID ||
+    "1:426861136448:web:8177bb2fffed65c74c2da5",
 };
 
 let app: FirebaseApp | undefined;

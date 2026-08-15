@@ -208,7 +208,7 @@ function AuthForm() {
       const auth = getFirebaseAuth();
       if (!auth) {
         throw new Error(
-          "Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* in .env.local",
+          "Firebase failed to initialize. Check the web app config.",
         );
       }
 
@@ -283,7 +283,7 @@ function AuthForm() {
       const auth = getFirebaseAuth();
       if (!auth) {
         throw new Error(
-          "Firebase is not configured. Set NEXT_PUBLIC_FIREBASE_* in .env.local",
+          "Firebase failed to initialize. Check the web app config.",
         );
       }
       await sendPasswordResetEmail(auth, trimmed);
