@@ -8,18 +8,16 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toggleFavorite } from "@/store/slices/favoritesSlice";
 import {
   formatAskPrice,
+  formatMoney,
   isPriceDropped,
   soldDisplayPrice,
 } from "@/lib/car-pricing-trust";
 import { formatCarTitle } from "@/lib/listing-display";
+import { formatMileageLabel, localizeCity } from "@/lib/listing-labels";
+import { t } from "@/lib/i18n";
 
 export function carTitle(car: Car) {
   return formatCarTitle(car);
-}
-
-function mileage(car: Car) {
-  if (car.mileageValue == null) return null;
-  return `${Number(car.mileageValue).toLocaleString()} km`;
 }
 
 export function CarCard({
@@ -32,6 +30,7 @@ export function CarCard({
   const { user } = useAuth();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const locale = useAppSelector((s) => s.preferences.locale);
   const isFavorite = useAppSelector((s) => s.favorites.ids.includes(car.id));
   const image =
     car.imageUrl ||
@@ -39,11 +38,20 @@ export function CarCard({
     "/placeholder-car.svg";
   const sold = car.status === "sold";
   const priceDropped = !sold && isPriceDropped(car.priceMeta);
-  const bid =
+  const bidAmount =
     car.highestBid != null && Number(car.highestBid) > 0
-      ? Number(car.highestBid).toLocaleString()
+      ? Number(car.highestBid)
+      : null;
+  const bidLabel =
+    bidAmount != null
+      ? formatMoney(bidAmount, car.currencyKey)
       : null;
   const displayPrice = sold ? soldDisplayPrice(car) : formatAskPrice(car);
+  const city =
+    localizeCity(locale, String(car.city || car.province || "")) ||
+    t(locale, "iraq");
+  const mileage = formatMileageLabel(locale, car.mileageValue, car.mileageUnit);
+  const title = carTitle(car) || t(locale, "carListing");
 
   async function onFavorite(e: React.MouseEvent) {
     e.preventDefault();
@@ -74,24 +82,28 @@ export function CarCard({
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={String(image)}
-          alt={carTitle(car)}
+          alt={title}
           loading="lazy"
           decoding="async"
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
         />
         {sold ? (
           <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-surface/90 px-2.5 py-1 text-[11px] font-semibold text-foreground backdrop-blur">
-            Sold
+            {t(locale, "sold")}
           </span>
         ) : priceDropped ? (
           <span className="absolute start-2 top-2 inline-flex items-center gap-1 rounded-full bg-teal-700/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm backdrop-blur">
-            <span aria-hidden>↓</span> Price dropped
+            <span aria-hidden>↓</span> {t(locale, "priceDropped")}
           </span>
         ) : null}
         <button
           type="button"
           onClick={(e) => void onFavorite(e)}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={
+            isFavorite
+              ? t(locale, "removeFromFavorites")
+              : t(locale, "addToFavorites")
+          }
           className={`absolute end-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface/85 text-sm backdrop-blur transition hover:scale-105 ${
             isFavorite ? "text-primary" : "text-foreground"
           }`}
@@ -104,27 +116,38 @@ export function CarCard({
           className={`font-bold leading-snug text-foreground ${
             compact ? "line-clamp-1 text-[13px]" : "line-clamp-2 text-sm md:text-base"
           }`}
+          dir="auto"
         >
-          {carTitle(car) || "Car listing"}
+          {title}
         </h3>
-        <p className="flex flex-wrap gap-x-3 text-[11px] text-muted md:text-xs">
-          <span>{car.city || car.province || "Iraq"}</span>
-          {mileage(car) ? <span>{mileage(car)}</span> : null}
+        <p className="flex flex-wrap items-center gap-x-3 text-[11px] text-muted md:text-xs">
+          <span dir="auto">{city}</span>
+          {mileage ? (
+            <span dir="ltr" className="[unicode-bidi:isolate]">
+              {mileage}
+            </span>
+          ) : null}
         </p>
         <p
           className={`mt-auto text-sm font-bold md:text-lg ${
             sold ? "text-foreground" : "text-primary"
           }`}
+          dir="auto"
         >
-          {sold ? `Sold for ${displayPrice}` : displayPrice}
+          {sold ? t(locale, "soldFor", { price: displayPrice }) : displayPrice}
         </p>
         {!sold ? (
           <p
             className={`text-[11px] ${
-              bid ? "font-medium text-red-600 dark:text-red-400" : "text-muted"
+              bidLabel
+                ? "font-medium text-red-600 dark:text-red-400"
+                : "text-muted"
             }`}
+            dir="auto"
           >
-            {bid ? `Latest bid ${bid}` : "No bids yet"}
+            {bidLabel
+              ? t(locale, "latestBid", { amount: bidLabel })
+              : t(locale, "noBids")}
           </p>
         ) : null}
       </div>
