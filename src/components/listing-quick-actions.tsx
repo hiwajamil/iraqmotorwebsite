@@ -13,7 +13,7 @@ import { emitToast } from "@/components/site-toast";
 import { t } from "@/lib/i18n";
 
 const fabClass =
-  "flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md backdrop-blur transition hover:scale-105 hover:bg-blue-600 hover:text-white";
+  "flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md backdrop-blur transition hover:scale-105 hover:bg-primary hover:text-on-primary";
 
 export function ListingQuickActions({
   car,
@@ -82,7 +82,7 @@ export function ListingQuickActions({
   }
 
   return (
-    <div className="absolute top-3 right-3 z-10 flex flex-col gap-2">
+    <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
       <button
         type="button"
         onClick={(e) => void onFavorite(e)}
@@ -94,7 +94,7 @@ export function ListingQuickActions({
         className={`${fabClass} ${isFavorite ? "text-red-500" : ""}`}
       >
         <Heart
-          className="h-4 w-4"
+          size={16}
           fill={isFavorite ? "currentColor" : "none"}
           strokeWidth={2}
         />
@@ -106,9 +106,9 @@ export function ListingQuickActions({
         aria-label={
           inCompare ? t(locale, "removeFromCompare") : t(locale, "addToCompare")
         }
-        className={`${fabClass} ${inCompare ? "bg-blue-600 text-white" : ""}`}
+        className={`${fabClass} ${inCompare ? "bg-primary text-on-primary" : ""}`}
       >
-        <Scale className="h-4 w-4" strokeWidth={2} />
+        <Scale size={16} strokeWidth={2} />
       </button>
       <button
         type="button"
@@ -117,7 +117,7 @@ export function ListingQuickActions({
         disabled={busyShare}
         className={fabClass}
       >
-        <Share2 className="h-4 w-4" strokeWidth={2} />
+        <Share2 size={16} strokeWidth={2} />
       </button>
     </div>
   );

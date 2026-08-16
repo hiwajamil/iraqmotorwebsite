@@ -15,7 +15,6 @@ import { useAppSelector } from "@/store/hooks";
 import { useCompareHydrated, useCompareStore } from "@/store/compare-store";
 
 const STORAGE_KEY = "iq_help_widget_dismissed";
-const WIDGET_BLUE = "#2563eb";
 
 function subscribeDismissed() {
   return () => {};
@@ -176,8 +175,7 @@ export function FloatingHelpWidget() {
             onClick={open}
             aria-expanded={false}
             aria-haspopup="dialog"
-            className="flex items-center gap-2.5 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-[0_10px_28px_rgba(37,99,235,0.38)] transition hover:brightness-110 hover:shadow-[0_12px_32px_rgba(37,99,235,0.48)]"
-            style={{ backgroundColor: WIDGET_BLUE }}
+            className="flex items-center gap-2.5 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[0_10px_28px_rgba(234,88,12,0.38)] transition hover:brightness-110 hover:shadow-[0_12px_32px_rgba(234,88,12,0.48)]"
           >
             <ChatIcon className="h-5 w-5 shrink-0" />
             <span>{t(locale, "helpCta")}</span>
@@ -198,10 +196,7 @@ export function FloatingHelpWidget() {
           role="dialog"
           aria-labelledby={`${formId}-title`}
         >
-          <div
-            className="flex items-start justify-between gap-3 px-5 py-4 text-white"
-            style={{ backgroundColor: WIDGET_BLUE }}
-          >
+          <div className="flex items-start justify-between gap-3 bg-primary px-5 py-4 text-on-primary">
             <div className="min-w-0">
               <p
                 id={`${formId}-title`}
@@ -209,14 +204,14 @@ export function FloatingHelpWidget() {
               >
                 {t(locale, "helpTitle")}
               </p>
-              <p className="mt-1 text-[13px] leading-snug text-white/85">
+              <p className="mt-1 text-[13px] leading-snug text-on-primary/85">
                 {t(locale, "helpSubtitle")}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setView("closed")}
-              className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+              className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-on-primary transition hover:bg-white/25"
               aria-label={t(locale, "helpMinimize")}
             >
               <svg
@@ -235,10 +230,7 @@ export function FloatingHelpWidget() {
 
           {view === "success" ? (
             <div className="flex flex-col items-center px-6 py-8 text-center">
-              <span
-                className="flex h-14 w-14 items-center justify-center rounded-full text-white"
-                style={{ backgroundColor: WIDGET_BLUE }}
-              >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary">
                 <CheckIcon className="h-7 w-7" />
               </span>
               <h3 className="mt-4 text-xl font-bold text-slate-900">
@@ -250,8 +242,7 @@ export function FloatingHelpWidget() {
               <button
                 type="button"
                 onClick={() => setView("closed")}
-                className="mt-6 text-sm font-semibold"
-                style={{ color: WIDGET_BLUE }}
+                className="mt-6 text-sm font-semibold text-primary"
               >
                 {t(locale, "helpClose")}
               </button>
@@ -268,7 +259,7 @@ export function FloatingHelpWidget() {
                   placeholder={t(locale, "helpNamePlaceholder")}
                   autoComplete="name"
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                 />
               </label>
 
@@ -284,7 +275,7 @@ export function FloatingHelpWidget() {
                   autoComplete="email"
                   dir="ltr"
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                 />
               </label>
 
@@ -294,7 +285,7 @@ export function FloatingHelpWidget() {
                 </span>
                 <div
                   dir="ltr"
-                  className="flex overflow-hidden rounded-xl border border-slate-200 bg-slate-50 focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100"
+                  className="flex overflow-hidden rounded-xl border border-slate-200 bg-slate-50 focus-within:border-primary focus-within:bg-white focus-within:ring-2 focus-within:ring-primary/20"
                 >
                   <select
                     value={countryDial}
@@ -330,7 +321,7 @@ export function FloatingHelpWidget() {
                   onChange={(e) =>
                     setIntent(e.target.value as LeadIntent | "")
                   }
-                  className="lang-select w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                  className="lang-select w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
                   required
                 >
                   <option value="" disabled>
@@ -351,8 +342,7 @@ export function FloatingHelpWidget() {
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full rounded-xl py-3 text-sm font-bold text-white shadow-[0_8px_18px_rgba(37,99,235,0.28)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
-                style={{ backgroundColor: WIDGET_BLUE }}
+                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-on-primary shadow-[0_8px_18px_rgba(234,88,12,0.28)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {busy ? t(locale, "helpSubmitting") : t(locale, "helpSubmit")}
               </button>

@@ -37,7 +37,7 @@ function Toggle({
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
       />
-      <span className="relative h-6 w-11 shrink-0 rounded-full bg-gray-200 transition peer-checked:bg-blue-700 peer-focus-visible:ring-2 peer-focus-visible:ring-blue-400 peer-focus-visible:ring-offset-2 after:absolute after:top-0.5 after:start-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:start-[1.375rem]" />
+      <span className="relative h-6 w-11 shrink-0 rounded-full bg-gray-200 transition peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary/40 peer-focus-visible:ring-offset-2 after:absolute after:top-0.5 after:start-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:start-[1.375rem]" />
       <span className="text-sm font-medium text-gray-700 dark:text-foreground">{label}</span>
     </label>
   );
@@ -118,7 +118,7 @@ export default function CompareClient() {
         <p className="mt-2 text-sm text-muted">{t(locale, "compareEmptyHint")}</p>
         <Link
           href="/cars"
-          className="mt-6 inline-flex rounded-md bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+          className="mt-6 inline-flex rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary transition hover:brightness-110"
         >
           {t(locale, "browseToCompare")}
         </Link>
@@ -143,7 +143,7 @@ export default function CompareClient() {
     return (
       <div className="mx-auto max-w-3xl px-[4%] py-28 text-center">
         <p className="text-sm text-red-500">{error}</p>
-        <Link href="/cars" className="mt-4 inline-block text-sm font-semibold text-blue-700">
+        <Link href="/cars" className="mt-4 inline-block text-sm font-semibold text-primary">
           {t(locale, "browseToCompare")}
         </Link>
       </div>
@@ -159,7 +159,7 @@ export default function CompareClient() {
         <p className="mt-2 text-sm text-muted">{t(locale, "compareMissing")}</p>
         <Link
           href="/cars"
-          className="mt-6 inline-flex rounded-md bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+          className="mt-6 inline-flex rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary hover:brightness-110"
         >
           {t(locale, "browseToCompare")}
         </Link>
@@ -171,7 +171,7 @@ export default function CompareClient() {
     <div className="mx-auto max-w-[1200px] px-[4%] pb-24 pt-24">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold tracking-[0.18em] text-blue-700">
+          <p className="text-xs font-semibold tracking-[0.18em] text-primary">
             {t(locale, "compareDockTitle", { count: cars.length })}
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-foreground">

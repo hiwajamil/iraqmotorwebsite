@@ -37,7 +37,7 @@ export function CompareDock() {
       className="fixed bottom-0 right-4 z-50 w-72 overflow-hidden rounded-t-xl bg-white shadow-2xl transform transition-transform duration-300 sm:right-10 sm:w-80"
       aria-label={t(locale, "compare")}
     >
-      <div className="rounded-t-xl bg-blue-700 px-4 py-2 text-center text-sm font-bold tracking-wide text-white">
+      <div className="rounded-t-xl bg-primary px-4 py-2 text-center text-sm font-bold tracking-wide text-on-primary">
         {t(locale, "compareDockTitle", { count: compareList.length })}
       </div>
       <div className="bg-white p-3">
@@ -96,7 +96,7 @@ export function CompareDock() {
           onClick={(e) => {
             if (!canCompare) e.preventDefault();
           }}
-          className={`mt-3 block rounded-md bg-blue-700 py-2 text-center text-sm font-semibold text-white transition hover:bg-blue-800 ${
+          className={`mt-3 block rounded-md bg-primary py-2 text-center text-sm font-semibold text-on-primary transition hover:brightness-110 ${
             canCompare ? "" : "pointer-events-none opacity-40"
           }`}
         >
