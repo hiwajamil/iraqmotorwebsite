@@ -114,7 +114,7 @@ export default function ShowroomsPage() {
           <p className="mt-1 text-sm text-muted">
             {city
               ? "Try another city or clear the filter."
-              : "Showrooms will appear here when dealers join IQ Motors."}
+              : "Showrooms will appear here when dealers join Iraq Motors."}
           </p>
         </div>
       ) : (

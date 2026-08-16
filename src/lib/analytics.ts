@@ -44,6 +44,8 @@ export function trackEvent(name: string, params?: GaParams) {
   gtag("event", name, params);
 }
 
+import { formatCarTitle } from "@/lib/listing-display";
+
 export function listingItemParams(car: {
   id: string;
   brandId?: string;
@@ -52,15 +54,17 @@ export function listingItemParams(car: {
   priceValue?: number;
   currencyKey?: string;
 }): GaParams {
-  const itemName = [car.year, car.brandId, car.modelKey]
-    .filter((part) => part != null && String(part).trim())
-    .join(" ");
+  const itemName = formatCarTitle(car) || car.id;
+  const compact = (car.currencyKey || "iqd")
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
   return {
     item_id: car.id,
-    item_name: itemName || car.id,
+    item_name: itemName,
     item_brand: car.brandId,
     item_category: car.modelKey,
     value: Number(car.priceValue) || undefined,
-    currency: (car.currencyKey || "IQD").toUpperCase(),
+    currency: compact.includes("usd") ? "USD" : "IQD",
   };
 }

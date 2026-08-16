@@ -202,11 +202,9 @@ export function HomeMarketplace({
       </section>
 
       <div className="mx-auto max-w-[1400px] px-[4%]">
-        {bannerAd ? (
-          <div className="pt-4 pb-2 md:-mt-2 md:pt-2">
-            <AdHomeBanner ad={bannerAd} viewport={viewport} locale={locale} />
-          </div>
-        ) : null}
+        <div className="pt-4 pb-2 md:-mt-2 md:pt-2">
+          <AdHomeBanner ad={bannerAd} viewport={viewport} locale={locale} />
+        </div>
 
         <div className="pt-2 pb-4 md:-mt-4">
           <h2 className="mb-4 text-lg font-bold text-foreground md:text-center md:text-xl">

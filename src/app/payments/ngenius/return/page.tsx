@@ -51,7 +51,7 @@ function ReturnBody() {
     <div className="mx-auto max-w-lg px-[4%] pb-16 pt-28">
       <h1 className="text-3xl font-bold tracking-tight">Card payment</h1>
       <p className="mt-2 text-sm text-muted">
-        N-Genius checkout for your IQ Motors listing boost.
+        N-Genius checkout for your Iraq Motors listing boost.
       </p>
 
       <div className="mt-8 rounded-[16px] border border-outline bg-card p-6">
@@ -69,7 +69,7 @@ function ReturnBody() {
           <p className="text-red-600">{error}</p>
         ) : !user && !loading ? (
           <p className="text-muted">
-            Sign in to confirm this payment, or return to the IQ Motors app.
+            Sign in to confirm this payment, or return to the Iraq Motors app.
           </p>
         ) : (
           <p className="text-muted">

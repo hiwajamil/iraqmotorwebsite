@@ -9,6 +9,7 @@ import {
   setCarStatuses,
 } from "@/lib/admin";
 import { AdReviewModal } from "@/components/admin-ad-review";
+import { formatMoney } from "@/lib/car-pricing-trust";
 
 export default function AdminApprovalsPage() {
   const [items, setItems] = useState<Car[]>([]);
@@ -313,7 +314,7 @@ export default function AdminApprovalsPage() {
                           {[car.city, car.province].filter(Boolean).join(", ") ||
                             "—"}
                           {car.priceValue != null
-                            ? ` · ${Number(car.priceValue).toLocaleString()} ${car.currencyKey || ""}`
+                            ? ` · ${formatMoney(car.priceValue, car.currencyKey)}`
                             : ""}
                         </p>
                       </div>

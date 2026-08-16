@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useId, useState } from "react";
 import { usePathname } from "next/navigation";
+import { IraqMotorsWordmark } from "@/components/iraq-motors-wordmark";
 import { useAuth } from "@/components/auth-provider";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setLocale, toggleTheme } from "@/store/slices/preferencesSlice";
@@ -65,32 +65,8 @@ export function SiteHeader() {
       className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${barClass}`}
     >
       <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-[4%] py-3 md:gap-6 md:py-4">
-        <Link
-          href="/"
-          className="relative flex h-12 w-[140px] shrink-0 items-center md:h-14 md:w-[180px]"
-        >
-          {/* Dark wordmark for light surfaces */}
-          <Image
-            src="/brand/IQ33.png"
-            alt="IQ Motors"
-            fill
-            sizes="180px"
-            className={`object-contain object-left ${
-              immersive ? "hidden" : "dark:hidden"
-            }`}
-            priority
-          />
-          {/* Light wordmark for dark surfaces / immersive hero */}
-          <Image
-            src="/brand/iqLogo.png"
-            alt="IQ Motors"
-            fill
-            sizes="180px"
-            className={`object-contain object-left ${
-              immersive ? "block" : "hidden dark:block"
-            }`}
-            priority
-          />
+        <Link href="/" className="shrink-0">
+          <IraqMotorsWordmark inverted={immersive} />
         </Link>
 
         <nav className="hidden flex-1 items-center justify-center gap-8 text-sm font-semibold md:flex">
@@ -105,16 +81,22 @@ export function SiteHeader() {
           <select
             value={locale}
             onChange={(e) => dispatch(setLocale(e.target.value as Locale))}
-            className={`hidden rounded-[12px] px-2 py-2 text-xs font-semibold outline-none sm:block ${
+            className={`lang-select hidden rounded-[12px] px-2 py-2 text-xs font-semibold outline-none [color-scheme:light] sm:block ${
               immersive
-                ? "bg-white/15 text-white [color-scheme:dark]"
+                ? "bg-white/15 text-white"
                 : "bg-input text-foreground"
             }`}
             aria-label="Language"
           >
-            <option value="en">EN</option>
-            <option value="ar">AR</option>
-            <option value="ku">KU</option>
+            <option value="en" className="bg-white text-neutral-900">
+              EN
+            </option>
+            <option value="ar" className="bg-white text-neutral-900">
+              AR
+            </option>
+            <option value="ku" className="bg-white text-neutral-900">
+              KU
+            </option>
           </select>
 
           <button
@@ -168,10 +150,10 @@ export function SiteHeader() {
           ) : (
             <Link
               href="/auth"
-              className={`hidden rounded-[12px] px-4 py-2.5 text-sm font-semibold sm:inline ${
+              className={`hidden rounded-[12px] px-4 py-2.5 text-sm font-semibold sm:inline-flex sm:items-center ${
                 immersive
-                  ? "bg-white/90 text-on-surface"
-                  : "bg-input text-foreground"
+                  ? "bg-white/20 text-white ring-2 ring-white hover:bg-white/35"
+                  : "bg-card text-foreground ring-2 ring-foreground/30 hover:bg-input"
               }`}
             >
               {t(locale, "signIn")}
@@ -239,12 +221,18 @@ export function SiteHeader() {
               <select
                 value={locale}
                 onChange={(e) => dispatch(setLocale(e.target.value as Locale))}
-                className="flex-1 rounded-[12px] bg-input px-3 py-2.5 text-xs font-semibold outline-none"
+                className="lang-select flex-1 rounded-[12px] bg-input px-3 py-2.5 text-xs font-semibold text-foreground outline-none [color-scheme:light]"
                 aria-label="Language"
               >
-                <option value="en">EN</option>
-                <option value="ar">AR</option>
-                <option value="ku">KU</option>
+                <option value="en" className="bg-white text-neutral-900">
+                  EN
+                </option>
+                <option value="ar" className="bg-white text-neutral-900">
+                  AR
+                </option>
+                <option value="ku" className="bg-white text-neutral-900">
+                  KU
+                </option>
               </select>
               <button
                 type="button"

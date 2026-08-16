@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="750" height="750" viewBox="0 0 750 750" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="750" y2="750" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0c1222"/>
+      <stop offset="1" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <rect width="750" height="750" fill="url(#g)"/>
+  <text x="48" y="320" fill="#fff" font-family="Segoe UI, Arial, sans-serif" font-size="44" font-weight="700">Sponsored</text>
+  <text x="48" y="380" fill="rgba(255,255,255,0.8)" font-family="Segoe UI, Arial, sans-serif" font-size="24">Featured showrooms</text>
+  <text x="48" y="430" fill="rgba(255,255,255,0.65)" font-family="Segoe UI, Arial, sans-serif" font-size="18">Tap to explore dealer inventory</text>
+</svg>

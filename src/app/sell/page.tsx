@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth-provider";
 import { IRAQ_CITIES } from "@/lib/i18n";
+import { formatCarTitle } from "@/lib/listing-display";
 
 const steps = [
   "Location",
@@ -542,7 +543,11 @@ export default function SellPage() {
           <div className="space-y-2 text-sm">
             <p>
               <strong className="capitalize">
-                {draft.year} {draft.brandId} {draft.modelKey}
+                {formatCarTitle({
+                  brandId: draft.brandId,
+                  modelKey: draft.modelKey,
+                  year: draft.year,
+                }) || "Listing"}
               </strong>
             </p>
             <p>

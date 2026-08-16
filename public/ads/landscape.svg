@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1200" y2="390" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111827"/>
+      <stop offset="0.6" stop-color="#1f2937"/>
+      <stop offset="1" stop-color="#c2410c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="390" fill="url(#g)"/>
+  <text x="56" y="160" fill="#fff" font-family="Segoe UI, Arial, sans-serif" font-size="42" font-weight="700">Sell faster on iraqMotors</text>
+  <text x="56" y="210" fill="rgba(255,255,255,0.75)" font-family="Segoe UI, Arial, sans-serif" font-size="20">Reach buyers across Baghdad, Erbil, Basra &amp; beyond</text>
+  <rect x="56" y="250" width="200" height="56" rx="12" fill="#ea580c"/>
+  <text x="156" y="286" text-anchor="middle" fill="#fff" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">List your car</text>
+</svg>

@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
+import { IraqMotorsWordmark } from "@/components/iraq-motors-wordmark";
 import {
   getFirebaseAuth,
   signInWithEmailAndPassword,
@@ -325,23 +325,8 @@ function AuthForm() {
       />
       <div className="relative w-full max-w-[480px] overflow-hidden rounded-[24px] bg-card p-8 shadow-[0_8px_40px_rgba(15,23,42,0.08)] ring-1 ring-outline md:p-10">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="relative mb-4 h-14 w-40">
-            <Image
-              src="/brand/IQ33.png"
-              alt="IQ Motors"
-              fill
-              sizes="160px"
-              className="object-contain dark:hidden"
-              priority
-            />
-            <Image
-              src="/brand/IQ11.png"
-              alt="IQ Motors"
-              fill
-              sizes="160px"
-              className="hidden object-contain dark:block"
-              priority
-            />
+          <div className="mb-4">
+            <IraqMotorsWordmark />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">
             {mode === "login" ? "Sign in" : "Create account"}

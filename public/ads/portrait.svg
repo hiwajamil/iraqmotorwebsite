@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1020" height="1200" viewBox="0 0 1020 1200" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1020" y2="1200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f172a"/>
+      <stop offset="0.45" stop-color="#334155"/>
+      <stop offset="1" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <rect width="1020" height="1200" fill="url(#g)"/>
+  <text x="72" y="520" fill="#fff" font-family="Segoe UI, Arial, sans-serif" font-size="56" font-weight="700">iraqMotors</text>
+  <text x="72" y="590" fill="rgba(255,255,255,0.78)" font-family="Segoe UI, Arial, sans-serif" font-size="28">Trusted cars. Real sellers.</text>
+  <rect x="72" y="660" width="280" height="72" rx="14" fill="#fff"/>
+  <text x="212" y="706" text-anchor="middle" fill="#0f172a" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">Learn more</text>
+</svg>

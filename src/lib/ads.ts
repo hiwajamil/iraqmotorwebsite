@@ -12,11 +12,17 @@ export type AdvertiseTypeId =
 
 export type Advertise = {
   id: string;
-  advertiseTypeId: AdvertiseTypeId;
+  advertiseTypeId?: AdvertiseTypeId;
   locationIds?: string[];
   title?: string;
+  description?: string;
   phone?: string;
   url?: string;
+  targetLink?: string | null;
+  slotPosition?: string;
+  isActive?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
   carId?: string;
   showroomId?: string;
   showroomSellerId?: string;
@@ -28,6 +34,24 @@ export type Advertise = {
   LandscapeImageUrlEn?: string;
   WebImageUrlEn?: string;
   ImageUrlEn?: string;
+};
+
+/**
+ * Display fields the homepage banner consumes.
+ * Super Admin ads will supply these from the database; the house banner is the fallback.
+ */
+export type AdBannerContent = {
+  title?: string;
+  description?: string;
+  imageUrl?: string | null;
+  targetLink?: string | null;
+};
+
+export const DEFAULT_HOME_BANNER: Required<AdBannerContent> = {
+  title: "iraqMotors",
+  description: "Iraq marketplace for verified cars",
+  imageUrl: null,
+  targetLink: "/",
 };
 
 export type AdSurface = "homeBanner" | "gridTile";
@@ -47,6 +71,14 @@ function firstNonEmpty(...values: Array<string | undefined | null>): string | nu
   return null;
 }
 
+/** Seed creatives live in website/public/ads so the banner is same-origin. */
+export function localizeAdAsset(url: string | null): string | null {
+  if (!url) return null;
+  const match = url.match(/\/media\/ads\/([^/?#]+)$/i);
+  if (match) return `/ads/${match[1]}`;
+  return url;
+}
+
 /**
  * Placement is chosen by surface + viewport (not a separate slot ID).
  * Creative field names encode intended size — same strategy as iQ Cars.
@@ -56,48 +88,61 @@ export function resolveAdImage(
   surface: AdSurface,
   viewport: AdViewport,
 ): string | null {
+  let src: string | null = null;
   if (surface === "homeBanner") {
-    if (viewport === "desktop") {
-      return firstNonEmpty(
-        ad.webLandscapeImageUrl,
-        ad.WebLandscapeImageUrlEn,
-        ad.landscapeImageUrl,
-        ad.LandscapeImageUrlEn,
-        ad.webImageUrl,
-        ad.imageUrl,
-      );
-    }
-    return firstNonEmpty(
-      ad.landscapeImageUrl,
-      ad.LandscapeImageUrlEn,
-      ad.webLandscapeImageUrl,
-      ad.WebLandscapeImageUrlEn,
-      ad.imageUrl,
-    );
-  }
-
-  // gridTile
-  if (viewport === "desktop") {
-    return firstNonEmpty(
+    src =
+      viewport === "desktop"
+        ? firstNonEmpty(
+            ad.webLandscapeImageUrl,
+            ad.WebLandscapeImageUrlEn,
+            ad.landscapeImageUrl,
+            ad.LandscapeImageUrlEn,
+            ad.webImageUrl,
+            ad.imageUrl,
+          )
+        : firstNonEmpty(
+            ad.landscapeImageUrl,
+            ad.LandscapeImageUrlEn,
+            ad.webLandscapeImageUrl,
+            ad.WebLandscapeImageUrlEn,
+            ad.imageUrl,
+          );
+  } else if (viewport === "desktop") {
+    src = firstNonEmpty(
       ad.webImageUrl,
       ad.WebImageUrlEn,
       ad.imageUrl,
       ad.ImageUrlEn,
       ad.landscapeImageUrl,
     );
+  } else {
+    src = firstNonEmpty(
+      ad.landscapeImageUrl,
+      ad.LandscapeImageUrlEn,
+      ad.webImageUrl,
+      ad.imageUrl,
+    );
   }
-  return firstNonEmpty(
-    ad.landscapeImageUrl,
-    ad.LandscapeImageUrlEn,
-    ad.webImageUrl,
-    ad.imageUrl,
-  );
+  return localizeAdAsset(src);
 }
 
-/** Prefer index [1] then [0] for homepage banner (iQ Cars behavior). */
+/** House/seed creatives are placeholders, not Super Admin placements. */
+export function isExternalAd(ad: Advertise): boolean {
+  return !ad.id.startsWith("seed-");
+}
+
+/**
+ * Pick an active external homepage banner.
+ * Returns null when none is active so the UI can fall back to DEFAULT_HOME_BANNER.
+ */
 export function pickHomeBannerAd(ads: Advertise[]): Advertise | null {
-  if (!ads.length) return null;
-  return ads[1] ?? ads[0] ?? null;
+  const external = ads.filter(isExternalAd);
+  if (!external.length) return null;
+  const banners = external.filter((ad) => {
+    const slot = (ad.slotPosition || "home_banner").replace(/-/g, "_");
+    return slot === "home_banner" || slot === "homeBanner";
+  });
+  return (banners[0] ?? external[0]) ?? null;
 }
 
 export function interleaveAdsInGrid(
@@ -158,6 +203,7 @@ export async function fetchAds(opts?: {
 }
 
 export function adHref(ad: Advertise): string | null {
+  if (ad.targetLink) return ad.targetLink;
   if (ad.advertiseTypeId === AdvertiseType.Car && ad.carId) {
     return `/cars/${ad.carId}`;
   }
@@ -168,6 +214,35 @@ export function adHref(ad: Advertise): string | null {
   if (ad.url) return ad.url;
   if (ad.phone) return `tel:${ad.phone.replace(/\s+/g, "")}`;
   return null;
+}
+
+export function resolveHomeBannerContent(
+  ad: Advertise | null | undefined,
+  viewport: AdViewport,
+  overrides: AdBannerContent = {},
+): Required<AdBannerContent> {
+  const imageUrl =
+    overrides.imageUrl !== undefined
+      ? overrides.imageUrl
+      : ad
+        ? resolveAdImage(ad, "homeBanner", viewport)
+        : DEFAULT_HOME_BANNER.imageUrl;
+  const targetLink =
+    overrides.targetLink !== undefined
+      ? overrides.targetLink
+      : ad
+        ? adHref(ad)
+        : DEFAULT_HOME_BANNER.targetLink;
+
+  return {
+    title: overrides.title || ad?.title || DEFAULT_HOME_BANNER.title,
+    description:
+      overrides.description ||
+      ad?.description ||
+      DEFAULT_HOME_BANNER.description,
+    imageUrl,
+    targetLink,
+  };
 }
 
 export const AD_TYPE_LABELS: Record<AdvertiseTypeId, string> = {
@@ -222,23 +297,59 @@ export const AD_CREATIVE_SLOTS = [
   },
 ];
 
+export const AD_SLOTS = [
+  { key: "home_banner", label: "Homepage banner" },
+  { key: "grid_tile", label: "Listing grid tile" },
+] as const;
+
+export function adImageUrl(ad: AdvertiseAdmin): string | null {
+  return (
+    ad.imageUrl ||
+    ad.creatives?.webLandscape ||
+    ad.creatives?.landscape ||
+    ad.creatives?.webSquare ||
+    ad.creatives?.portrait ||
+    null
+  );
+}
+
+export function adIsActive(ad: AdvertiseAdmin): boolean {
+  return ad.isActive ?? ad.active !== false;
+}
+
+export function adSlotLabel(slot?: string | null): string {
+  return AD_SLOTS.find((s) => s.key === slot)?.label || slot || "Banner";
+}
+
+export function formatAdDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
 export type AdvertiseAdmin = {
   id: string;
-  advertiseTypeId: AdvertiseTypeId;
-  locationIds: string[];
-  title?: Partial<Record<"en" | "ar" | "ku", string>>;
-  phone?: string | null;
+  title: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  targetLink?: string | null;
+  slotPosition?: string;
+  isActive?: boolean;
+  active?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  source?: "store" | "seed";
   url?: string | null;
-  carId?: string | null;
-  showroomId?: string | null;
-  showroomSellerId?: string | null;
-  creatives: {
+  creatives?: {
     webLandscape?: string;
     landscape?: string;
     webSquare?: string;
     portrait?: string;
   };
-  priority?: number;
-  active?: boolean;
-  source?: "store" | "seed";
 };

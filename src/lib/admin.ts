@@ -94,7 +94,7 @@ export const ADMIN_NAV = [
   { href: "/admin/listings", label: "Listings" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/showrooms", label: "Showrooms" },
-  { href: "/admin/banners", label: "Banners" },
+  { href: "/admin/ads", label: "Ads" },
   { href: "/admin/flagged", label: "Flagged" },
   { href: "/admin/messages", label: "Messages" },
   { href: "/admin/catalog", label: "Catalog" },
@@ -137,9 +137,7 @@ export function statusBadgeClass(status?: string): string {
   }
 }
 
-export function carTitle(car: Pick<Car, "year" | "brandId" | "modelKey">) {
-  return [car.year, car.brandId, car.modelKey].filter(Boolean).join(" ");
-}
+export { carTitle } from "@/lib/listing-display";
 
 export function carImage(car: Car): string | null {
   if (typeof car.imageUrl === "string" && car.imageUrl) return car.imageUrl;

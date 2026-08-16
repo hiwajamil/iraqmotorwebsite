@@ -12,6 +12,7 @@ import {
   statusBadgeClass,
 } from "@/lib/admin";
 import { AdReviewModal } from "@/components/admin-ad-review";
+import { formatMoney } from "@/lib/car-pricing-trust";
 
 const ALL_STATUSES = "pending,active,sold,expired,rejected";
 
@@ -329,7 +330,7 @@ function AdminListingsInner() {
                       {[car.city, car.province].filter(Boolean).join(", ") ||
                         "—"}
                       {car.priceValue != null
-                        ? ` · ${Number(car.priceValue).toLocaleString()} ${car.currencyKey || ""}`
+                        ? ` · ${formatMoney(car.priceValue, car.currencyKey)}`
                         : ""}
                     </p>
                     <span

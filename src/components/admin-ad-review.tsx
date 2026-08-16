@@ -9,6 +9,7 @@ import {
   statusBadgeClass,
   type AdminUser,
 } from "@/lib/admin";
+import { formatMoney } from "@/lib/car-pricing-trust";
 
 type Props = {
   car: Car;
@@ -288,7 +289,7 @@ export function AdReviewModal({
                 label="Price"
                 value={
                   localCar.priceValue != null
-                    ? `${Number(localCar.priceValue).toLocaleString()} ${localCar.currencyKey || ""}`
+                    ? formatMoney(localCar.priceValue, localCar.currencyKey)
                     : null
                 }
               />

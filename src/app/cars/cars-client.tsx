@@ -308,11 +308,9 @@ export default function CarsClient() {
         </div>
       ) : (
         <>
-          {bannerAd ? (
-            <div className="mt-6">
-              <AdHomeBanner ad={bannerAd} viewport={viewport} locale={locale} />
-            </div>
-          ) : null}
+          <div className="mt-6">
+            <AdHomeBanner ad={bannerAd} viewport={viewport} locale={locale} />
+          </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {gridItems.map((item) =>
               item.kind === "car" ? (

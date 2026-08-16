@@ -1,4 +1,4 @@
-/** Pricing intelligence + VIN / condition-trust helpers for marketplace UI. */
+import { t, type Locale } from "@/lib/i18n";
 
 export type PriceMeta = {
   initialPriceValue?: number | null;
@@ -57,16 +57,39 @@ export function isPriceDropped(meta?: PriceMeta | null): boolean {
   return meta?.lastDirection === "down";
 }
 
+function looksLikeRawCurrencyLabel(value: string): boolean {
+  return /currency[_-]/i.test(value) || /CURRENCY_/.test(value);
+}
+
+function usablePriceLabel(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || looksLikeRawCurrencyLabel(trimmed)) return null;
+  return trimmed;
+}
+
 export function formatMoney(
   amount: number | null | undefined,
   currencyKey?: string | null,
 ): string {
   if (amount == null || !Number.isFinite(Number(amount))) return "—";
-  const raw = (currencyKey || "iqd").toString().toLowerCase();
+  const compact = (currencyKey || "iqd").toString().toLowerCase().replace(/[^a-z]/g, "");
   const formatted = Number(amount).toLocaleString();
-  if (raw.includes("usd")) return `$${formatted}`;
-  if (raw.includes("iqd")) return `${formatted} IQD`;
-  return `${formatted} ${raw.toUpperCase()}`;
+  if (compact.includes("usd") || compact === "dollar") return `$${formatted}`;
+  if (compact.includes("iqd") || compact.includes("dinar") || !compact) {
+    return `${formatted} IQD`;
+  }
+  return `${formatted} ${compact.toUpperCase()}`;
+}
+
+export function formatAskPrice(car: {
+  price?: unknown;
+  priceValue?: number;
+  currencyKey?: string;
+}): string {
+  const labeled = usablePriceLabel(car.price);
+  if (labeled) return labeled;
+  return formatMoney(car.priceValue, car.currencyKey);
 }
 
 export function soldDisplayPrice(car: {
@@ -76,14 +99,12 @@ export function soldDisplayPrice(car: {
   price?: unknown;
 }): string {
   const sale = car.sale;
-  if (sale?.soldPrice && String(sale.soldPrice).trim()) {
-    return String(sale.soldPrice).trim();
-  }
+  const labeled = usablePriceLabel(sale?.soldPrice);
+  if (labeled) return labeled;
   if (sale?.soldPriceValue != null) {
     return formatMoney(sale.soldPriceValue, sale.soldCurrencyKey || car.currencyKey);
   }
-  if (typeof car.price === "string" && car.price.trim()) return car.price.trim();
-  return formatMoney(car.priceValue, car.currencyKey);
+  return formatAskPrice(car);
 }
 
 export function parseEventTime(value: PriceHistoryEvent["at"]): Date | null {
@@ -109,16 +130,22 @@ export function buildTrustChips(input: {
   vin?: VinSummary | null;
   conditionReport?: ConditionReport | null;
   vinNumber?: string | null;
+  locale?: Locale;
 }): TrustChip[] {
   const chips: TrustChip[] = [];
   const { vin, conditionReport: report, vinNumber } = input;
+  const locale = input.locale ?? "en";
 
   if (vin?.verifiedStatus === "admin_verified") {
-    chips.push({ key: "vin-verified", label: "VIN verified", tone: "positive" });
+    chips.push({
+      key: "vin-verified",
+      label: t(locale, "vinVerified"),
+      tone: "positive",
+    });
   } else if (vin?.isComplete || vin?.last4) {
     chips.push({
       key: "vin",
-      label: vin.last4 ? `VIN ···${vin.last4}` : "VIN on file",
+      label: vin.last4 ? `VIN ···${vin.last4}` : t(locale, "vinOnFile"),
       tone: "neutral",
     });
   } else if (vinNumber && String(vinNumber).trim()) {
@@ -130,13 +157,13 @@ export function buildTrustChips(input: {
   if (report?.hasAccidentHistory) {
     chips.push({
       key: "accident",
-      label: "Accident history",
+      label: t(locale, "accidentHistory"),
       tone: "warning",
     });
   } else if (report?.accidentDeclared === false) {
     chips.push({
       key: "clean",
-      label: "No accidents declared",
+      label: t(locale, "noAccidents"),
       tone: "positive",
     });
   }
@@ -146,16 +173,16 @@ export function buildTrustChips(input: {
       key: "inspected",
       label: report.inspectionGrade
         ? `Grade ${report.inspectionGrade}`
-        : "Inspected",
+        : t(locale, "inspected"),
       tone: "positive",
     });
   }
 
   if (report?.floodDamage) {
-    chips.push({ key: "flood", label: "Flood damage", tone: "warning" });
+    chips.push({ key: "flood", label: t(locale, "floodDamage"), tone: "warning" });
   }
   if (report?.salvageTitle || report?.rebuiltTitle) {
-    chips.push({ key: "salvage", label: "Salvage title", tone: "warning" });
+    chips.push({ key: "salvage", label: t(locale, "salvageTitle"), tone: "warning" });
   }
 
   return chips;

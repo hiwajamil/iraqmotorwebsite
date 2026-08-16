@@ -8,23 +8,63 @@ import { listingItemParams, trackEvent } from "@/lib/analytics";
 import { carTitle } from "@/components/car-card";
 import { PriceHistoryTimeline } from "@/components/price-history-timeline";
 import { TrustChips } from "@/components/trust-chips";
+import { ListingGallery } from "@/components/listing-gallery";
+import { ListingSellerCard } from "@/components/listing-seller-card";
 import { useAuth } from "@/components/auth-provider";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toggleFavorite } from "@/store/slices/favoritesSlice";
 import {
   buildTrustChips,
+  formatAskPrice,
   formatMoney,
   isPriceDropped,
   soldDisplayPrice,
 } from "@/lib/car-pricing-trust";
+import { t } from "@/lib/i18n";
+import {
+  formatMileageLabel,
+  listingDescription,
+  listingFeatureKeys,
+  localizeCity,
+  localizeOption,
+  stringField,
+} from "@/lib/listing-labels";
 
 function Spec({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
     <div className="rounded-[12px] bg-input px-3 py-2.5">
       <p className="text-[11px] font-medium text-muted">{label}</p>
-      <p className="mt-0.5 text-sm font-semibold capitalize">{value}</p>
+      <p className="mt-0.5 text-sm font-semibold" dir="auto">
+        {value}
+      </p>
     </div>
+  );
+}
+
+function BackLink({ label }: { label: string }) {
+  return (
+    <Link
+      href="/cars"
+      className="inline-flex items-center gap-1.5 rounded-full bg-input/80 px-3 py-1.5 text-sm font-medium text-foreground/80 ring-1 ring-outline/60 transition hover:bg-input hover:text-foreground"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+        className="rtl:rotate-180"
+      >
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+      {label}
+    </Link>
   );
 }
 
@@ -33,11 +73,11 @@ export default function CarDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const dispatch = useAppDispatch();
+  const locale = useAppSelector((s) => s.preferences.locale);
   const isFavorite = useAppSelector((s) =>
     params.id ? s.favorites.ids.includes(params.id) : false,
   );
   const [car, setCar] = useState<Car | null>(null);
-  const [activeImage, setActiveImage] = useState(0);
   const [bid, setBid] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<"ok" | "err">("ok");
@@ -54,7 +94,6 @@ export default function CarDetailPage() {
         const data = await api.get<Car>(`/cars/${params.id}`);
         if (!cancelled) {
           setCar(data);
-          setActiveImage(0);
           setError(null);
           setNotFound(false);
           trackEvent("view_item", listingItemParams(data));
@@ -66,18 +105,18 @@ export default function CarDetailPage() {
             ? Number((e as { status: number }).status)
             : 0;
         if (status === 404) setNotFound(true);
-        setError(e instanceof Error ? e.message : "Failed to load listing");
+        setError(e instanceof Error ? e.message : t(locale, "loadFailed"));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [params.id]);
+  }, [params.id, locale]);
 
   function requireAuth(action: string) {
     if (user) return true;
     setMessageTone("err");
-    setMessage(`Sign in to ${action}`);
+    setMessage(t(locale, "signInToAction", { action }));
     router.push(
       `/auth?next=${encodeURIComponent(`/cars/${params.id ?? ""}`)}`,
     );
@@ -85,11 +124,11 @@ export default function CarDetailPage() {
   }
 
   async function placeBid() {
-    if (!requireAuth("place a bid")) return;
+    if (!requireAuth(t(locale, "placeBid").toLowerCase())) return;
     const amount = Number(bid.replace(/[^\d]/g, ""));
     if (!amount) {
       setMessageTone("err");
-      setMessage("Enter a valid amount");
+      setMessage(t(locale, "enterValidAmount"));
       return;
     }
     setBidding(true);
@@ -97,29 +136,29 @@ export default function CarDetailPage() {
     try {
       await api.post(`/cars/${params.id}/bids`, { amount });
       setMessageTone("ok");
-      setMessage("Bid submitted");
+      setMessage(t(locale, "bidSubmitted"));
       setBid("");
       const refreshed = await api.get<Car>(`/cars/${params.id}`);
       setCar(refreshed);
     } catch (e) {
       setMessageTone("err");
-      setMessage(e instanceof Error ? e.message : "Bid failed");
+      setMessage(e instanceof Error ? e.message : t(locale, "bidFailed"));
     } finally {
       setBidding(false);
     }
   }
 
   async function onToggleFavorite() {
-    if (!requireAuth("save favorites")) return;
+    if (!requireAuth(t(locale, "save").toLowerCase())) return;
     if (!params.id) return;
     setSavingFav(true);
     try {
       await dispatch(toggleFavorite(params.id)).unwrap();
       setMessageTone("ok");
-      setMessage(isFavorite ? "Removed from favorites" : "Added to favorites");
+      setMessage(isFavorite ? t(locale, "saved") : t(locale, "save"));
     } catch (e) {
       setMessageTone("err");
-      setMessage(e instanceof Error ? e.message : "Failed");
+      setMessage(e instanceof Error ? e.message : t(locale, "bidFailed"));
     } finally {
       setSavingFav(false);
     }
@@ -128,16 +167,11 @@ export default function CarDetailPage() {
   if (notFound) {
     return (
       <div className="mx-auto max-w-4xl px-[4%] pt-28 text-center">
-        <h1 className="text-2xl font-bold">Listing not found</h1>
-        <p className="mt-2 text-muted">
-          This car may have been removed or is no longer available.
-        </p>
-        <Link
-          href="/cars"
-          className="mt-6 inline-block text-sm font-semibold text-primary"
-        >
-          Back to browse
-        </Link>
+        <h1 className="text-2xl font-bold">{t(locale, "listingNotFound")}</h1>
+        <p className="mt-2 text-muted">{t(locale, "listingRemoved")}</p>
+        <div className="mt-6">
+          <BackLink label={t(locale, "backToBrowse")} />
+        </div>
       </div>
     );
   }
@@ -153,7 +187,7 @@ export default function CarDetailPage() {
           className="mt-4 text-sm font-semibold text-primary"
           onClick={() => window.location.reload()}
         >
-          Retry
+          {t(locale, "retry")}
         </button>
       </div>
     );
@@ -180,85 +214,75 @@ export default function CarDetailPage() {
       : car.imageUrl
         ? [String(car.imageUrl)]
         : []) || [];
-  const title = carTitle(car) || "Car listing";
+  const title = carTitle(car) || t(locale, "browseCars");
   const sold = car.status === "sold";
   const priceDropped = !sold && isPriceDropped(car.priceMeta);
-  const displayPrice = sold
-    ? soldDisplayPrice(car)
-    : car.price && String(car.price).trim()
-      ? String(car.price)
-      : formatMoney(car.priceValue, car.currencyKey);
-  const fuel = String(car.fuelKey || car.fuel || "");
-  const transmission = String(car.transmissionKey || car.transmission || "");
-  const condition = String(car.conditionKey || car.condition || "");
-  const plate = [car.plateTypeKey, car.plateCityKey]
-    .filter(Boolean)
-    .join(" · ");
+  const displayPrice = sold ? soldDisplayPrice(car) : formatAskPrice(car);
+  const fuel = localizeOption(
+    locale,
+    stringField(car, "fuelKey", "fuel", "engine"),
+  );
+  const transmission = localizeOption(
+    locale,
+    stringField(car, "transmissionKey", "transmission"),
+  );
+  const condition = localizeOption(
+    locale,
+    stringField(car, "conditionKey", "condition"),
+  );
+  const color = localizeOption(locale, stringField(car, "colorKey", "color"));
+  const plateType = localizeOption(locale, stringField(car, "plateTypeKey"));
+  const plateCity = localizeCity(locale, stringField(car, "plateCityKey"));
+  const plate = [plateType, plateCity].filter(Boolean).join(" · ");
+  const city = localizeCity(locale, stringField(car, "city"));
+  const province = localizeCity(locale, stringField(car, "province"));
+  const location =
+    [city, province].filter((part, i, all) => part && all.indexOf(part) === i).join(
+      " · ",
+    ) || t(locale, "iraq");
+  const mileage = formatMileageLabel(
+    locale,
+    car.mileageValue ?? car.mileage,
+    car.mileageUnit,
+  );
+  const description = listingDescription(car);
+  const featureKeys = listingFeatureKeys(car);
   const trustChips = buildTrustChips({
     vin: car.vin,
     conditionReport: car.conditionReport,
     vinNumber: car.vinNumber,
+    locale,
   });
+  const highestFormatted = formatMoney(
+    car.highestBid != null ? Number(car.highestBid) : 0,
+    car.currencyKey,
+  );
+  const sellerId = car.sellerId ? String(car.sellerId) : "";
+  const priceDroppedBadge = (
+    <span className="absolute start-3 top-3 inline-flex items-center gap-1 rounded-full bg-teal-700/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
+      ↓ {t(locale, "priceDropped")}
+    </span>
+  );
 
   return (
     <div className="mx-auto max-w-5xl px-[4%] pb-16 pt-24">
-      <Link href="/cars" className="text-sm font-medium text-primary">
-        ← Back to browse
-      </Link>
+      <BackLink label={t(locale, "backToBrowse")} />
       <div className="mt-4 grid gap-8 lg:grid-cols-2">
-        <div>
-          <div className="relative overflow-hidden rounded-[16px] bg-input ring-1 ring-outline">
-            {images[activeImage] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={images[activeImage]}
-                alt={title}
-                className="aspect-[4/3] w-full object-cover"
-              />
-            ) : (
-              <div className="flex aspect-[4/3] items-center justify-center text-muted">
-                No photo
-              </div>
-            )}
-            {priceDropped ? (
-              <span className="absolute start-3 top-3 inline-flex items-center gap-1 rounded-full bg-teal-700/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
-                ↓ Price dropped
-              </span>
-            ) : null}
-          </div>
-          {images.length > 1 ? (
-            <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {images.map((url, i) => (
-                <button
-                  key={`${url}-${i}`}
-                  type="button"
-                  onClick={() => setActiveImage(i)}
-                  className={`h-16 w-20 shrink-0 overflow-hidden rounded-[10px] ring-2 transition ${
-                    i === activeImage
-                      ? "ring-primary"
-                      : "ring-transparent opacity-80 hover:opacity-100"
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        <ListingGallery
+          images={images}
+          title={title}
+          locale={locale}
+          badge={priceDropped ? priceDroppedBadge : null}
+        />
 
         <div className="space-y-4">
           <div>
             {sold ? (
               <span className="mb-2 inline-block rounded-full bg-input px-2.5 py-1 text-[11px] font-semibold">
-                Sold
+                {t(locale, "sold")}
               </span>
             ) : null}
-            <h1 className="text-3xl font-bold capitalize tracking-tight">
+            <h1 className="text-3xl font-bold tracking-tight" dir="auto">
               {title}
             </h1>
           </div>
@@ -267,54 +291,154 @@ export default function CarDetailPage() {
               className={`text-2xl font-semibold ${
                 sold ? "text-foreground" : "text-primary"
               }`}
+              dir="ltr"
             >
-              {sold ? `Sold for ${displayPrice}` : displayPrice}
+              {sold
+                ? t(locale, "soldFor", { price: displayPrice })
+                : displayPrice}
             </p>
             {priceDropped ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-teal-700/95 px-2.5 py-1 text-[11px] font-semibold text-white">
-                ↓ Price dropped
+                ↓ {t(locale, "priceDropped")}
               </span>
             ) : null}
           </div>
           <TrustChips chips={trustChips} />
-          <p className="text-sm text-muted">
-            {[car.city, car.province].filter(Boolean).join(", ") || "Iraq"}
-            {car.mileageValue != null
-              ? ` · ${Number(car.mileageValue).toLocaleString()} km`
-              : ""}
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+            {mileage ? (
+              <span dir="ltr" className="[unicode-bidi:isolate]">
+                {mileage}
+              </span>
+            ) : null}
+            {mileage && transmission ? (
+              <span aria-hidden className="text-outline">
+                ·
+              </span>
+            ) : null}
+            {transmission ? (
+              <span dir="auto" className="[unicode-bidi:isolate]">
+                {transmission}
+              </span>
+            ) : null}
+            {(mileage || transmission) && location ? (
+              <span aria-hidden className="text-outline">
+                ·
+              </span>
+            ) : null}
+            {location ? (
+              <span dir="auto" className="[unicode-bidi:isolate]">
+                {location}
+              </span>
+            ) : null}
           </p>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <Spec label="Fuel" value={fuel || null} />
-            <Spec label="Transmission" value={transmission || null} />
-            <Spec label="Condition" value={condition || null} />
-            <Spec label="Plate" value={plate || null} />
+            <Spec label={t(locale, "specFuel")} value={fuel || null} />
             <Spec
-              label="Year"
-              value={car.year != null ? String(car.year) : null}
+              label={t(locale, "specTransmission")}
+              value={transmission || null}
             />
             <Spec
-              label="Color"
-              value={car.colorKey ? String(car.colorKey) : null}
+              label={t(locale, "specCondition")}
+              value={condition || null}
+            />
+            <Spec label={t(locale, "specPlate")} value={plate || null} />
+            <Spec
+              label={t(locale, "specYear")}
+              value={car.year != null ? String(car.year) : null}
+            />
+            <Spec label={t(locale, "specColor")} value={color || null} />
+            <Spec label={t(locale, "specMileage")} value={mileage} />
+            <Spec
+              label={t(locale, "specBody")}
+              value={
+                localizeOption(locale, stringField(car, "bodyTypeKey", "bodyType")) ||
+                null
+              }
+            />
+            <Spec
+              label={t(locale, "specDrivetrain")}
+              value={
+                localizeOption(
+                  locale,
+                  stringField(car, "drivetrainKey", "drivetrain"),
+                ) || null
+              }
+            />
+            <Spec
+              label={t(locale, "specEngineSize")}
+              value={
+                localizeOption(locale, stringField(car, "engineSizeKey")) || null
+              }
+            />
+            <Spec
+              label={t(locale, "specCylinders")}
+              value={
+                localizeOption(locale, stringField(car, "cylindersKey")) || null
+              }
+            />
+            <Spec
+              label={t(locale, "specImport")}
+              value={
+                localizeOption(locale, stringField(car, "importCountryKey")) ||
+                null
+              }
+            />
+            <Spec
+              label={t(locale, "specHorsepower")}
+              value={
+                stringField(car, "horsepower")
+                  ? `${stringField(car, "horsepower")} HP`
+                  : null
+              }
             />
           </div>
 
-          {car.description ? (
-            <p className="text-sm leading-relaxed text-foreground/90">
-              {String(car.description)}
-            </p>
+          {description || featureKeys.length ? (
+            <section className="rounded-[16px] bg-card p-4 ring-1 ring-outline/60">
+              <h2 className="text-sm font-semibold tracking-tight">
+                {t(locale, "descriptionFeatures")}
+              </h2>
+              {description ? (
+                <p
+                  className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90"
+                  dir="auto"
+                >
+                  {description}
+                </p>
+              ) : null}
+              {featureKeys.length ? (
+                <div className={description ? "mt-4" : "mt-3"}>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted">
+                    {t(locale, "features")}
+                  </p>
+                  <ul className="mt-2 flex flex-wrap gap-2">
+                    {featureKeys.map((key) => (
+                      <li
+                        key={key}
+                        className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-foreground ring-1 ring-primary/15"
+                      >
+                        {localizeOption(locale, key)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </section>
           ) : null}
 
-          <PriceHistoryTimeline carId={car.id} />
+          <PriceHistoryTimeline carId={car.id} locale={locale} />
 
-          {car.sellerId ? (
-            <Link
-              href={`/cars?sellerId=${encodeURIComponent(String(car.sellerId))}`}
-              className="inline-block text-sm font-semibold text-primary"
-            >
-              More from this seller
-            </Link>
-          ) : null}
+          <ListingSellerCard
+            sellerId={sellerId || null}
+            locale={locale}
+            listingSeller={{
+              displayName: stringField(car, "sellerName") || null,
+              showroomName: stringField(car, "sellerShowroom") || null,
+              phone: stringField(car, "sellerPhone", "phone", "phoneNumber") || null,
+              photoUrl: stringField(car, "sellerAvatar") || null,
+            }}
+          />
 
           <div className="flex flex-wrap gap-3 pt-2">
             <button
@@ -323,24 +447,23 @@ export default function CarDetailPage() {
               onClick={() => void onToggleFavorite()}
               className="rounded-[12px] bg-input px-4 py-2.5 text-sm font-semibold disabled:opacity-60"
             >
-              {isFavorite ? "Saved" : "Save"}
+              {isFavorite ? t(locale, "saved") : t(locale, "save")}
             </button>
           </div>
 
           {!sold ? (
             <div className="rounded-[16px] bg-card p-4 ring-1 ring-outline">
-              <p className="text-sm font-semibold">Place a bid</p>
-              {car.highestBid != null ? (
-                <p className="mt-1 text-xs text-muted">
-                  Highest: {Number(car.highestBid).toLocaleString()}
-                </p>
-              ) : null}
+              <p className="text-sm font-semibold">{t(locale, "placeBid")}</p>
+              <p className="mt-1 text-xs text-muted" dir="auto">
+                {t(locale, "highestBid", { amount: highestFormatted })}
+              </p>
               <div className="mt-3 flex gap-2">
                 <input
                   value={bid}
                   onChange={(e) => setBid(e.target.value)}
-                  placeholder="Amount"
+                  placeholder={t(locale, "bidAmount")}
                   inputMode="numeric"
+                  dir="ltr"
                   className="flex-1 rounded-[12px] bg-input px-3 py-2 text-sm outline-none ring-1 ring-transparent focus:ring-primary"
                 />
                 <button
@@ -349,7 +472,7 @@ export default function CarDetailPage() {
                   onClick={() => void placeBid()}
                   className="rounded-[12px] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
                 >
-                  {bidding ? "…" : "Bid"}
+                  {bidding ? "…" : t(locale, "bid")}
                 </button>
               </div>
               {message ? (

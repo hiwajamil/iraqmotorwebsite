@@ -120,7 +120,7 @@ export default function DashboardPage() {
           </p>
           <p className="mt-1 text-sm text-muted">
             {tab === "ads"
-              ? "Create a listing to sell your car on IQ Motors."
+              ? "Create a listing to sell your car on Iraq Motors."
               : "Save cars while browsing to find them here later."}
           </p>
           <Link

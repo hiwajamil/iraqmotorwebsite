@@ -7,22 +7,14 @@ import { useAuth } from "@/components/auth-provider";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { toggleFavorite } from "@/store/slices/favoritesSlice";
 import {
-  formatMoney,
+  formatAskPrice,
   isPriceDropped,
   soldDisplayPrice,
 } from "@/lib/car-pricing-trust";
-
-function formatAskPrice(car: Car) {
-  if (car.price && String(car.price).trim()) return String(car.price).trim();
-  return formatMoney(car.priceValue, car.currencyKey);
-}
+import { formatCarTitle } from "@/lib/listing-display";
 
 export function carTitle(car: Car) {
-  const make = (car.make as string) || car.brandId || "";
-  const model = (car.model as string) || car.modelKey || "";
-  const year = car.year ? String(car.year) : "";
-  const trim = car.trim ? String(car.trim) : "";
-  return [make, model, year, trim].filter(Boolean).join(" ");
+  return formatCarTitle(car);
 }
 
 function mileage(car: Car) {
@@ -109,7 +101,7 @@ export function CarCard({
       </div>
       <div className={`flex flex-1 flex-col ${compact ? "gap-1 p-2" : "gap-1.5 p-3"}`}>
         <h3
-          className={`font-bold capitalize leading-snug text-foreground ${
+          className={`font-bold leading-snug text-foreground ${
             compact ? "line-clamp-1 text-[13px]" : "line-clamp-2 text-sm md:text-base"
           }`}
         >

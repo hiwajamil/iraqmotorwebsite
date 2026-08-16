@@ -156,11 +156,11 @@ export default function AdminPage() {
               <p className="mt-2 text-sm font-semibold text-primary">Manage →</p>
             </Link>
             <Link
-              href="/admin/banners"
+              href="/admin/ads"
               className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline transition hover:ring-primary"
             >
               <p className="text-xs uppercase tracking-wide text-muted">
-                Sponsor banners
+                Ads
               </p>
               <p className="mt-2 text-sm font-semibold text-primary">
                 Manage →
