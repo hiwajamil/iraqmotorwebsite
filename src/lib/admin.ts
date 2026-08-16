@@ -96,6 +96,7 @@ export const ADMIN_NAV = [
   { href: "/admin/showrooms", label: "Showrooms" },
   { href: "/admin/ads", label: "Ads" },
   { href: "/admin/flagged", label: "Flagged" },
+  { href: "/admin/leads", label: "Leads" },
   { href: "/admin/messages", label: "Messages" },
   { href: "/admin/catalog", label: "Catalog" },
   { href: "/admin/analytics", label: "Analytics" },

@@ -9,6 +9,7 @@ import { carTitle } from "@/components/car-card";
 import { PriceHistoryTimeline } from "@/components/price-history-timeline";
 import { TrustChips } from "@/components/trust-chips";
 import { ListingGallery } from "@/components/listing-gallery";
+import { ListingQuickActions } from "@/components/listing-quick-actions";
 import { ListingSellerCard } from "@/components/listing-seller-card";
 import { useAuth } from "@/components/auth-provider";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -214,7 +215,7 @@ export default function CarDetailPage() {
       : car.imageUrl
         ? [String(car.imageUrl)]
         : []) || [];
-  const title = carTitle(car) || t(locale, "browseCars");
+  const title = carTitle(car, locale) || t(locale, "browseCars");
   const sold = car.status === "sold";
   const priceDropped = !sold && isPriceDropped(car.priceMeta);
   const displayPrice = sold ? soldDisplayPrice(car) : formatAskPrice(car);
@@ -273,6 +274,7 @@ export default function CarDetailPage() {
           title={title}
           locale={locale}
           badge={priceDropped ? priceDroppedBadge : null}
+          actions={<ListingQuickActions car={car} title={title} />}
         />
 
         <div className="space-y-4">

@@ -3,6 +3,9 @@ import { Suspense } from "react";
 import { Montserrat, Noto_Kufi_Arabic } from "next/font/google";
 import { StoreProvider } from "@/store/provider";
 import { SiteHeader } from "@/components/site-header";
+import { CompareDock } from "@/components/compare-dock";
+import { FloatingHelpWidget } from "@/components/floating-help-widget";
+import { SiteToast } from "@/components/site-toast";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import "./globals.css";
 
@@ -38,6 +41,9 @@ export default function RootLayout({
           <footer className="mt-10 border-t border-outline px-[4%] py-10 text-center text-sm text-muted">
             © {new Date().getFullYear()} Iraq Motors. All rights reserved.
           </footer>
+          <CompareDock />
+          <FloatingHelpWidget />
+          <SiteToast />
         </StoreProvider>
         <Suspense fallback={null}>
           <GoogleAnalytics />

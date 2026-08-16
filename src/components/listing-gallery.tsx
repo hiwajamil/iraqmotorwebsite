@@ -181,11 +181,13 @@ export function ListingGallery({
   title,
   locale,
   badge,
+  actions,
 }: {
   images: string[];
   title: string;
   locale: Locale;
   badge?: ReactNode;
+  actions?: ReactNode;
 }) {
   const [active, setActive] = useState(0);
   const [open, setOpen] = useState(false);
@@ -198,7 +200,8 @@ export function ListingGallery({
 
   return (
     <div>
-      <div className="relative overflow-hidden rounded-[16px] bg-input ring-1 ring-outline">
+      <div className="relative rounded-[16px] bg-input ring-1 ring-outline">
+        <div className="overflow-hidden rounded-[16px]">
         {current ? (
           <button
             type="button"
@@ -221,7 +224,9 @@ export function ListingGallery({
             {t(locale, "noPhoto")}
           </div>
         )}
+        </div>
         {badge}
+        {actions}
       </div>
       {images.length > 1 ? (
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">

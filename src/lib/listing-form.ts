@@ -13,6 +13,7 @@ export type ListingDraft = {
   imageUrls: string[];
   brandId: string;
   modelKey: string;
+  trim: string;
   colorKey: string;
   year: string;
   plateTypeKey: string;
@@ -41,6 +42,7 @@ export const emptyListingDraft: ListingDraft = {
   imageUrls: [],
   brandId: "",
   modelKey: "",
+  trim: "",
   colorKey: "",
   year: "",
   plateTypeKey: "",
@@ -147,6 +149,7 @@ export function listingDraftToPayload(draft: ListingDraft) {
     city: draft.city,
     brandId: draft.brandId,
     modelKey: draft.modelKey,
+    trim: draft.trim.trim() || null,
     year: draft.year || null,
     colorKey: draft.colorKey,
     plateTypeKey: draft.plateTypeKey,

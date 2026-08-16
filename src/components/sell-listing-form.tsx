@@ -41,7 +41,8 @@ import {
 } from "@/lib/listing-form";
 
 type Brand = { id: string; name?: string };
-type Model = { id: string; key?: string; name?: string };
+type Model = { id: string; key?: string; name?: string; trims?: string[] };
+type Trim = { id: string; name?: string };
 
 const selectClass =
   "mt-1 w-full rounded-[12px] bg-input px-3 py-2.5 text-sm outline-none ring-1 ring-transparent focus:ring-primary disabled:opacity-50";
@@ -132,6 +133,7 @@ export function SellListingForm() {
   );
   const [brands, setBrands] = useState<Brand[]>([]);
   const [models, setModels] = useState<Model[]>([]);
+  const [trims, setTrims] = useState<Trim[]>([]);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const damageInputRef = useRef<HTMLInputElement>(null);
   const photoTargetSlot = useRef<number | null>(null);
@@ -154,7 +156,7 @@ export function SellListingForm() {
     }
     let cancelled = false;
     void api
-      .get<{ items: Model[] }>(`/catalog/brands/${draft.brandId}/models`)
+      .get<{ items: Model[] }>(`/catalog/brands/${encodeURIComponent(draft.brandId)}/models`)
       .then((d) => {
         if (!cancelled) setModels(d.items ?? []);
       })
@@ -165,6 +167,36 @@ export function SellListingForm() {
       cancelled = true;
     };
   }, [draft.brandId]);
+
+  useEffect(() => {
+    if (!draft.brandId || !draft.modelKey) {
+      setTrims([]);
+      return;
+    }
+    let cancelled = false;
+    const brandId = encodeURIComponent(draft.brandId);
+    const modelKey = encodeURIComponent(draft.modelKey);
+    void api
+      .get<{ items: Trim[] }>(`/catalog/brands/${brandId}/models/${modelKey}/trims`)
+      .then((d) => {
+        if (cancelled) return;
+        const items = d.items ?? [];
+        if (items.length) {
+          setTrims(items);
+          return;
+        }
+        const nested = models.find((m) => (m.key || m.id) === draft.modelKey)?.trims ?? [];
+        setTrims(nested.map((name) => ({ id: name, name })));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const nested = models.find((m) => (m.key || m.id) === draft.modelKey)?.trims ?? [];
+        setTrims(nested.map((name) => ({ id: name, name })));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [draft.brandId, draft.modelKey, models]);
 
   const cityOptions = useMemo(
     () => (draft.province ? citiesForProvince(draft.province) : []),
@@ -373,7 +405,9 @@ export function SellListingForm() {
           {label("sellBrand")}
           <select
             value={draft.brandId}
-            onChange={(e) => patch({ brandId: e.target.value, modelKey: "" })}
+            onChange={(e) =>
+              patch({ brandId: e.target.value, modelKey: "", trim: "" })
+            }
             className={selectClass}
           >
             <option value="">{label("sellSelectBrand")}</option>
@@ -389,7 +423,7 @@ export function SellListingForm() {
           {label("sellModel")}
           <select
             value={draft.modelKey}
-            onChange={(e) => patch({ modelKey: e.target.value })}
+            onChange={(e) => patch({ modelKey: e.target.value, trim: "" })}
             className={selectClass}
             disabled={!draft.brandId}
           >
@@ -404,6 +438,26 @@ export function SellListingForm() {
             })}
           </select>
           <FieldError message={err("modelKey")} />
+        </label>
+        <label className="block text-sm font-medium" data-field="trim">
+          {label("sellTrim")}
+          <select
+            value={draft.trim}
+            onChange={(e) => patch({ trim: e.target.value })}
+            className={selectClass}
+            disabled={!draft.modelKey}
+          >
+            <option value="">{label("sellSelectTrim")}</option>
+            {trims.map((trim) => {
+              const key = trim.name || trim.id;
+              return (
+                <option key={trim.id || key} value={key}>
+                  {key}
+                </option>
+              );
+            })}
+          </select>
+          <FieldError message={err("trim")} />
         </label>
         <label className="block text-sm font-medium" data-field="colorKey">
           {label("sellColor")}

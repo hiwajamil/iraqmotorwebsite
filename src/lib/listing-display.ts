@@ -1,4 +1,11 @@
 import type { Car } from "@/lib/api";
+import type { Locale } from "@/lib/i18n";
+import {
+  localizeBrandName,
+  localizeModelName,
+  localizeTrimName,
+  vehicleNameKey,
+} from "@/lib/vehicle-names";
 
 const BRAND_LABELS: Record<string, string> = {
   bmw: "BMW",
@@ -102,31 +109,87 @@ export type ListingTitleInput = {
   trim?: unknown;
 };
 
-export function formatCarTitle(car: ListingTitleInput): string {
-  const brandRaw = String(car.make || car.brandId || "").trim();
-  const modelRaw = String(car.model || car.modelKey || "").trim();
-  const brand = humanizeSlug(brandRaw);
-  let model = humanizeSlug(modelRaw);
-  if (brand && model) {
-    const stripped = stripBrandPrefix(modelRaw || model, brandRaw || brand);
-    if (stripped && slugKey(stripped) !== slugKey(brandRaw || brand)) {
-      model = looksLikeSlug(stripped) ? humanizeSlug(stripped) : stripped;
-    }
-    if (slugKey(model) === slugKey(brandRaw || brand) || slugKey(model) === slugKey(brand)) {
-      model = "";
-    }
+function localizedLabel(
+  raw: string,
+  locale: Locale,
+  kind: "brand" | "model" | "trim",
+): string {
+  if (!raw) return "";
+  const localize =
+    kind === "brand"
+      ? localizeBrandName
+      : kind === "model"
+        ? localizeModelName
+        : localizeTrimName;
+  const lookedUp = localize(raw, locale);
+  if (lookedUp !== raw) return lookedUp;
+  const human = humanizeSlug(raw);
+  if (human !== raw) {
+    const fromHuman = localize(human, locale);
+    if (fromHuman !== human) return fromHuman;
   }
-  const year = car.year != null && String(car.year).trim() ? String(car.year).trim() : "";
-  const trimRaw = car.trim != null ? String(car.trim).trim() : "";
-  const trim =
-    trimRaw &&
-    slugKey(trimRaw) !== slugKey(modelRaw) &&
-    !slugKey(model).includes(slugKey(trimRaw))
-      ? humanizeSlug(trimRaw)
-      : "";
-  return [brand, model, year, trim].filter(Boolean).join(" ");
+  return human;
 }
 
-export function carTitle(car: Pick<Car, "year" | "brandId" | "modelKey"> & ListingTitleInput) {
-  return formatCarTitle(car);
+function isolateLtr(value: string, locale: Locale): string {
+  if (!value || locale === "en") return value;
+  if (/^[\u0600-\u06FF]/.test(value)) return value;
+  return `\u2066${value}\u2069`;
+}
+
+function stripYearAndTrim(model: string, year: string, trim: string): string {
+  let text = model;
+  if (year) {
+    text = text.replace(new RegExp(`\\b${year.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g"), "");
+  }
+  if (trim) {
+    text = text.replace(
+      new RegExp(`\\b${trim.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi"),
+      "",
+    );
+  }
+  return text.replace(/\s+/g, " ").trim();
+}
+
+export function formatCarTitle(
+  car: ListingTitleInput,
+  locale: Locale = "en",
+): string {
+  const brandRaw = String(car.brandId || car.make || "").trim();
+  const modelRaw = String(car.modelKey || car.model || "").trim();
+  const year = car.year != null && String(car.year).trim() ? String(car.year).trim() : "";
+  const trimRaw = car.trim != null ? String(car.trim).trim() : "";
+
+  const brand = localizedLabel(brandRaw, locale, "brand");
+  let modelClean = modelRaw;
+  if (brandRaw && modelClean) {
+    const stripped = stripBrandPrefix(modelRaw, brandRaw);
+    if (stripped && vehicleNameKey(stripped) !== vehicleNameKey(brandRaw)) {
+      modelClean = stripped;
+    }
+  }
+  modelClean = stripYearAndTrim(modelClean, year, trimRaw);
+  if (
+    vehicleNameKey(modelClean) === vehicleNameKey(brandRaw) ||
+    vehicleNameKey(modelClean) === vehicleNameKey(brand)
+  ) {
+    modelClean = "";
+  }
+
+  const model = modelClean ? localizedLabel(modelClean, locale, "model") : "";
+  const trim =
+    trimRaw &&
+    vehicleNameKey(trimRaw) !== vehicleNameKey(modelRaw) &&
+    vehicleNameKey(trimRaw) !== vehicleNameKey(modelClean)
+      ? isolateLtr(localizedLabel(trimRaw, locale, "trim"), locale)
+      : "";
+
+  return [brand, model, isolateLtr(year, locale), trim].filter(Boolean).join(" ");
+}
+
+export function carTitle(
+  car: Pick<Car, "year" | "brandId" | "modelKey"> & ListingTitleInput,
+  locale: Locale = "en",
+) {
+  return formatCarTitle(car, locale);
 }

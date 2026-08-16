@@ -51,10 +51,11 @@ Configured in `next.config.ts`. Client helper: `src/lib/api.ts`. Auth: Firebase 
 |------|---------|
 | `/` | Home / hero + latest listings |
 | `/cars`, `/cars/[id]` | Browse & detail (bids, favorites) |
+| `/compare` | Side-by-side comparison (`?ids=`) |
 | `/sell` | Multi-step sell wizard |
 | `/showrooms` | Dealer directory |
 | `/auth` | Sign in / register |
-| `/dashboard` | My ads & wishlist |
+| `/dashboard` | Account home, listings, favorites, messages, settings |
 
 ### Admin (super-admin)
 
@@ -65,6 +66,7 @@ Configured in `next.config.ts`. Client helper: `src/lib/api.ts`. Auth: Firebase 
 | `/admin/listings` | All statuses (activate, expire, sold, delete) |
 | `/admin/users`, `/admin/showrooms` | Users & dealers |
 | `/admin/flagged` | Reported ads |
+| `/admin/leads` | Help-widget lead requests |
 | `/admin/messages` | Support tickets |
 | `/admin/catalog` | Brands / models / trims |
 | `/admin/analytics` | GA report + CSV |

@@ -17,6 +17,10 @@ export type Me = {
   email?: string;
   isSuperAdmin?: boolean;
   profile?: Record<string, unknown> | null;
+  preferences?: {
+    priceAlerts: boolean;
+    newMatchAlerts: boolean;
+  };
 };
 
 type AuthState = {

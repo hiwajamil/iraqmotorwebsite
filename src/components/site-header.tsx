@@ -11,6 +11,7 @@ import { t, type Locale } from "@/lib/i18n";
 
 const navLinks = [
   { href: "/cars", labelKey: "browse" as const },
+  { href: "/compare", labelKey: "compare" as const },
   { href: "/showrooms", labelKey: "showrooms" as const },
 ];
 

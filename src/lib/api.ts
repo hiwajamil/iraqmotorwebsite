@@ -247,3 +247,44 @@ export type Car = {
   conditionReport?: import("./car-pricing-trust").ConditionReport | null;
   [key: string]: unknown;
 };
+
+export type UserPreferences = {
+  priceAlerts: boolean;
+  newMatchAlerts: boolean;
+};
+
+export type DashboardSummary = {
+  uid: string;
+  email?: string;
+  isSuperAdmin?: boolean;
+  profile?: Record<string, unknown> | null;
+  preferences?: UserPreferences;
+  listings: {
+    total: number;
+    draft: number;
+    pending: number;
+    active: number;
+    rejected: number;
+    sold: number;
+    expired: number;
+  };
+  favoritesCount: number;
+  unreadMessages: number;
+};
+
+export type InboxMessage = {
+  id: string;
+  senderName?: string;
+  senderPhone?: string;
+  carId?: string;
+  carName?: string;
+  bidAmount?: number;
+  amount?: number;
+  currencyKey?: string;
+  messageBody?: string;
+  timestamp?: unknown;
+  createdAt?: unknown;
+  isRead?: boolean;
+  read?: boolean;
+  [key: string]: unknown;
+};
