@@ -157,6 +157,13 @@ const OPTION_ALIASES: Record<string, string> = {
   private: "plate_private",
   temporary: "plate_temporary",
   commercial: "plate_commercial",
+  fwd: "drivetrain_fwd",
+  rwd: "drivetrain_rwd",
+  awd: "drivetrain_awd",
+  "4wd": "drivetrain_4wd",
+  "4x4": "drivetrain_4wd",
+  fabric: "seat_fabric",
+  leather: "seat_leather",
 };
 
 const CITY_LABELS: Record<string, Tri> = {
@@ -198,6 +205,13 @@ const CITY_LABELS: Record<string, Tri> = {
   anbar: tri("Anbar", "الأنبار", "ئەنبار"),
   halabja: tri("Halabja", "حلبجة", "هەڵەبجە"),
   maysan: tri("Maysan", "ميسان", "میسان"),
+  babylon: tri("Babylon", "بابل", "بابل"),
+  diyala: tri("Diyala", "ديالى", "دیالە"),
+  wasit: tri("Wasit", "واسط", "واست"),
+  muthanna: tri("Muthanna", "المثنى", "موسەنا"),
+  qadisiyyah: tri("Qadisiyyah", "القادسية", "قادسیە"),
+  dhi_qar: tri("Dhi Qar", "ذي قار", "زیقار"),
+  salahuddin: tri("Salah al-Din", "صلاح الدين", "سەلاحەدین"),
 };
 
 function looksLikeStorageKey(value: string): boolean {
@@ -273,7 +287,11 @@ export function listingDescription(car: Car): string {
 }
 
 export function listingFeatureKeys(car: Car): string[] {
-  const raw = car.features ?? car.selectedFeatures;
+  const raw =
+    car.features ??
+    car.extraFeatures ??
+    car.extra_features ??
+    car.selectedFeatures;
   if (Array.isArray(raw)) {
     return raw.map((item) => String(item).trim()).filter(Boolean);
   }

@@ -392,7 +392,52 @@ export default function CarDetailPage() {
                   : null
               }
             />
+            <Spec
+              label={t(locale, "specSeatMaterial")}
+              value={
+                localizeOption(
+                  locale,
+                  stringField(car, "seatMaterialKey", "seat_material"),
+                ) || null
+              }
+            />
+            <Spec
+              label={t(locale, "specSeats")}
+              value={
+                localizeOption(locale, stringField(car, "seatCountKey")) ||
+                (car.numberOfSeats != null || car.number_of_seats != null
+                  ? String(car.numberOfSeats ?? car.number_of_seats)
+                  : null)
+              }
+            />
+            <Spec
+              label={t(locale, "specPainted")}
+              value={
+                localizeOption(
+                  locale,
+                  stringField(car, "paintedPartsKey", "painted_parts"),
+                ) || null
+              }
+            />
           </div>
+
+          {stringField(car, "damagePhotoUrl", "damage_photo_url") ||
+          (Array.isArray(car.damageImageUrls) && car.damageImageUrls[0]) ? (
+            <div>
+              <p className="mb-2 text-[11px] font-medium text-muted">
+                {t(locale, "specDamage")}
+              </p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={
+                  stringField(car, "damagePhotoUrl", "damage_photo_url") ||
+                  String(car.damageImageUrls?.[0] ?? "")
+                }
+                alt=""
+                className="h-40 w-full rounded-[12px] object-cover ring-1 ring-outline"
+              />
+            </div>
+          ) : null}
 
           {description || featureKeys.length ? (
             <section className="rounded-[16px] bg-card p-4 ring-1 ring-outline/60">
