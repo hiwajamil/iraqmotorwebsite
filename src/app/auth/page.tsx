@@ -15,6 +15,7 @@ import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/components/auth-provider";
 import { LoadingFallback } from "@/components/loading-fallback";
 import { t, type Locale } from "@/lib/i18n";
+import { IRAQ_PROVINCE_ORDER, localizeProvince } from "@/lib/iraq-locations";
 import { useAppSelector } from "@/store/hooks";
 
 /** Keep in sync with Flutter `kSuperAdminEmail` / backend `SUPER_ADMIN_EMAILS`. */
@@ -188,6 +189,7 @@ function AuthForm() {
   const [accountType, setAccountType] = useState<"individual" | "showroom">(
     "individual",
   );
+  const [city, setCity] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -232,6 +234,10 @@ function AuthForm() {
         if (!trimmedEmail) {
           throw new Error(t(locale, "authEmailRequired"));
         }
+        const trimmedCity = city.trim();
+        if (!trimmedCity) {
+          throw new Error(t(locale, "authCityRequired"));
+        }
         const normalizedPhone = normalizeIraqPhone(trimmedPhone);
         const cred = await createUserWithEmailAndPassword(
           auth,
@@ -250,6 +256,7 @@ function AuthForm() {
             accountType,
             phone: normalizedPhone,
             displayName: displayName.trim() || trimmedEmail.split("@")[0],
+            city: trimmedCity,
             ...(accountType === "showroom"
               ? { showroomName: displayName.trim() || t(locale, "showroomDefaultName") }
               : {}),
@@ -357,6 +364,22 @@ function AuthForm() {
               >
                 <option value="individual">{t(locale, "accountTypeIndividual")}</option>
                 <option value="showroom">{t(locale, "accountTypeShowroom")}</option>
+              </select>
+              <select
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+                className={`${fieldClass} ${city ? "" : "text-muted"}`}
+                aria-label={t(locale, "authSelectCity")}
+              >
+                <option value="" disabled>
+                  {t(locale, "authSelectCity")}
+                </option>
+                {IRAQ_PROVINCE_ORDER.map((province) => (
+                  <option key={province} value={province}>
+                    {localizeProvince(locale, province)}
+                  </option>
+                ))}
               </select>
             </>
           ) : null}

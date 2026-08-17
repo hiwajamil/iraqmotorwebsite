@@ -1,22 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AdGridTile, AdHomeBanner } from "@/components/ad-placements";
 import { AdvancedSearchFilter } from "@/components/advanced-search-filter";
 import { BrowseBrands } from "@/components/browse-brands";
 import { CarCard } from "@/components/car-card";
+import { Pagination, hrefWithPage } from "@/components/pagination";
 import { useAdViewport } from "@/hooks/use-ad-viewport";
 import { useAdvertise } from "@/hooks/use-advertise";
 import {
   interleaveAdsInGrid,
   pickHomeBannerAd,
 } from "@/lib/ads";
-import { api, type Car } from "@/lib/api";
+import { api, type Car, type CarsListResponse, type CarsPagination } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { t } from "@/lib/i18n";
 import {
+  CARS_PAGE_SIZE,
   parseSearchFilters,
   searchFiltersActive,
   serializeSearchFilters,
@@ -34,6 +36,10 @@ export default function CarsClient() {
   const brandParam = searchParams.get("brandId");
   const statusParam = searchParams.get("status") || "";
   const sortParam = (searchParams.get("sort") as SortKey) || "newest";
+  const pageParam = Math.max(
+    1,
+    Math.trunc(Number(searchParams.get("page") || "1")) || 1,
+  );
   const queryKey = searchParams.toString();
   const filters = useMemo(
     () => parseSearchFilters(new URLSearchParams(queryKey)),
@@ -46,7 +52,7 @@ export default function CarsClient() {
   const { ads } = useAdvertise({
     langCode: locale,
     locationId: filters.city,
-    listSize: 12,
+    listSize: CARS_PAGE_SIZE,
   });
   const bannerAd = useMemo(() => pickHomeBannerAd(ads), [ads]);
   const [sort, setSort] = useState<SortKey>(
@@ -55,11 +61,9 @@ export default function CarsClient() {
       : "newest",
   );
   const [cars, setCars] = useState<Car[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<CarsPagination | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
 
   const gridItems = useMemo(
     () => interleaveAdsInGrid(cars, ads),
@@ -93,53 +97,63 @@ export default function CarsClient() {
     router.replace(qs ? `/cars?${qs}` : "/cars", { scroll: false });
   }
 
-  const loadPage = useCallback(
-    async (opts?: { append?: boolean; cursor?: string | null }) => {
-      const append = Boolean(opts?.append);
-      if (append) {
-        setLoadingMore(true);
-        setLoadMoreError(null);
-      } else {
-        setLoading(true);
-        setError(null);
-      }
-      try {
-        const data = await api.get<{
-          items: Car[];
-          nextCursor?: string | null;
-        }>("/cars", {
-          limit: "24",
-          ...toCarsApiParams(filters, extras()),
-          ...(opts?.cursor ? { cursor: opts.cursor } : {}),
-        });
-        const items = data.items ?? [];
-        setCars((prev) => (append ? [...prev, ...items] : items));
-        setNextCursor(data.nextCursor ?? null);
-        if (!append && filters.q.trim()) {
-          trackEvent("search", {
-            search_term: filters.q.trim(),
-            item_brand: brandId || undefined,
-            item_category: filters.city || undefined,
-          });
-        }
-      } catch (e) {
-        const msg =
-          e instanceof Error ? e.message : t(locale, "carsLoadFailed");
-        if (append) setLoadMoreError(msg);
-        else setError(msg);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-      }
-    },
-    [filters, brandId, sellerIdParam, statusParam, sort, locale],
+  const buildPageHref = useCallback(
+    (page: number) => hrefWithPage("/cars", queryKey, page),
+    [queryKey],
   );
 
+  const loadSeq = useRef(0);
+  const lastSearchQ = useRef(filters.q);
+
+  const loadPage = useCallback(async () => {
+    const seq = ++loadSeq.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.get<CarsListResponse>("/cars", {
+        limit: String(CARS_PAGE_SIZE),
+        ...toCarsApiParams(filters, { ...extras(), page: pageParam }),
+      });
+      if (seq !== loadSeq.current) return;
+      const items = data.data ?? data.items ?? [];
+      const nextPagination: CarsPagination = data.pagination ?? {
+        totalItems: items.length,
+        totalPages: items.length ? 1 : 0,
+        currentPage: pageParam,
+        limit: CARS_PAGE_SIZE,
+      };
+      setCars(items);
+      setPagination(nextPagination);
+      if (
+        nextPagination.totalPages > 0 &&
+        pageParam > nextPagination.totalPages
+      ) {
+        router.replace(hrefWithPage("/cars", queryKey, nextPagination.totalPages), {
+          scroll: false,
+        });
+      }
+      if (filters.q.trim()) {
+        trackEvent("search", {
+          search_term: filters.q.trim(),
+          item_brand: brandId || undefined,
+          item_category: filters.city || undefined,
+        });
+      }
+    } catch (e) {
+      if (seq !== loadSeq.current) return;
+      setError(e instanceof Error ? e.message : t(locale, "carsLoadFailed"));
+    } finally {
+      if (seq === loadSeq.current) setLoading(false);
+    }
+  }, [filters, brandId, sellerIdParam, statusParam, sort, locale, pageParam, queryKey, router]);
+
   useEffect(() => {
+    const qChanged = lastSearchQ.current !== filters.q;
+    lastSearchQ.current = filters.q;
     let cancelled = false;
     const handle = window.setTimeout(() => {
       if (!cancelled) void loadPage();
-    }, filters.q ? 280 : 0);
+    }, qChanged && filters.q ? 280 : 0);
     return () => {
       cancelled = true;
       window.clearTimeout(handle);
@@ -278,23 +292,15 @@ export default function CarsClient() {
               ),
             )}
           </div>
-          {loadMoreError ? (
-            <p className="mt-4 text-center text-sm text-red-600">{loadMoreError}</p>
-          ) : null}
-          {nextCursor ? (
-            <div className="mt-10 flex justify-center">
-              <button
-                type="button"
-                disabled={loadingMore}
-                onClick={() =>
-                  void loadPage({ append: true, cursor: nextCursor })
-                }
-                className="rounded-[12px] bg-card px-5 py-3 text-sm font-semibold ring-1 ring-outline disabled:opacity-60"
-              >
-                {loadingMore ? t(locale, "loading") : t(locale, "loadMore")}
-              </button>
-            </div>
-          ) : null}
+          <Pagination
+            currentPage={pagination?.currentPage ?? pageParam}
+            totalPages={pagination?.totalPages ?? 0}
+            buildHref={buildPageHref}
+            previousLabel={t(locale, "paginationPrevious")}
+            nextLabel={t(locale, "paginationNext")}
+            navLabel={t(locale, "paginationNav")}
+            pageLabel={(page) => t(locale, "paginationPage", { page })}
+          />
         </>
       )}
     </div>

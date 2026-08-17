@@ -109,11 +109,14 @@ export const emptySearchFilters = (): SearchFilterState => ({
   sellerType: "",
 });
 
+export const CARS_PAGE_SIZE = 20;
+
 export type SearchFilterExtras = {
   brandId?: string | null;
   sort?: string | null;
   sellerId?: string | null;
   status?: string | null;
+  page?: number | null;
 };
 
 function optionalInt(raw: string | null, min: number, max: number): number | null {
@@ -233,6 +236,9 @@ export function serializeSearchFilters(
   if (extras.sort && extras.sort !== "newest") params.set("sort", extras.sort);
   if (extras.sellerId) params.set("sellerId", extras.sellerId);
   if (extras.status) params.set("status", extras.status);
+  if (extras.page != null && extras.page > 1) {
+    params.set("page", String(Math.trunc(extras.page)));
+  }
   return params.toString();
 }
 
@@ -281,6 +287,9 @@ export function toCarsApiParams(
   if (extras.sort) params.sort = extras.sort;
   if (extras.sellerId) params.sellerId = extras.sellerId;
   if (extras.status) params.status = extras.status;
+  if (extras.page != null && extras.page >= 1) {
+    params.page = String(Math.trunc(extras.page));
+  }
   return params;
 }
 

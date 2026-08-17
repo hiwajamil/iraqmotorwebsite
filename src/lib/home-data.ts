@@ -1,20 +1,57 @@
+import { BRAND_LOGO_FILES, brandLogoSrc } from "@/lib/brand-logos";
 import type { Locale } from "@/lib/i18n";
+import { VEHICLE_BRANDS } from "@/lib/vehicle-names";
 
-/** Popular brands shown on the home strip — mirrors Flutter `homeStripBrands`. */
-export const HOME_STRIP_BRANDS = [
-  { id: "toyota", name: "Toyota", logo: "/brands/27_Toyota.png" },
-  { id: "mercedes_benz", name: "Mercedes-Benz", logo: "/brands/8_Mercedes-Benz.png" },
-  { id: "bmw", name: "BMW", logo: "/brands/60_BMW.png" },
-  { id: "hyundai", name: "Hyundai", logo: "/brands/77_Hyundai.png" },
-  { id: "kia", name: "Kia", logo: "/brands/47_Kia.png" },
-  { id: "nissan", name: "Nissan", logo: "/brands/2_Nissan.png" },
-  { id: "land_rover", name: "Land Rover", logo: "/brands/19_Land_Rover.png" },
-  { id: "lexus", name: "Lexus", logo: "/brands/18_Lexus.png" },
-  { id: "chevrolet", name: "Chevrolet", logo: "/brands/51_Chevrolet.png" },
-  { id: "ford", name: "Ford", logo: "/brands/87_Ford.png" },
-  { id: "honda", name: "Honda", logo: "/brands/79_Honda.png" },
-  { id: "audi", name: "Audi", logo: "/brands/63_Audi.png" },
+/** Popular brands shown first in Browse Brands — mirrors Flutter `homeStripBrands`. */
+export const HOME_STRIP_BRAND_IDS = [
+  "toyota",
+  "mercedes_benz",
+  "bmw",
+  "hyundai",
+  "kia",
+  "nissan",
+  "land_rover",
+  "lexus",
+  "chevrolet",
+  "ford",
+  "honda",
+  "audi",
 ] as const;
+
+export type BrowseBrand = {
+  id: string;
+  name: string;
+  logo: string;
+};
+
+function toBrowseBrand(id: string): BrowseBrand | null {
+  const logo = brandLogoSrc(id);
+  if (!logo) return null;
+  return {
+    id,
+    name: VEHICLE_BRANDS[id]?.en ?? id,
+    logo,
+  };
+}
+
+export const HOME_STRIP_BRANDS = HOME_STRIP_BRAND_IDS.map(
+  (id) => toBrowseBrand(id)!,
+);
+
+/** Popular strip first, then remaining logo brands A–Z. */
+export const ALL_BROWSE_BRANDS: BrowseBrand[] = (() => {
+  const strip = new Set<string>(HOME_STRIP_BRAND_IDS);
+  const rest = Object.keys(BRAND_LOGO_FILES)
+    .filter((id) => !strip.has(id))
+    .sort((a, b) => {
+      const an = VEHICLE_BRANDS[a]?.en ?? a;
+      const bn = VEHICLE_BRANDS[b]?.en ?? b;
+      return an.localeCompare(bn);
+    })
+    .map(toBrowseBrand)
+    .filter((b): b is BrowseBrand => b !== null);
+  return [...HOME_STRIP_BRANDS, ...rest];
+})();
 
 export const HOME_CITIES = [
   { key: null, en: "All Cities", ar: "كل المدن", ku: "هەموو شارەکان" },

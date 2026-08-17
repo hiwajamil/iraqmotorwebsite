@@ -248,6 +248,21 @@ export type Car = {
   [key: string]: unknown;
 };
 
+export type CarsPagination = {
+  totalItems: number;
+  totalPages: number;
+  currentPage: number;
+  limit: number;
+};
+
+export type CarsListResponse = {
+  data?: Car[];
+  items?: Car[];
+  nextCursor?: string | null;
+  limit?: number;
+  pagination?: CarsPagination;
+};
+
 export type UserPreferences = {
   priceAlerts: boolean;
   newMatchAlerts: boolean;
