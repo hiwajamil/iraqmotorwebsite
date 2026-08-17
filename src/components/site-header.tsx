@@ -13,6 +13,7 @@ const navLinks = [
   { href: "/cars", labelKey: "browse" as const },
   { href: "/compare", labelKey: "compare" as const },
   { href: "/showrooms", labelKey: "showrooms" as const },
+  { href: "/services", labelKey: "services" as const },
 ];
 
 export function SiteHeader() {
