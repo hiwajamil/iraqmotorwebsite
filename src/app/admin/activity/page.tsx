@@ -8,8 +8,11 @@ import {
   formatActivity,
   formatAdminWhen,
 } from "@/lib/admin";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 export default function AdminActivityPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [items, setItems] = useState<ActivityLog[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -20,7 +23,7 @@ export default function AdminActivityPage() {
       setItems(d.items ?? []);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed");
+      setError(e instanceof Error ? e.message : t(locale, "failedGeneric"));
     }
   }
 
@@ -32,22 +35,24 @@ export default function AdminActivityPage() {
     const q = query.trim().toLowerCase();
     if (!q) return items;
     return items.filter((log) => {
-      const { title, detail } = formatActivity(log);
+      const { title, detail } = formatActivity(log, locale);
       return [title, detail, log.adminDisplayName, log.adminId, log.type, log.carId]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(q);
     });
-  }, [items, query]);
+  }, [items, query, locale]);
 
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Activity logs</h1>
+          <h1 className="text-3xl font-bold">
+            {t(locale, "adminActivityTitle")}
+          </h1>
           <p className="mt-1 text-sm text-muted">
-            Recent admin actions across the platform
+            {t(locale, "adminActivitySubtitle")}
           </p>
         </div>
         <button
@@ -55,14 +60,14 @@ export default function AdminActivityPage() {
           onClick={() => void load()}
           className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
         >
-          Refresh
+          {t(locale, "refresh")}
         </button>
       </div>
 
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search actions, admins, car ids…"
+        placeholder={t(locale, "activitySearchPlaceholder")}
         className="mt-4 w-full max-w-md rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
       />
 
@@ -72,17 +77,19 @@ export default function AdminActivityPage() {
         {visible.length === 0 ? (
           <div className="rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
             <p className="font-semibold">
-              {items.length === 0 ? "No activity yet" : "No matches"}
+              {items.length === 0
+                ? t(locale, "activityEmptyTitle")
+                : t(locale, "noMatches")}
             </p>
             <p className="mt-1 text-sm text-muted">
               {items.length === 0
-                ? "Admin actions like approvals and bans will show up here."
-                : "Try a different search term."}
+                ? t(locale, "activityEmptyHint")
+                : t(locale, "tryDifferentSearch")}
             </p>
           </div>
         ) : (
           visible.map((log) => {
-            const { title, detail } = formatActivity(log);
+            const { title, detail } = formatActivity(log, locale);
             return (
               <div
                 key={log.id}
@@ -96,13 +103,19 @@ export default function AdminActivityPage() {
                 </div>
                 {detail ? <p className="mt-1 text-muted">{detail}</p> : null}
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
-                  <span>{log.adminDisplayName || log.adminId || "System"}</span>
+                  <span>
+                    {log.adminDisplayName ||
+                      log.adminId ||
+                      t(locale, "activitySystem")}
+                  </span>
                   {log.carId ? (
                     <Link
                       href={`/admin/listings?status=all`}
                       className="font-semibold text-primary"
                     >
-                      car {log.carId.slice(0, 8)}…
+                      {t(locale, "activityCarLink", {
+                        id: `${log.carId.slice(0, 8)}…`,
+                      })}
                     </Link>
                   ) : null}
                   {log.ticketId ? (
@@ -110,7 +123,7 @@ export default function AdminActivityPage() {
                       href="/admin/messages"
                       className="font-semibold text-primary"
                     >
-                      ticket
+                      {t(locale, "ticketFallback")}
                     </Link>
                   ) : null}
                   {log.flagId ? (
@@ -118,7 +131,7 @@ export default function AdminActivityPage() {
                       href="/admin/flagged"
                       className="font-semibold text-primary"
                     >
-                      flag
+                      {t(locale, "flagReportFallback")}
                     </Link>
                   ) : null}
                 </div>

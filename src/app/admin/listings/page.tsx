@@ -13,6 +13,8 @@ import {
 } from "@/lib/admin";
 import { AdReviewModal } from "@/components/admin-ad-review";
 import { formatMoney } from "@/lib/car-pricing-trust";
+import { t, listingStatusLabel } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 const ALL_STATUSES = "pending,active,sold,expired,rejected";
 
@@ -28,6 +30,7 @@ function parseStatus(
 function AdminListingsInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const locale = useAppSelector((s) => s.preferences.locale);
   const status = parseStatus(
     searchParams.get("status"),
     Boolean(searchParams.get("sellerId")),
@@ -81,12 +84,12 @@ function AdminListingsInner() {
         if (!opts?.append) setSelected(new Set());
         setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to load listings");
+        setError(e instanceof Error ? e.message : t(locale, "failedToLoad"));
       } finally {
         setLoading(false);
       }
     },
-    [status, sellerId],
+    [status, sellerId, locale],
   );
 
   useEffect(() => {
@@ -97,7 +100,12 @@ function AdminListingsInner() {
     if (!ids.length) return;
     if (
       (next === "rejected" || next === "expired") &&
-      !window.confirm(`Set ${ids.length} listing(s) to ${next}?`)
+      !window.confirm(
+        t(locale, "confirmSetStatus", {
+          count: ids.length,
+          status: listingStatusLabel(locale, next),
+        }),
+      )
     ) {
       return;
     }
@@ -107,11 +115,17 @@ function AdminListingsInner() {
       const res = await setCarStatuses(ids, next);
       const done = new Set(res.updated);
       if (res.failed?.length) {
-        setError(`Failed for ${res.failed.length} listing(s)`);
+        setError(t(locale, "failedForListings", { count: res.failed.length }));
       } else {
         setError(null);
       }
-      if (done.size) setSuccess(`${done.size} listing(s) set to ${next}`);
+      if (done.size)
+        setSuccess(
+          t(locale, "listingsStatusUpdated", {
+            count: done.size,
+            status: listingStatusLabel(locale, next),
+          }),
+        );
       setItems((list) =>
         list
           .map((c) => (done.has(c.id) ? { ...c, status: next } : c))
@@ -126,22 +140,27 @@ function AdminListingsInner() {
         setReview((r) => (r ? { ...r, status: next } : r));
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed");
+      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
     } finally {
       setBusy(false);
     }
   }
 
   async function deleteListing(car: Car) {
-    if (!window.confirm(`Permanently delete "${carTitle(car)}"?`)) return;
+    if (
+      !window.confirm(
+        t(locale, "confirmDeleteListing", { title: carTitle(car) }),
+      )
+    )
+      return;
     setBusy(true);
     try {
       await api.delete(`/cars/${car.id}`);
       setItems((list) => list.filter((c) => c.id !== car.id));
       if (review?.id === car.id) setReview(null);
-      setSuccess("Listing deleted");
+      setSuccess(t(locale, "listingDeleted"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Delete failed");
+      setError(e instanceof Error ? e.message : t(locale, "deleteFailed"));
     } finally {
       setBusy(false);
     }
@@ -188,9 +207,9 @@ function AdminListingsInner() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Listings</h1>
+          <h1 className="text-3xl font-bold">{t(locale, "adminListingsTitle")}</h1>
           <p className="mt-1 text-sm text-muted">
-            Manage listing lifecycle across all statuses
+            {t(locale, "adminListingsSubtitle")}
           </p>
         </div>
         <button
@@ -198,7 +217,7 @@ function AdminListingsInner() {
           onClick={() => void load()}
           className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
         >
-          Refresh
+          {t(locale, "refresh")}
         </button>
       </div>
 
@@ -214,7 +233,7 @@ function AdminListingsInner() {
                 : "bg-input text-muted"
             }`}
           >
-            {s.label}
+            {t(locale, s.labelKey)}
           </button>
         ))}
       </div>
@@ -223,7 +242,7 @@ function AdminListingsInner() {
         <input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter loaded results by brand, city, seller…"
+          placeholder={t(locale, "listingsFilterPlaceholder")}
           className="w-full max-w-md rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
         />
         {sellerId ? (
@@ -232,7 +251,7 @@ function AdminListingsInner() {
             onClick={() => writeFilters({ sellerId: null })}
             className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
           >
-            Seller: {sellerId.slice(0, 10)}… ×
+            {t(locale, "sellerFilterChip", { id: sellerId.slice(0, 10) })}
           </button>
         ) : null}
       </div>
@@ -240,17 +259,17 @@ function AdminListingsInner() {
       {selectedVisible.length > 0 ? (
         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-[var(--radius-card)] bg-card p-3 ring-1 ring-outline">
           <span className="text-xs font-semibold">
-            {selectedVisible.length} selected
+            {t(locale, "selectedCount", { count: selectedVisible.length })}
           </span>
           {(
             [
-              ["active", "Activate"],
-              ["pending", "Pending"],
-              ["sold", "Sold"],
-              ["expired", "Expire"],
-              ["rejected", "Reject"],
+              ["active", "activate"],
+              ["pending", "statusPending"],
+              ["sold", "sold"],
+              ["expired", "expire"],
+              ["rejected", "reject"],
             ] as const
-          ).map(([value, label]) => (
+          ).map(([value, labelKey]) => (
             <button
               key={value}
               type="button"
@@ -258,7 +277,7 @@ function AdminListingsInner() {
               className="rounded-[var(--radius-control)] bg-input px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
               onClick={() => void setStatusFor(selectedVisible, value)}
             >
-              {label}
+              {t(locale, labelKey)}
             </button>
           ))}
           <button
@@ -266,7 +285,7 @@ function AdminListingsInner() {
             className="text-xs font-semibold text-muted"
             onClick={() => setSelected(new Set())}
           >
-            Clear
+            {t(locale, "clearSelection")}
           </button>
         </div>
       ) : null}
@@ -284,12 +303,12 @@ function AdminListingsInner() {
 
       <div className="mt-6 space-y-3">
         {loading && items.length === 0 ? (
-          <p className="text-sm text-muted">Loading listings…</p>
+          <p className="text-sm text-muted">{t(locale, "loading")}</p>
         ) : visible.length === 0 ? (
           <div className="rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
-            <p className="font-semibold">No listings here</p>
+            <p className="font-semibold">{t(locale, "listingsEmptyTitle")}</p>
             <p className="mt-1 text-sm text-muted">
-              Try another status filter or refresh the queue.
+              {t(locale, "listingsEmptyHint")}
             </p>
           </div>
         ) : (
@@ -315,7 +334,7 @@ function AdminListingsInner() {
                     />
                   ) : (
                     <div className="flex h-16 w-24 items-center justify-center rounded-lg bg-input text-xs text-muted">
-                      No photo
+                      {t(locale, "noPhoto")}
                     </div>
                   )}
                   <div className="min-w-0">
@@ -336,7 +355,7 @@ function AdminListingsInner() {
                     <span
                       className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClass(car.status)}`}
                     >
-                      {car.status || "—"}
+                      {listingStatusLabel(locale, car.status)}
                     </span>
                   </div>
                 </div>
@@ -346,7 +365,7 @@ function AdminListingsInner() {
                     className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
                     onClick={() => setReview(car)}
                   >
-                    Review
+                    {t(locale, "review")}
                   </button>
                   {car.status !== "active" ? (
                     <button
@@ -355,7 +374,7 @@ function AdminListingsInner() {
                       className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                       onClick={() => void setStatusFor([car.id], "active")}
                     >
-                      Activate
+                      {t(locale, "activate")}
                     </button>
                   ) : null}
                   {car.status === "active" ? (
@@ -365,7 +384,7 @@ function AdminListingsInner() {
                       className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-50"
                       onClick={() => void setStatusFor([car.id], "sold")}
                     >
-                      Mark sold
+                      {t(locale, "dashMarkSold")}
                     </button>
                   ) : null}
                   {car.status !== "expired" ? (
@@ -375,7 +394,7 @@ function AdminListingsInner() {
                       className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-50"
                       onClick={() => void setStatusFor([car.id], "expired")}
                     >
-                      Expire
+                      {t(locale, "expire")}
                     </button>
                   ) : null}
                   <button
@@ -384,7 +403,7 @@ function AdminListingsInner() {
                     className="rounded-[var(--radius-control)] px-3 py-2 text-xs font-semibold text-red-600 hover:bg-input disabled:opacity-50"
                     onClick={() => void deleteListing(car)}
                   >
-                    Delete
+                    {t(locale, "dashDelete")}
                   </button>
                 </div>
               </div>
@@ -401,7 +420,7 @@ function AdminListingsInner() {
             className="rounded-[var(--radius-control)] bg-input px-4 py-2 text-sm font-semibold disabled:opacity-50"
             onClick={() => void load({ append: true, cursor: nextCursor })}
           >
-            {loading ? "Loading…" : "Load more"}
+            {loading ? t(locale, "loading") : t(locale, "loadMore")}
           </button>
         </div>
       ) : null}
@@ -430,9 +449,10 @@ function AdminListingsInner() {
 }
 
 export default function AdminListingsPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   return (
     <Suspense
-      fallback={<p className="text-sm text-muted">Loading listings…</p>}
+      fallback={<p className="text-sm text-muted">{t(locale, "loading")}</p>}
     >
       <AdminListingsInner />
     </Suspense>

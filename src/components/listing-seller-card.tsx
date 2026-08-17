@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { t, type Locale } from "@/lib/i18n";
+import { t, type Locale, accountTypeLabel } from "@/lib/i18n";
 
 export type PublicSeller = {
   uid?: string;
@@ -132,7 +132,7 @@ export function ListingSellerCard({
   const subtitle =
     showroom && showroom !== name
       ? showroom
-      : String(profile.accountType || "").trim();
+      : accountTypeLabel(locale, profile.accountType);
 
   return (
     <section className="rounded-[16px] bg-card p-4 ring-1 ring-outline/60">

@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { api, type Car } from "@/lib/api";
 import { listingStatusClass } from "@/lib/dashboard";
 import { useAppSelector } from "@/store/hooks";
-import { t } from "@/lib/i18n";
+import { t, listingStatusLabel } from "@/lib/i18n";
 
 export default function DashboardListingsPage() {
   const { user } = useAuth();
@@ -121,7 +121,7 @@ export default function DashboardListingsPage() {
                 <span
                   className={`absolute start-3 top-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide backdrop-blur ${listingStatusClass(car.status)}`}
                 >
-                  {car.status || "draft"}
+                  {listingStatusLabel(locale, car.status)}
                 </span>
                 <CarCard car={car} />
                 <div className="mt-2 flex gap-2">

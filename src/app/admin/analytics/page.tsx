@@ -7,6 +7,8 @@ import {
   defaultAnalyticsRange,
   downloadCsv,
 } from "@/lib/admin";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 function presetRange(days: number): { startDate: string; endDate: string } {
   const end = new Date();
@@ -29,8 +31,9 @@ function MiniBars({
   max: number;
   colorClass?: string;
 }) {
+  const locale = useAppSelector((s) => s.preferences.locale);
   if (data.length === 0) {
-    return <p className="text-sm text-muted">No data.</p>;
+    return <p className="text-sm text-muted">{t(locale, "noData")}</p>;
   }
   return (
     <div className="flex h-40 items-end gap-1 overflow-x-auto">
@@ -56,6 +59,7 @@ function MiniBars({
 }
 
 export default function AdminAnalyticsPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const defaults = defaultAnalyticsRange();
   const [startDate, setStartDate] = useState(defaults.startDate);
   const [endDate, setEndDate] = useState(defaults.endDate);
@@ -73,11 +77,13 @@ export default function AdminAnalyticsPage() {
       });
       setReport(data);
       if (data.gaError && !data.gaAvailable) {
-        setError(`GA: ${data.gaError} — marketplace metrics still loaded.`);
+        setError(t(locale, "gaWarning", { error: data.gaError }));
       }
     } catch (e) {
       setReport(null);
-      setError(e instanceof Error ? e.message : "Failed to load analytics");
+      setError(
+        e instanceof Error ? e.message : t(locale, "failedToLoadAnalytics"),
+      );
     } finally {
       setLoading(false);
     }
@@ -115,27 +121,31 @@ export default function AdminAnalyticsPage() {
   return (
     <div>
       <div>
-        <h1 className="text-3xl font-bold">Analytics</h1>
+        <h1 className="text-3xl font-bold">
+          {t(locale, "adminAnalyticsTitle")}
+        </h1>
         <p className="mt-1 text-sm text-muted">
-          Marketplace revenue &amp; new ads, plus Google Analytics when configured
+          {t(locale, "adminAnalyticsSubtitle")}
         </p>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {[
-          [7, "7 days"],
-          [14, "14 days"],
-          [30, "30 days"],
-          [90, "90 days"],
-        ].map(([days, label]) => (
+        {(
+          [
+            [7, "preset7"],
+            [14, "preset14"],
+            [30, "preset30"],
+            [90, "preset90"],
+          ] as const
+        ).map(([days, labelKey]) => (
           <button
-            key={String(days)}
+            key={days}
             type="button"
             disabled={loading}
-            onClick={() => applyPreset(Number(days))}
+            onClick={() => applyPreset(days)}
             className="rounded-full bg-input px-3 py-1 text-xs font-semibold disabled:opacity-50"
           >
-            {label}
+            {t(locale, labelKey)}
           </button>
         ))}
       </div>
@@ -148,7 +158,7 @@ export default function AdminAnalyticsPage() {
         }}
       >
         <label className="text-xs font-semibold text-muted">
-          Start
+          {t(locale, "dateStart")}
           <input
             type="date"
             value={startDate}
@@ -157,7 +167,7 @@ export default function AdminAnalyticsPage() {
           />
         </label>
         <label className="text-xs font-semibold text-muted">
-          End
+          {t(locale, "dateEnd")}
           <input
             type="date"
             value={endDate}
@@ -170,7 +180,7 @@ export default function AdminAnalyticsPage() {
           disabled={loading}
           className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
         >
-          {loading ? "Loading…" : "Generate report"}
+          {loading ? t(locale, "loading") : t(locale, "generateReport")}
         </button>
         {report ? (
           <button
@@ -179,26 +189,34 @@ export default function AdminAnalyticsPage() {
             onClick={() => {
               const rows: string[][] = [
                 ["Metric", "Value"],
-                ["Todays active users", String(report.todaysActiveUsers)],
-                ["App downloads", String(report.totalAppDownloads)],
-                ["New ads", String(report.totalNewAds ?? 0)],
-                ["Total revenue IQD", String(report.totalRevenue ?? 0)],
-                ["Card revenue IQD", String(report.revenueCard ?? 0)],
-                ["E-wallet revenue IQD", String(report.revenueEWallet ?? 0)],
+                [t(locale, "metricTodaysDau"), String(report.todaysActiveUsers)],
+                [t(locale, "metricAppDownloads"), String(report.totalAppDownloads)],
+                [t(locale, "metricNewAds"), String(report.totalNewAds ?? 0)],
+                [t(locale, "metricTotalRevenue"), String(report.totalRevenue ?? 0)],
+                [t(locale, "metricCardRevenue"), String(report.revenueCard ?? 0)],
+                [
+                  t(locale, "metricEwalletRevenue"),
+                  String(report.revenueEWallet ?? 0),
+                ],
                 [],
-                ["Date", "Daily active users"],
+                ["Date", t(locale, "chartDailyDau")],
                 ...report.dailyActiveUsers.map((d) => [
                   d.date,
                   String(d.count),
                 ]),
                 [],
-                ["Date", "New ads"],
+                ["Date", t(locale, "metricNewAds")],
                 ...(report.dailyNewAds ?? []).map((d) => [
                   d.date,
                   String(d.count),
                 ]),
                 [],
-                ["City", "Visitors", "Total ads", "Approved ads"],
+                [
+                  t(locale, "colCity"),
+                  t(locale, "colVisitors"),
+                  t(locale, "colNewAds"),
+                  t(locale, "colApproved"),
+                ],
                 ...cities.map((c) => [
                   c.city,
                   String(c.visitorCount ?? 0),
@@ -209,7 +227,7 @@ export default function AdminAnalyticsPage() {
               downloadCsv(`analytics-${startDate}-${endDate}.csv`, rows);
             }}
           >
-            Export CSV
+            {t(locale, "exportCsv")}
           </button>
         ) : null}
       </form>
@@ -218,10 +236,9 @@ export default function AdminAnalyticsPage() {
 
       {!report && !error ? (
         <div className="mt-8 rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
-          <p className="font-semibold">Generate a report</p>
+          <p className="font-semibold">{t(locale, "analyticsEmptyTitle")}</p>
           <p className="mt-1 text-sm text-muted">
-            Pick a preset or date range. Marketplace metrics work without GA;
-            visitor charts need GA credentials on the API.
+            {t(locale, "analyticsEmptyHint")}
           </p>
         </div>
       ) : null}
@@ -231,16 +248,22 @@ export default function AdminAnalyticsPage() {
           <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
             {(
               [
-                ["New ads", report.totalNewAds ?? 0],
-                ["Total revenue", report.totalRevenue ?? 0, true],
-                ["Card revenue", report.revenueCard ?? 0, true],
-                ["E-wallet revenue", report.revenueEWallet ?? 0, true],
-                ["Today's active users", report.todaysActiveUsers],
-                ["App downloads", report.totalAppDownloads],
-                ["Cities", cities.length],
+                [t(locale, "metricNewAds"), report.totalNewAds ?? 0],
+                [t(locale, "metricTotalRevenue"), report.totalRevenue ?? 0, true],
+                [t(locale, "metricCardRevenue"), report.revenueCard ?? 0, true],
                 [
-                  "GA status",
-                  report.gaAvailable ? "Connected" : "Offline",
+                  t(locale, "metricEwalletRevenue"),
+                  report.revenueEWallet ?? 0,
+                  true,
+                ],
+                [t(locale, "metricTodaysDau"), report.todaysActiveUsers],
+                [t(locale, "metricAppDownloads"), report.totalAppDownloads],
+                [t(locale, "metricCities"), cities.length],
+                [
+                  t(locale, "metricGaStatus"),
+                  report.gaAvailable
+                    ? t(locale, "gaConnected")
+                    : t(locale, "gaOffline"),
                   false,
                   true,
                 ],
@@ -266,7 +289,9 @@ export default function AdminAnalyticsPage() {
 
           <div className="mt-10 grid gap-6 xl:grid-cols-2">
             <section className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline">
-              <h2 className="text-lg font-semibold">Daily new ads</h2>
+              <h2 className="text-lg font-semibold">
+                {t(locale, "chartDailyNewAds")}
+              </h2>
               <div className="mt-4">
                 <MiniBars
                   data={report.dailyNewAds ?? []}
@@ -276,29 +301,33 @@ export default function AdminAnalyticsPage() {
               </div>
             </section>
             <section className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline">
-              <h2 className="text-lg font-semibold">Daily active users</h2>
+              <h2 className="text-lg font-semibold">
+                {t(locale, "chartDailyDau")}
+              </h2>
               <div className="mt-4">
                 <MiniBars data={report.dailyActiveUsers} max={maxDau} />
               </div>
             </section>
           </div>
 
-          <h2 className="mt-10 text-lg font-semibold">City performance</h2>
+          <h2 className="mt-10 text-lg font-semibold">
+            {t(locale, "cityPerformance")}
+          </h2>
           <div className="mt-4 overflow-x-auto rounded-[var(--radius-card)] ring-1 ring-outline">
             <table className="w-full text-left text-sm">
               <thead className="bg-input text-xs uppercase text-muted">
                 <tr>
-                  <th className="px-4 py-3">City</th>
-                  <th className="px-4 py-3">Visitors</th>
-                  <th className="px-4 py-3">New ads</th>
-                  <th className="px-4 py-3">Approved</th>
+                  <th className="px-4 py-3">{t(locale, "colCity")}</th>
+                  <th className="px-4 py-3">{t(locale, "colVisitors")}</th>
+                  <th className="px-4 py-3">{t(locale, "colNewAds")}</th>
+                  <th className="px-4 py-3">{t(locale, "colApproved")}</th>
                 </tr>
               </thead>
               <tbody>
                 {cities.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-4 py-6 text-muted">
-                      No city data.
+                      {t(locale, "noCityData")}
                     </td>
                   </tr>
                 ) : (

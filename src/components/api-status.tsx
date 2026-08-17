@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 /** Dev-only health chip — hidden in production builds. */
 export function ApiStatus() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [ok, setOk] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -31,7 +34,7 @@ export function ApiStatus() {
       <span
         className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-emerald-300" : "bg-red-300"}`}
       />
-      {ok ? "API online" : "API offline"}
+      {ok ? t(locale, "apiOnline") : t(locale, "apiOffline")}
     </span>
   );
 }

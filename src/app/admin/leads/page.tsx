@@ -4,26 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { formatAdminWhen, statusBadgeClass } from "@/lib/admin";
 import {
+  INTENT_LABEL_KEYS,
   LEAD_STATUSES,
   type LeadIntent,
   type LeadRequest,
   type LeadStatus,
 } from "@/lib/leads";
+import { t, leadStatusLabel, type Locale } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
-const INTENT_FALLBACK: Record<LeadIntent, string> = {
-  buy_car: "Buy a car",
-  sell_car: "Sell a car",
-  finance: "Get financing",
-  valuation: "Get a valuation",
-  showroom: "Find a showroom",
-  other: "Something else",
-};
-
-function intentLabel(intent: string): string {
-  if (intent in INTENT_FALLBACK) {
-    return INTENT_FALLBACK[intent as LeadIntent];
-  }
-  return intent;
+function intentLabel(locale: Locale, intent: string): string {
+  const key = INTENT_LABEL_KEYS[intent as LeadIntent];
+  return key ? t(locale, key) : intent;
 }
 
 function leadStatusClass(status?: string): string {
@@ -40,6 +32,7 @@ function leadStatusClass(status?: string): string {
 }
 
 export default function AdminLeadsPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [items, setItems] = useState<LeadRequest[]>([]);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +53,7 @@ export default function AdminLeadsPage() {
       })
       .catch((e: unknown) => {
         if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Failed to load leads");
+        setError(e instanceof Error ? e.message : t(locale, "failedToLoadLeads"));
       });
     return () => {
       cancelled = true;
@@ -77,7 +70,7 @@ export default function AdminLeadsPage() {
         list.map((item) => (item.id === id ? { ...item, ...updated } : item)),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed");
+      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
     } finally {
       setBusyId(null);
     }
@@ -93,13 +86,13 @@ export default function AdminLeadsPage() {
         item.email,
         item.whatsappNumber,
         item.intent,
-        intentLabel(item.intent),
+        intentLabel(locale, item.intent),
       ]
         .join(" ")
         .toLowerCase()
         .includes(q);
     });
-  }, [items, filter, query]);
+  }, [items, filter, query, locale]);
 
   const newCount = items.filter((i) => i.status === "new").length;
 
@@ -107,11 +100,11 @@ export default function AdminLeadsPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Lead requests</h1>
+          <h1 className="text-3xl font-bold">{t(locale, "adminLeadsTitle")}</h1>
           <p className="mt-1 text-sm text-muted">
-            Help-widget submissions from the website
-            {total ? ` · ${total} total` : ""}
-            {newCount ? ` · ${newCount} new` : ""}
+            {t(locale, "adminLeadsSubtitle")}
+            {total ? ` · ${total}` : ""}
+            {newCount ? ` · ${newCount} ${t(locale, "leadStatusNew")}` : ""}
           </p>
         </div>
         <button
@@ -119,7 +112,7 @@ export default function AdminLeadsPage() {
           onClick={() => setReload((n) => n + 1)}
           className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
         >
-          Refresh
+          {t(locale, "refresh")}
         </button>
       </div>
 
@@ -135,13 +128,15 @@ export default function AdminLeadsPage() {
                 : "bg-input text-muted"
             }`}
           >
-            {key}
+            {key === "all"
+              ? t(locale, "all")
+              : leadStatusLabel(locale, key)}
           </button>
         ))}
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name, email, WhatsApp…"
+          placeholder={t(locale, "leadsSearchPlaceholder")}
           className="ms-auto w-full max-w-xs rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm sm:w-auto"
         />
       </div>
@@ -152,23 +147,35 @@ export default function AdminLeadsPage() {
         {visible.length === 0 ? (
           <div className="p-8 text-center">
             <p className="font-semibold">
-              {items.length === 0 ? "No lead requests yet" : "No matches"}
+              {items.length === 0
+                ? t(locale, "leadsEmptyTitle")
+                : t(locale, "noMatches")}
             </p>
             <p className="mt-1 text-sm text-muted">
               {items.length === 0
-                ? "Submissions from the help widget will show up here."
-                : "Try a different filter or search."}
+                ? t(locale, "leadsEmptyHint")
+                : t(locale, "tryDifferentFilter")}
             </p>
           </div>
         ) : (
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-outline text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th className="px-4 py-3 font-semibold">Name</th>
-                <th className="px-4 py-3 font-semibold">Contact</th>
-                <th className="px-4 py-3 font-semibold">Looking to</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Submitted</th>
+                <th className="px-4 py-3 font-semibold">
+                  {t(locale, "colName")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t(locale, "colContact")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t(locale, "colLookingTo")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t(locale, "colStatus")}
+                </th>
+                <th className="px-4 py-3 font-semibold">
+                  {t(locale, "colSubmitted")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -195,7 +202,9 @@ export default function AdminLeadsPage() {
                       {item.whatsappNumber}
                     </a>
                   </td>
-                  <td className="px-4 py-3">{intentLabel(item.intent)}</td>
+                  <td className="px-4 py-3">
+                    {intentLabel(locale, item.intent)}
+                  </td>
                   <td className="px-4 py-3">
                     <select
                       value={item.status}
@@ -207,7 +216,7 @@ export default function AdminLeadsPage() {
                     >
                       {LEAD_STATUSES.map((status) => (
                         <option key={status} value={status}>
-                          {status}
+                          {leadStatusLabel(locale, status)}
                         </option>
                       ))}
                     </select>

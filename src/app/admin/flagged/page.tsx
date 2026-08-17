@@ -5,6 +5,8 @@ import Link from "next/link";
 import { api, type Car } from "@/lib/api";
 import { type FlaggedAd, carImage, carTitle } from "@/lib/admin";
 import { AdReviewModal } from "@/components/admin-ad-review";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 function flagToCar(item: FlaggedAd): Car | null {
   if (item.adData && typeof item.adData === "object") {
@@ -17,6 +19,7 @@ function flagToCar(item: FlaggedAd): Car | null {
 }
 
 export default function AdminFlaggedPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [items, setItems] = useState<FlaggedAd[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -33,7 +36,7 @@ export default function AdminFlaggedPage() {
       setItems(d.items ?? []);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed");
+      setError(e instanceof Error ? e.message : t(locale, "failedGeneric"));
     }
   }
 
@@ -60,7 +63,7 @@ export default function AdminFlaggedPage() {
         ),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed");
+      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
     } finally {
       setBusyId(null);
     }
@@ -68,11 +71,7 @@ export default function AdminFlaggedPage() {
 
   async function deleteAd(item: FlaggedAd) {
     if (!item.adId) return;
-    if (
-      !window.confirm(
-        "Delete this listing permanently and resolve the report?",
-      )
-    ) {
+    if (!window.confirm(t(locale, "confirmDeleteFlagged"))) {
       return;
     }
     setBusyId(item.id);
@@ -80,7 +79,7 @@ export default function AdminFlaggedPage() {
       await api.delete(`/cars/${item.adId}`);
       await api.patch(`/admin/flagged/${item.id}`, {
         status: "resolved",
-        resolution: "Listing deleted by admin",
+        resolution: t(locale, "listingDeletedByAdmin"),
       });
       setItems((list) =>
         list.map((row) =>
@@ -88,7 +87,7 @@ export default function AdminFlaggedPage() {
             ? {
                 ...row,
                 status: "resolved",
-                resolution: "Listing deleted by admin",
+                resolution: t(locale, "listingDeletedByAdmin"),
               }
             : row,
         ),
@@ -98,7 +97,7 @@ export default function AdminFlaggedPage() {
         setReviewFlagId(null);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Delete failed");
+      setError(e instanceof Error ? e.message : t(locale, "deleteFailed"));
     } finally {
       setBusyId(null);
     }
@@ -116,7 +115,7 @@ export default function AdminFlaggedPage() {
       const car = await api.get<Car>(`/cars/${item.adId}`);
       setReview(car);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load listing");
+      setError(e instanceof Error ? e.message : t(locale, "couldNotLoadListing"));
     }
   }
 
@@ -136,13 +135,19 @@ export default function AdminFlaggedPage() {
     });
   }, [items, filter, query]);
 
+  function flagStatusLabel(status: string) {
+    if (status === "resolved") return t(locale, "flagStatusResolved");
+    if (status === "dismissed") return t(locale, "flagStatusDismissed");
+    return t(locale, "flagStatusOpen");
+  }
+
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Flagged ads</h1>
+          <h1 className="text-3xl font-bold">{t(locale, "adminFlaggedTitle")}</h1>
           <p className="mt-1 text-sm text-muted">
-            Resolve, dismiss, or delete reported listings
+            {t(locale, "adminFlaggedSubtitle")}
           </p>
         </div>
         <button
@@ -150,7 +155,7 @@ export default function AdminFlaggedPage() {
           onClick={() => void load()}
           className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
         >
-          Refresh
+          {t(locale, "refresh")}
         </button>
       </div>
 
@@ -160,13 +165,13 @@ export default function AdminFlaggedPage() {
             key={key}
             type="button"
             onClick={() => setFilter(key)}
-            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
               filter === key
                 ? "bg-primary text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
-            {key}
+            {key === "all" ? t(locale, "all") : flagStatusLabel(key)}
           </button>
         ))}
       </div>
@@ -174,7 +179,7 @@ export default function AdminFlaggedPage() {
       <input
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search reason, ad id, brand…"
+        placeholder={t(locale, "flaggedSearchPlaceholder")}
         className="mt-4 w-full max-w-md rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
       />
 
@@ -183,9 +188,9 @@ export default function AdminFlaggedPage() {
       <div className="mt-6 space-y-3">
         {visible.length === 0 ? (
           <div className="rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
-            <p className="font-semibold">No flagged ads in this filter</p>
+            <p className="font-semibold">{t(locale, "flaggedEmptyTitle")}</p>
             <p className="mt-1 text-sm text-muted">
-              Reports from users will appear here for moderation.
+              {t(locale, "flaggedEmptyHint")}
             </p>
           </div>
         ) : (
@@ -209,7 +214,9 @@ export default function AdminFlaggedPage() {
                     />
                   ) : null}
                   <div className="min-w-0">
-                    <p className="font-semibold">{item.reason || "Report"}</p>
+                    <p className="font-semibold">
+                      {item.reason || t(locale, "flagReportFallback")}
+                    </p>
                     {preview ? (
                       <p className="text-sm capitalize text-muted">
                         {carTitle(preview)}
@@ -219,7 +226,10 @@ export default function AdminFlaggedPage() {
                       <p className="mt-1 text-sm text-muted">{item.details}</p>
                     ) : null}
                     <p className="mt-2 text-xs text-muted">
-                      Ad {item.adId || "—"} · {status}
+                      {t(locale, "flagAdMeta", {
+                        id: item.adId || "—",
+                        status: flagStatusLabel(status),
+                      })}
                       {item.resolution ? ` · ${item.resolution}` : ""}
                     </p>
                   </div>
@@ -230,14 +240,14 @@ export default function AdminFlaggedPage() {
                     className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
                     onClick={() => void openReview(item)}
                   >
-                    Review
+                    {t(locale, "review")}
                   </button>
                   {item.adId ? (
                     <Link
                       href={`/cars/${item.adId}`}
                       className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
                     >
-                      Open
+                      {t(locale, "open")}
                     </Link>
                   ) : null}
                   {status !== "resolved" ? (
@@ -249,11 +259,11 @@ export default function AdminFlaggedPage() {
                         void updateStatus(
                           item.id,
                           "resolved",
-                          "Resolved by admin",
+                          t(locale, "flagResolvedByAdmin"),
                         )
                       }
                     >
-                      Resolve
+                      {t(locale, "resolve")}
                     </button>
                   ) : null}
                   {status !== "dismissed" ? (
@@ -265,11 +275,11 @@ export default function AdminFlaggedPage() {
                         void updateStatus(
                           item.id,
                           "dismissed",
-                          "Dismissed by admin",
+                          t(locale, "flagDismissedByAdmin"),
                         )
                       }
                     >
-                      Dismiss
+                      {t(locale, "dismiss")}
                     </button>
                   ) : null}
                   {item.adId ? (
@@ -279,7 +289,7 @@ export default function AdminFlaggedPage() {
                       className="rounded-[var(--radius-control)] px-3 py-2 text-xs font-semibold text-red-600 hover:bg-input disabled:opacity-50"
                       onClick={() => void deleteAd(item)}
                     >
-                      Delete ad
+                      {t(locale, "deleteAd")}
                     </button>
                   ) : null}
                 </div>
@@ -304,7 +314,11 @@ export default function AdminFlaggedPage() {
               await api.patch(`/admin/cars/${review.id}/status`, {
                 status: "active",
               });
-              await updateStatus(reviewFlagId, "resolved", "Approved after review");
+              await updateStatus(
+                reviewFlagId,
+                "resolved",
+                t(locale, "flagApprovedAfterReview"),
+              );
               setReview(null);
             })();
           }}
@@ -314,7 +328,11 @@ export default function AdminFlaggedPage() {
               await api.patch(`/admin/cars/${review.id}/status`, {
                 status: "rejected",
               });
-              await updateStatus(reviewFlagId, "resolved", "Rejected after review");
+              await updateStatus(
+                reviewFlagId,
+                "resolved",
+                t(locale, "flagRejectedAfterReview"),
+              );
               setReview(null);
             })();
           }}

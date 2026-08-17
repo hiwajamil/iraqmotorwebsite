@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { api } from "@/lib/api";
+import { useAppSelector } from "@/store/hooks";
+import { t } from "@/lib/i18n";
 
 export default function DashboardLayout({
   children,
@@ -13,6 +15,7 @@ export default function DashboardLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
@@ -34,7 +37,11 @@ export default function DashboardLayout({
   }, [user]);
 
   if (loading || !user) {
-    return <p className="px-[4%] pt-28 text-center text-muted">Loading…</p>;
+    return (
+      <p className="px-[4%] pt-28 text-center text-muted">
+        {t(locale, "loading")}
+      </p>
+    );
   }
 
   return (

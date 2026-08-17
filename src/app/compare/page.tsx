@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { LoadingFallback } from "@/components/loading-fallback";
 import CompareClient from "./compare-client";
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export default function ComparePage() {
   return (
     <Suspense
       fallback={
-        <p className="px-4 py-28 text-center text-muted">Loading…</p>
+        <LoadingFallback className="px-4 py-28 text-center text-muted" />
       }
     >
       <CompareClient />

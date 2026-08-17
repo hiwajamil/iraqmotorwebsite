@@ -1,4 +1,5 @@
 import { api, type Car } from "@/lib/api";
+import { t, listingStatusLabel, type DictKey, type Locale } from "@/lib/i18n";
 
 export type AdminStats = {
   activeCars: number;
@@ -89,20 +90,20 @@ export type AnalyticsReport = {
 };
 
 export const ADMIN_NAV = [
-  { href: "/admin", label: "Overview" },
-  { href: "/admin/approvals", label: "Approvals" },
-  { href: "/admin/listings", label: "Listings" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/showrooms", label: "Showrooms" },
-  { href: "/admin/ads", label: "Ads" },
-  { href: "/admin/flagged", label: "Flagged" },
-  { href: "/admin/leads", label: "Leads" },
-  { href: "/admin/messages", label: "Messages" },
-  { href: "/admin/catalog", label: "Catalog" },
-  { href: "/admin/analytics", label: "Analytics" },
-  { href: "/admin/activity", label: "Activity" },
-  { href: "/admin/settings", label: "Settings" },
-] as const;
+  { href: "/admin", labelKey: "adminNavOverview" as const },
+  { href: "/admin/approvals", labelKey: "adminNavApprovals" as const },
+  { href: "/admin/listings", labelKey: "adminNavListings" as const },
+  { href: "/admin/users", labelKey: "adminNavUsers" as const },
+  { href: "/admin/showrooms", labelKey: "showrooms" as const },
+  { href: "/admin/ads", labelKey: "adminNavAds" as const },
+  { href: "/admin/flagged", labelKey: "adminNavFlagged" as const },
+  { href: "/admin/leads", labelKey: "adminNavLeads" as const },
+  { href: "/admin/messages", labelKey: "dashMessages" as const },
+  { href: "/admin/catalog", labelKey: "adminNavCatalog" as const },
+  { href: "/admin/analytics", labelKey: "adminNavAnalytics" as const },
+  { href: "/admin/activity", labelKey: "adminNavActivity" as const },
+  { href: "/admin/settings", labelKey: "dashSettings" as const },
+] satisfies { href: string; labelKey: DictKey }[];
 
 export type CarAdminStatus =
   | "active"
@@ -111,15 +112,17 @@ export type CarAdminStatus =
   | "expired"
   | "sold";
 
-export const LISTING_STATUSES: { value: CarAdminStatus | "all"; label: string }[] =
-  [
-    { value: "all", label: "All" },
-    { value: "pending", label: "Pending" },
-    { value: "active", label: "Active" },
-    { value: "sold", label: "Sold" },
-    { value: "expired", label: "Expired" },
-    { value: "rejected", label: "Rejected" },
-  ];
+export const LISTING_STATUSES: {
+  value: CarAdminStatus | "all";
+  labelKey: DictKey;
+}[] = [
+  { value: "all", labelKey: "all" },
+  { value: "pending", labelKey: "statusPending" },
+  { value: "active", labelKey: "statusActive" },
+  { value: "sold", labelKey: "sold" },
+  { value: "expired", labelKey: "statusExpired" },
+  { value: "rejected", labelKey: "statusRejected" },
+];
 
 export function statusBadgeClass(status?: string): string {
   switch (status) {
@@ -163,24 +166,33 @@ export function formatAdminWhen(
   return "";
 }
 
-export function formatActivity(log: ActivityLog): {
+export function formatActivity(
+  log: ActivityLog,
+  locale: Locale,
+): {
   title: string;
   detail: string;
 } {
   if (log.action || log.details) {
     return {
-      title: log.action || log.type || "Activity",
+      title: log.action || log.type || t(locale, "activityFallback"),
       detail: log.details || "",
     };
   }
   if (log.type === "car_status" || log.carId) {
     return {
-      title: `car_${log.status ?? "update"}`,
-      detail: `Listing ${log.carId ?? "?"} → ${log.status ?? "?"}`,
+      title: t(locale, "activityListingStatusChange", {
+        id: log.carId ?? "?",
+        status: listingStatusLabel(locale, log.status),
+      }),
+      detail: t(locale, "activityListingStatusChange", {
+        id: log.carId ?? "?",
+        status: listingStatusLabel(locale, log.status),
+      }),
     };
   }
   return {
-    title: log.type || "Activity",
+    title: log.type || t(locale, "activityFallback"),
     detail: "",
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useSyncExternalStore, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import { t } from "@/lib/i18n";
@@ -16,20 +16,12 @@ import { useCompareHydrated, useCompareStore } from "@/store/compare-store";
 
 const STORAGE_KEY = "iq_help_widget_dismissed";
 
-function subscribeDismissed() {
-  return () => {};
-}
-
-function getDismissedSnapshot() {
+function readDismissed(): boolean {
   try {
     return localStorage.getItem(STORAGE_KEY) === "1";
   } catch {
     return false;
   }
-}
-
-function getDismissedServerSnapshot() {
-  return true;
 }
 
 type View = "closed" | "open" | "success";
@@ -88,13 +80,9 @@ export function FloatingHelpWidget() {
   const liftForCompare =
     compareHydrated &&
     compareCount > 0 &&
-    !pathname.startsWith("/compare");
+    !pathname?.startsWith("/compare");
   const formId = useId();
-  const storedDismissed = useSyncExternalStore(
-    subscribeDismissed,
-    getDismissedSnapshot,
-    getDismissedServerSnapshot,
-  );
+  const [ready, setReady] = useState(false);
   const [hiddenNow, setHiddenNow] = useState(false);
   const [view, setView] = useState<View>("closed");
   const [name, setName] = useState("");
@@ -105,10 +93,13 @@ export function FloatingHelpWidget() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const dismissed = storedDismissed || hiddenNow;
+  useEffect(() => {
+    setHiddenNow(readDismissed());
+    setReady(true);
+  }, []);
 
-  if (dismissed) return null;
-  if (pathname.startsWith("/admin")) return null;
+  if (!ready || hiddenNow) return null;
+  if (pathname?.startsWith("/admin")) return null;
 
   function dismiss() {
     setHiddenNow(true);

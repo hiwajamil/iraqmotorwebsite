@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AdGridTile, AdHomeBanner } from "@/components/ad-placements";
+import { AdvancedSearchFilter } from "@/components/advanced-search-filter";
 import { CarCard } from "@/components/car-card";
 import { useAdViewport } from "@/hooks/use-ad-viewport";
 import { useAdvertise } from "@/hooks/use-advertise";
@@ -13,9 +14,16 @@ import {
 } from "@/lib/ads";
 import { api, type Car } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
-import { HOME_CITIES, HOME_STRIP_BRANDS } from "@/lib/home-data";
+import { HOME_STRIP_BRANDS } from "@/lib/home-data";
+import { t } from "@/lib/i18n";
+import {
+  parseSearchFilters,
+  searchFiltersActive,
+  serializeSearchFilters,
+  toCarsApiParams,
+} from "@/lib/search-filters";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { setBrandId, setCity, setQuery } from "@/store/slices/filtersSlice";
+import { setBrandId, setQuery } from "@/store/slices/filtersSlice";
 
 type SortKey = "newest" | "price_asc" | "price_desc";
 
@@ -24,19 +32,20 @@ export default function CarsClient() {
   const searchParams = useSearchParams();
   const sellerIdParam = searchParams.get("sellerId") || "";
   const brandParam = searchParams.get("brandId");
-  const cityParam = searchParams.get("city");
-  const qParam = searchParams.get("q");
   const statusParam = searchParams.get("status") || "";
   const sortParam = (searchParams.get("sort") as SortKey) || "newest";
+  const queryKey = searchParams.toString();
+  const filters = useMemo(
+    () => parseSearchFilters(new URLSearchParams(queryKey)),
+    [queryKey],
+  );
   const dispatch = useAppDispatch();
   const brandId = useAppSelector((s) => s.filters.brandId) ?? "";
-  const city = useAppSelector((s) => s.filters.city) ?? "";
-  const q = useAppSelector((s) => s.filters.q);
   const locale = useAppSelector((s) => s.preferences.locale);
   const viewport = useAdViewport();
   const { ads } = useAdvertise({
     langCode: locale,
-    locationId: city || null,
+    locationId: filters.city,
     listSize: 12,
   });
   const bannerAd = useMemo(() => pickHomeBannerAd(ads), [ads]);
@@ -60,31 +69,27 @@ export default function CarsClient() {
   // Sync URL → Redux on mount / URL change
   useEffect(() => {
     dispatch(setBrandId(brandParam || null));
-    dispatch(setCity(cityParam || null));
-    if (qParam != null) dispatch(setQuery(qParam));
+    dispatch(setQuery(filters.q));
     if (["newest", "price_asc", "price_desc"].includes(sortParam)) {
       setSort(sortParam as SortKey);
     }
-  }, [brandParam, cityParam, qParam, sortParam, dispatch]);
+  }, [brandParam, filters.q, sortParam, dispatch]);
 
-  function writeUrl(next: {
-    brandId?: string | null;
-    city?: string | null;
-    q?: string;
-    sort?: SortKey;
-  }) {
-    const params = new URLSearchParams();
-    const b = next.brandId !== undefined ? next.brandId : brandId || null;
-    const c = next.city !== undefined ? next.city : city || null;
-    const query = next.q !== undefined ? next.q : q;
-    const s = next.sort ?? sort;
-    if (b) params.set("brandId", b);
-    if (c) params.set("city", c);
-    if (query.trim()) params.set("q", query.trim());
-    if (s && s !== "newest") params.set("sort", s);
-    if (sellerIdParam) params.set("sellerId", sellerIdParam);
-    if (statusParam) params.set("status", statusParam);
-    const qs = params.toString();
+  function extras() {
+    return {
+      brandId: brandId || null,
+      sort,
+      sellerId: sellerIdParam || null,
+      status: statusParam || null,
+    };
+  }
+
+  function writeUrl(next: { brandId?: string | null; sort?: SortKey }) {
+    const qs = serializeSearchFilters(filters, {
+      ...extras(),
+      brandId: next.brandId !== undefined ? next.brandId : brandId || null,
+      sort: next.sort ?? sort,
+    });
     router.replace(qs ? `/cars?${qs}` : "/cars", { scroll: false });
   }
 
@@ -104,27 +109,22 @@ export default function CarsClient() {
           nextCursor?: string | null;
         }>("/cars", {
           limit: "24",
-          sort,
-          ...(q ? { q } : {}),
-          ...(brandId ? { brandId } : {}),
-          ...(city ? { plateCityKey: city } : {}),
-          ...(sellerIdParam ? { sellerId: sellerIdParam } : {}),
-          ...(statusParam ? { status: statusParam } : {}),
+          ...toCarsApiParams(filters, extras()),
           ...(opts?.cursor ? { cursor: opts.cursor } : {}),
         });
         const items = data.items ?? [];
         setCars((prev) => (append ? [...prev, ...items] : items));
         setNextCursor(data.nextCursor ?? null);
-        if (!append && q.trim()) {
+        if (!append && filters.q.trim()) {
           trackEvent("search", {
-            search_term: q.trim(),
+            search_term: filters.q.trim(),
             item_brand: brandId || undefined,
-            item_category: city || undefined,
+            item_category: filters.city || undefined,
           });
         }
       } catch (e) {
         const msg =
-          e instanceof Error ? e.message : "Failed to load cars from API";
+          e instanceof Error ? e.message : t(locale, "carsLoadFailed");
         if (append) setLoadMoreError(msg);
         else setError(msg);
       } finally {
@@ -132,25 +132,26 @@ export default function CarsClient() {
         setLoadingMore(false);
       }
     },
-    [q, brandId, city, sellerIdParam, statusParam, sort],
+    [filters, brandId, sellerIdParam, statusParam, sort, locale],
   );
 
   useEffect(() => {
     let cancelled = false;
     const handle = window.setTimeout(() => {
       if (!cancelled) void loadPage();
-    }, q ? 280 : 0);
+    }, filters.q ? 280 : 0);
     return () => {
       cancelled = true;
       window.clearTimeout(handle);
     };
-  }, [loadPage, q]);
+  }, [loadPage, filters.q]);
 
-  const hasFilters = Boolean(brandId || city || q.trim() || sellerIdParam);
+  const hasFilters = Boolean(
+    brandId || sellerIdParam || searchFiltersActive(filters),
+  );
 
   function clearFilters() {
     dispatch(setBrandId(null));
-    dispatch(setCity(null));
     dispatch(setQuery(""));
     setSort("newest");
     const params = new URLSearchParams();
@@ -163,12 +164,25 @@ export default function CarsClient() {
     <div className="mx-auto max-w-[1400px] px-[4%] pb-16 pt-24">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-          All Models
+          {t(locale, "browse")}
         </h1>
         <p className="mt-1 text-muted">
-          Browse the full marketplace
-          {sellerIdParam ? " · filtered by seller" : ""}
+          {t(locale, "carsPageSubtitle")}
+          {sellerIdParam ? ` · ${t(locale, "carsFilteredBySeller")}` : ""}
         </p>
+      </div>
+
+      <div className="mb-6">
+        <AdvancedSearchFilter
+          variant="results"
+          initial={filters}
+          extras={{
+            brandId: brandId || null,
+            sort,
+            sellerId: sellerIdParam || null,
+            status: statusParam || null,
+          }}
+        />
       </div>
 
       <div className="mb-6 flex gap-3 overflow-x-auto pb-2 scrollbar-none">
@@ -184,7 +198,7 @@ export default function CarsClient() {
               : "bg-card ring-1 ring-outline"
           }`}
         >
-          All
+          {t(locale, "all")}
         </button>
         {HOME_STRIP_BRANDS.map((b) => (
           <button
@@ -212,39 +226,7 @@ export default function CarsClient() {
         ))}
       </div>
 
-      <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {HOME_CITIES.map((c) => {
-          const selected = (city || null) === c.key;
-          return (
-            <button
-              key={c.key ?? "all"}
-              type="button"
-              onClick={() => {
-                dispatch(setCity(c.key));
-                writeUrl({ city: c.key });
-              }}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                selected
-                  ? "bg-primary text-on-primary"
-                  : "bg-card ring-1 ring-outline"
-              }`}
-            >
-              {c.en}
-            </button>
-          );
-        })}
-      </div>
-
       <div className="flex flex-col gap-3 sm:flex-row">
-        <input
-          value={q}
-          onChange={(e) => {
-            dispatch(setQuery(e.target.value));
-            writeUrl({ q: e.target.value });
-          }}
-          placeholder="Search brand, model, city…"
-          className="flex-1 rounded-[12px] bg-input px-4 py-3.5 text-sm outline-none ring-1 ring-transparent focus:ring-primary"
-        />
         <select
           value={sort}
           onChange={(e) => {
@@ -252,18 +234,18 @@ export default function CarsClient() {
             setSort(next);
             writeUrl({ sort: next });
           }}
-          className="rounded-[12px] bg-input px-4 py-3.5 text-sm font-semibold outline-none"
-          aria-label="Sort"
+          className="rounded-[12px] bg-input px-4 py-3.5 text-sm font-semibold outline-none ring-1 ring-outline/60 focus:ring-primary"
+          aria-label={t(locale, "sort")}
         >
-          <option value="newest">Newest</option>
-          <option value="price_asc">Price: low to high</option>
-          <option value="price_desc">Price: high to low</option>
+          <option value="newest">{t(locale, "sortNewest")}</option>
+          <option value="price_asc">{t(locale, "sortPriceAsc")}</option>
+          <option value="price_desc">{t(locale, "sortPriceDesc")}</option>
         </select>
         <Link
           href="/sell"
           className="inline-flex items-center justify-center rounded-[12px] bg-primary px-5 py-3.5 text-sm font-semibold text-on-primary"
         >
-          Sell your car
+          {t(locale, "sellYourCar")}
         </Link>
       </div>
 
@@ -273,7 +255,7 @@ export default function CarsClient() {
           onClick={clearFilters}
           className="mt-3 text-sm font-semibold text-primary"
         >
-          Clear filters
+          {t(locale, "clearFilters")}
         </button>
       ) : null}
 
@@ -292,9 +274,9 @@ export default function CarsClient() {
         </p>
       ) : cars.length === 0 ? (
         <div className="mt-12 rounded-[16px] bg-card p-10 text-center ring-1 ring-outline">
-          <p className="font-semibold">No cars match your filters</p>
+          <p className="font-semibold">{t(locale, "carsEmptyTitle")}</p>
           <p className="mt-1 text-sm text-muted">
-            Try clearing filters or searching a different city.
+            {t(locale, "carsEmptyHint")}
           </p>
           {hasFilters ? (
             <button
@@ -302,7 +284,7 @@ export default function CarsClient() {
               onClick={clearFilters}
               className="mt-4 text-sm font-semibold text-primary"
             >
-              Clear filters
+              {t(locale, "clearFilters")}
             </button>
           ) : null}
         </div>
@@ -344,7 +326,7 @@ export default function CarsClient() {
                 }
                 className="rounded-[12px] bg-card px-5 py-3 text-sm font-semibold ring-1 ring-outline disabled:opacity-60"
               >
-                {loadingMore ? "Loading…" : "Load more"}
+                {loadingMore ? t(locale, "loading") : t(locale, "loadMore")}
               </button>
             </div>
           ) : null}

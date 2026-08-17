@@ -51,19 +51,17 @@ export function CarCard({
         compact ? "min-w-[272px] max-w-[272px]" : ""
       }`}
     >
-      <div className={`relative ${compact ? "aspect-[4/3]" : "aspect-[16/10]"}`}>
-        <div className="h-full overflow-hidden bg-input">
-          <Link href={`/cars/${car.id}`} className="block h-full w-full">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={String(image)}
-              alt={title}
-              loading="lazy"
-              decoding="async"
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
-            />
-          </Link>
-        </div>
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-t-[16px] bg-input">
+        <Link href={`/cars/${car.id}`} className="absolute inset-0 block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={String(image)}
+            alt={title}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
+          />
+        </Link>
         {sold ? (
           <span className="absolute start-2 top-2 z-[1] inline-flex items-center gap-1 rounded-full bg-surface/90 px-2.5 py-1 text-[11px] font-semibold text-foreground backdrop-blur">
             {t(locale, "sold")}

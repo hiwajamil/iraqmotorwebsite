@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { HOME_CITIES } from "@/lib/home-data";
+import { HOME_CITIES, homeCityLabel } from "@/lib/home-data";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 type Showroom = {
   uid?: string;
@@ -15,6 +17,7 @@ type Showroom = {
 };
 
 export default function ShowroomsPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [items, setItems] = useState<Showroom[]>([]);
   const [city, setCity] = useState("");
   const [cityInput, setCityInput] = useState("");
@@ -37,7 +40,7 @@ export default function ShowroomsPage() {
           }
         } catch (e) {
           if (!cancelled) {
-            setError(e instanceof Error ? e.message : "Failed to load showrooms");
+            setError(e instanceof Error ? e.message : t(locale, "showroomsLoadFailed"));
             setItems([]);
           }
         } finally {
@@ -54,9 +57,9 @@ export default function ShowroomsPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-[4%] pb-16 pt-24">
       <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-        Showrooms
+        {t(locale, "showrooms")}
       </h1>
-      <p className="mt-1 text-sm text-muted">Dealers across Iraq</p>
+      <p className="mt-1 text-sm text-muted">{t(locale, "showroomsSubtitle")}</p>
 
       <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {HOME_CITIES.map((c) => {
@@ -77,7 +80,7 @@ export default function ShowroomsPage() {
                   : "bg-card ring-1 ring-outline"
               }`}
             >
-              {c.en}
+              {homeCityLabel(c, locale)}
             </button>
           );
         })}
@@ -89,7 +92,7 @@ export default function ShowroomsPage() {
           setCityInput(e.target.value);
           setCity(e.target.value.trim());
         }}
-        placeholder="Filter by city"
+        placeholder={t(locale, "filterByCity")}
         className="mt-4 w-full max-w-sm rounded-[12px] bg-input px-4 py-3.5 text-sm outline-none ring-1 ring-transparent focus:ring-primary"
       />
 
@@ -110,11 +113,11 @@ export default function ShowroomsPage() {
         </div>
       ) : !error && items.length === 0 ? (
         <div className="mt-10 rounded-[16px] bg-card p-8 text-center ring-1 ring-outline">
-          <p className="font-semibold">No dealers found</p>
+          <p className="font-semibold">{t(locale, "showroomsEmptyTitle")}</p>
           <p className="mt-1 text-sm text-muted">
             {city
-              ? "Try another city or clear the filter."
-              : "Showrooms will appear here when dealers join Iraq Motors."}
+              ? t(locale, "showroomsEmptyFilteredHint")
+              : t(locale, "showroomsEmptyHint")}
           </p>
         </div>
       ) : (
@@ -127,7 +130,7 @@ export default function ShowroomsPage() {
                 className="rounded-[16px] bg-card p-5 ring-1 ring-outline transition hover:ring-primary/30"
               >
                 <h2 className="font-semibold">
-                  {s.showroomName || s.displayName || "Showroom"}
+                  {s.showroomName || s.displayName || t(locale, "showroomDefaultName")}
                 </h2>
                 <p className="mt-1 text-sm text-muted">{s.city || "—"}</p>
                 <p className="mt-1 text-sm">{s.phone || ""}</p>
@@ -136,7 +139,7 @@ export default function ShowroomsPage() {
                     href={`/cars?sellerId=${id}`}
                     className="mt-3 inline-block text-sm font-semibold text-primary"
                   >
-                    View listings
+                    {t(locale, "viewListings")}
                   </Link>
                 ) : null}
               </div>

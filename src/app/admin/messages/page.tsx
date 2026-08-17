@@ -8,8 +8,11 @@ import {
   type TicketMessage,
   formatAdminWhen,
 } from "@/lib/admin";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 export default function AdminMessagesPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const { user } = useAuth();
   const [items, setItems] = useState<SupportTicket[]>([]);
   const [selected, setSelected] = useState<SupportTicket | null>(null);
@@ -20,13 +23,20 @@ export default function AdminMessagesPage() {
   const [filter, setFilter] = useState<"all" | "open" | "resolved">("open");
   const threadGen = useRef(0);
 
+  function ticketStatusLabel(status?: string) {
+    const s = status || "open";
+    if (s === "resolved") return t(locale, "ticketStatusResolved");
+    if (s === "open") return t(locale, "ticketStatusOpen");
+    return s;
+  }
+
   async function loadTickets() {
     try {
       const d = await api.get<{ items: SupportTicket[] }>("/admin/tickets");
       setItems(d.items ?? []);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed");
+      setError(e instanceof Error ? e.message : t(locale, "failedGeneric"));
     }
   }
 
@@ -44,7 +54,7 @@ export default function AdminMessagesPage() {
     } catch (e) {
       if (gen !== threadGen.current) return;
       setMessages([]);
-      setError(e instanceof Error ? e.message : "Failed to load thread");
+      setError(e instanceof Error ? e.message : t(locale, "failedToLoadThread"));
     }
   }
 
@@ -63,7 +73,7 @@ export default function AdminMessagesPage() {
       await openTicket(selected);
       await loadTickets();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Reply failed");
+      setError(e instanceof Error ? e.message : t(locale, "replyFailed"));
     } finally {
       setBusy(false);
     }
@@ -79,10 +89,12 @@ export default function AdminMessagesPage() {
       );
       setSelected(updated);
       setItems((list) =>
-        list.map((t) => (t.id === updated.id ? { ...t, ...updated } : t)),
+        list.map((row) =>
+          row.id === updated.id ? { ...row, ...updated } : row,
+        ),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Status update failed");
+      setError(e instanceof Error ? e.message : t(locale, "statusUpdateFailed"));
     } finally {
       setBusy(false);
     }
@@ -92,9 +104,11 @@ export default function AdminMessagesPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Support messages</h1>
+          <h1 className="text-3xl font-bold">
+            {t(locale, "adminMessagesTitle")}
+          </h1>
           <p className="mt-1 text-sm text-muted">
-            Reply to tickets and mark them resolved
+            {t(locale, "adminMessagesSubtitle")}
           </p>
         </div>
         <button
@@ -102,7 +116,7 @@ export default function AdminMessagesPage() {
           onClick={() => void loadTickets()}
           className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
         >
-          Refresh
+          {t(locale, "refresh")}
         </button>
       </div>
 
@@ -114,44 +128,44 @@ export default function AdminMessagesPage() {
             key={key}
             type="button"
             onClick={() => setFilter(key)}
-            className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
               filter === key
                 ? "bg-primary text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
-            {key}
+            {key === "all" ? t(locale, "all") : ticketStatusLabel(key)}
           </button>
         ))}
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)]">
         <div className="space-y-2">
-          {items.filter((t) => {
-            const status = t.status || "open";
+          {items.filter((ticket) => {
+            const status = ticket.status || "open";
             if (filter === "all") return true;
             return status === filter;
           }).length === 0 ? (
             <div className="rounded-[var(--radius-card)] bg-card p-6 text-center ring-1 ring-outline">
-              <p className="font-semibold">No tickets</p>
+              <p className="font-semibold">{t(locale, "ticketsEmptyTitle")}</p>
               <p className="mt-1 text-sm text-muted">
-                Support requests will appear in this inbox.
+                {t(locale, "ticketsEmptyHint")}
               </p>
             </div>
           ) : (
             items
-              .filter((t) => {
-                const status = t.status || "open";
+              .filter((ticket) => {
+                const status = ticket.status || "open";
                 if (filter === "all") return true;
                 return status === filter;
               })
-              .map((t) => {
-              const active = selected?.id === t.id;
+              .map((ticket) => {
+              const active = selected?.id === ticket.id;
               return (
                 <button
-                  key={t.id}
+                  key={ticket.id}
                   type="button"
-                  onClick={() => void openTicket(t)}
+                  onClick={() => void openTicket(ticket)}
                   className={`w-full rounded-[var(--radius-card)] p-3 text-left ring-1 transition ${
                     active
                       ? "bg-primary/10 ring-primary"
@@ -159,13 +173,15 @@ export default function AdminMessagesPage() {
                   }`}
                 >
                   <p className="truncate text-sm font-semibold">
-                    {t.subject || t.userDisplayName || "Ticket"}
+                    {ticket.subject ||
+                      ticket.userDisplayName ||
+                      t(locale, "ticketFallback")}
                   </p>
                   <p className="mt-1 truncate text-xs text-muted">
-                    {t.lastMessage || t.status || "—"}
+                    {ticket.lastMessage || ticketStatusLabel(ticket.status) || "—"}
                   </p>
-                  <p className="mt-1 text-xs font-semibold capitalize text-muted">
-                    {t.status || "open"}
+                  <p className="mt-1 text-xs font-semibold text-muted">
+                    {ticketStatusLabel(ticket.status)}
                   </p>
                 </button>
               );
@@ -175,17 +191,17 @@ export default function AdminMessagesPage() {
 
         <div className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline">
           {!selected ? (
-            <p className="text-sm text-muted">Select a ticket to view the thread.</p>
+            <p className="text-sm text-muted">{t(locale, "selectTicketHint")}</p>
           ) : (
             <>
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-outline pb-3">
                 <div>
                   <p className="font-semibold">
-                    {selected.subject || "Support ticket"}
+                    {selected.subject || t(locale, "supportTicketFallback")}
                   </p>
                   <p className="text-xs text-muted">
                     {selected.userDisplayName || selected.userId} ·{" "}
-                    {selected.status || "open"}
+                    {ticketStatusLabel(selected.status)}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -195,7 +211,7 @@ export default function AdminMessagesPage() {
                     className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-50"
                     onClick={() => void setStatus("open")}
                   >
-                    Open
+                    {t(locale, "open")}
                   </button>
                   <button
                     type="button"
@@ -203,14 +219,14 @@ export default function AdminMessagesPage() {
                     className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                     onClick={() => void setStatus("resolved")}
                   >
-                    Resolve
+                    {t(locale, "resolve")}
                   </button>
                 </div>
               </div>
 
               <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto">
                 {messages.length === 0 ? (
-                  <p className="text-sm text-muted">No messages in this thread.</p>
+                  <p className="text-sm text-muted">{t(locale, "threadEmpty")}</p>
                 ) : (
                   messages.map((m) => {
                     const mine = m.isAdmin || m.senderId === user?.uid;
@@ -247,7 +263,7 @@ export default function AdminMessagesPage() {
                 <input
                   value={reply}
                   onChange={(e) => setReply(e.target.value)}
-                  placeholder="Write a reply…"
+                  placeholder={t(locale, "replyPlaceholder")}
                   className="min-w-0 flex-1 rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
                 />
                 <button
@@ -255,7 +271,7 @@ export default function AdminMessagesPage() {
                   disabled={busy || !reply.trim()}
                   className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                 >
-                  Send
+                  {t(locale, "send")}
                 </button>
               </form>
             </>

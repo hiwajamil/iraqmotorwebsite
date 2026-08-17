@@ -87,7 +87,7 @@ export function SiteHeader() {
                 ? "bg-white/15 text-white"
                 : "bg-input text-foreground"
             }`}
-            aria-label="Language"
+            aria-label={t(locale, "language")}
           >
             <option value="en" className="bg-white text-neutral-900">
               EN
@@ -106,7 +106,7 @@ export function SiteHeader() {
             className={`hidden h-10 w-10 items-center justify-center rounded-[12px] text-sm font-semibold sm:flex ${
               immersive ? "bg-white/15 text-white" : "bg-input"
             }`}
-            aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
+            aria-label={dark ? t(locale, "themeLight") : t(locale, "themeDark")}
           >
             {dark ? "☀" : "☾"}
           </button>
@@ -168,7 +168,7 @@ export function SiteHeader() {
             }`}
             aria-expanded={menuOpen}
             aria-controls={menuId}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-label={menuOpen ? t(locale, "closeMenu") : t(locale, "openMenu")}
             onClick={() => setMenuOpen((o) => !o)}
           >
             <span className="text-lg leading-none" aria-hidden>
@@ -223,7 +223,7 @@ export function SiteHeader() {
                 value={locale}
                 onChange={(e) => dispatch(setLocale(e.target.value as Locale))}
                 className="lang-select flex-1 rounded-[12px] bg-input px-3 py-2.5 text-xs font-semibold text-foreground outline-none [color-scheme:light]"
-                aria-label="Language"
+                aria-label={t(locale, "language")}
               >
                 <option value="en" className="bg-white text-neutral-900">
                   EN
@@ -239,7 +239,7 @@ export function SiteHeader() {
                 type="button"
                 onClick={() => dispatch(toggleTheme())}
                 className="h-10 w-10 rounded-[12px] bg-input text-sm font-semibold"
-                aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
+                aria-label={dark ? t(locale, "themeLight") : t(locale, "themeDark")}
               >
                 {dark ? "☀" : "☾"}
               </button>

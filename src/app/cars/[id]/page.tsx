@@ -390,7 +390,7 @@ export default function CarDetailPage() {
               label={t(locale, "specHorsepower")}
               value={
                 stringField(car, "horsepower")
-                  ? `${stringField(car, "horsepower")} HP`
+                  ? `${stringField(car, "horsepower")} ${t(locale, "specHorsepowerUnit")}`
                   : null
               }
             />

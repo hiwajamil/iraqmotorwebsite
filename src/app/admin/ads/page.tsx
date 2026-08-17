@@ -12,10 +12,13 @@ import {
   formatAdDate,
   type AdvertiseAdmin,
 } from "@/lib/ads";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 type StatusFilter = "all" | "active" | "inactive";
 
 export default function AdminAdsPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [items, setItems] = useState<AdvertiseAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -39,7 +42,7 @@ export default function AdminAdsPage() {
       setItems(data.items ?? []);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load advertisements");
+      setError(e instanceof Error ? e.message : t(locale, "failedToLoad"));
     } finally {
       setLoading(false);
     }
@@ -85,12 +88,13 @@ export default function AdminAdsPage() {
         list.map((row) => (row.id === ad.id ? { ...row, ...updated } : row)),
       );
       setToast({
-        message: next ? "Advertisement activated" : "Advertisement turned off",
+        message: next ? t(locale, "adActivated") : t(locale, "adDeactivated"),
         tone: "success",
       });
     } catch (e) {
       setToast({
-        message: e instanceof Error ? e.message : "Could not update status",
+        message:
+          e instanceof Error ? e.message : t(locale, "couldNotUpdateStatus"),
         tone: "error",
       });
     } finally {
@@ -108,11 +112,11 @@ export default function AdminAdsPage() {
         setModalOpen(false);
         setEditing(null);
       }
-      setToast({ message: "Advertisement deleted", tone: "success" });
+      setToast({ message: t(locale, "adDeleted"), tone: "success" });
       setPendingDelete(null);
     } catch (e) {
       setToast({
-        message: e instanceof Error ? e.message : "Could not delete ad",
+        message: e instanceof Error ? e.message : t(locale, "couldNotDeleteAd"),
         tone: "error",
       });
     } finally {
@@ -124,10 +128,9 @@ export default function AdminAdsPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Ads</h1>
+          <h1 className="text-3xl font-bold">{t(locale, "adminAdsTitle")}</h1>
           <p className="mt-1 text-sm text-muted">
-            Manage sponsor banners. Only active ads inside their date window
-            appear on the site.
+            {t(locale, "adminAdsSubtitle")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -136,14 +139,14 @@ export default function AdminAdsPage() {
             onClick={() => void load()}
             className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
           >
-            Refresh
+            {t(locale, "refresh")}
           </button>
           <button
             type="button"
             onClick={openCreate}
             className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary"
           >
-            New ad
+            {t(locale, "newAd")}
           </button>
         </div>
       </div>
@@ -151,11 +154,11 @@ export default function AdminAdsPage() {
       <div className="mt-4 flex flex-wrap gap-2">
         {(
           [
-            ["all", "All"],
-            ["active", "Active"],
-            ["inactive", "Inactive"],
+            ["all", "all"],
+            ["active", "statusActive"],
+            ["inactive", "statusInactive"],
           ] as const
-        ).map(([value, label]) => (
+        ).map(([value, labelKey]) => (
           <button
             key={value}
             type="button"
@@ -166,7 +169,7 @@ export default function AdminAdsPage() {
                 : "bg-input text-muted"
             }`}
           >
-            {label}
+            {t(locale, labelKey)}
           </button>
         ))}
       </div>
@@ -174,7 +177,7 @@ export default function AdminAdsPage() {
       <input
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
-        placeholder="Filter by title, slot, or link…"
+        placeholder={t(locale, "adsFilterPlaceholder")}
         className="mt-4 w-full max-w-md rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
       />
 
@@ -188,28 +191,42 @@ export default function AdminAdsPage() {
         <table className="min-w-full text-left text-sm">
           <thead className="border-b border-outline text-xs uppercase tracking-wide text-muted">
             <tr>
-              <th className="px-4 py-3 font-semibold">Thumbnail</th>
-              <th className="px-4 py-3 font-semibold">Title</th>
-              <th className="px-4 py-3 font-semibold">Slot</th>
-              <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Start date</th>
-              <th className="px-4 py-3 font-semibold">End date</th>
-              <th className="px-4 py-3 font-semibold">Actions</th>
+              <th className="px-4 py-3 font-semibold">
+                {t(locale, "colThumbnail")}
+              </th>
+              <th className="px-4 py-3 font-semibold">
+                {t(locale, "colTitle")}
+              </th>
+              <th className="px-4 py-3 font-semibold">
+                {t(locale, "colSlot")}
+              </th>
+              <th className="px-4 py-3 font-semibold">
+                {t(locale, "colStatus")}
+              </th>
+              <th className="px-4 py-3 font-semibold">
+                {t(locale, "colStartDate")}
+              </th>
+              <th className="px-4 py-3 font-semibold">
+                {t(locale, "colEndDate")}
+              </th>
+              <th className="px-4 py-3 font-semibold">
+                {t(locale, "colActions")}
+              </th>
             </tr>
           </thead>
           <tbody>
             {loading && items.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center text-muted">
-                  Loading advertisements…
+                  {t(locale, "loadingAds")}
                 </td>
               </tr>
             ) : visible.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-10 text-center">
-                  <p className="font-semibold">No advertisements yet</p>
+                  <p className="font-semibold">{t(locale, "adsEmptyTitle")}</p>
                   <p className="mt-1 text-sm text-muted">
-                    Create an ad to replace the default iraqMotors banner.
+                    {t(locale, "adsEmptyHint")}
                   </p>
                 </td>
               </tr>
@@ -233,19 +250,19 @@ export default function AdminAdsPage() {
                         />
                       ) : (
                         <div className="flex h-12 w-20 items-center justify-center rounded-lg bg-input text-[10px] text-muted">
-                          No image
+                          {t(locale, "noImage")}
                         </div>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       <p className="font-semibold">{ad.title}</p>
                       <p className="max-w-[220px] truncate text-xs text-muted">
-                        {ad.targetLink || ad.url || "No link"}
+                        {ad.targetLink || ad.url || t(locale, "noLink")}
                       </p>
                     </td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-input px-2 py-0.5 text-[11px] font-medium">
-                        {adSlotLabel(ad.slotPosition)}
+                        {adSlotLabel(locale, ad.slotPosition)}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -273,7 +290,11 @@ export default function AdminAdsPage() {
                             active ? "text-emerald-700" : "text-muted"
                           }`}
                         >
-                          {toggling ? "Saving…" : active ? "Active" : "Inactive"}
+                          {toggling
+                            ? t(locale, "saving")
+                            : active
+                              ? t(locale, "statusActive")
+                              : t(locale, "statusInactive")}
                         </span>
                       </button>
                     </td>
@@ -290,7 +311,7 @@ export default function AdminAdsPage() {
                           onClick={() => openEdit(ad)}
                           className="rounded-[var(--radius-control)] bg-input px-3 py-1.5 text-xs font-semibold"
                         >
-                          Edit
+                          {t(locale, "edit")}
                         </button>
                         <button
                           type="button"
@@ -298,7 +319,7 @@ export default function AdminAdsPage() {
                           onClick={() => setPendingDelete(ad)}
                           className="rounded-[var(--radius-control)] px-3 py-1.5 text-xs font-semibold text-red-600 disabled:opacity-60"
                         >
-                          Delete
+                          {t(locale, "dashDelete")}
                         </button>
                       </div>
                     </td>
@@ -327,7 +348,7 @@ export default function AdminAdsPage() {
           setModalOpen(false);
           setEditing(null);
           setToast({
-            message: created ? "Advertisement created" : "Advertisement saved",
+            message: created ? t(locale, "adCreated") : t(locale, "adSaved"),
             tone: "success",
           });
         }}
@@ -335,9 +356,11 @@ export default function AdminAdsPage() {
 
       <AdminConfirmDialog
         open={Boolean(pendingDelete)}
-        title="Delete advertisement?"
-        description={`“${pendingDelete?.title ?? "This ad"}” will be removed. The iraqMotors fallback will show if no other ad is live.`}
-        confirmLabel="Delete"
+        title={t(locale, "deleteAdTitle")}
+        description={t(locale, "deleteAdDescription", {
+          title: pendingDelete?.title ?? t(locale, "thisAd"),
+        })}
+        confirmLabel={t(locale, "confirm")}
         danger
         busy={Boolean(pendingDelete && busyId === pendingDelete.id)}
         onCancel={() => setPendingDelete(null)}

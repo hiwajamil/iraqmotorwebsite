@@ -10,6 +10,12 @@ import {
   type AdminUser,
 } from "@/lib/admin";
 import { formatMoney } from "@/lib/car-pricing-trust";
+import {
+  t,
+  listingStatusLabel,
+  accountTypeLabel,
+} from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 type Props = {
   car: Car;
@@ -70,6 +76,7 @@ export function AdReviewModal({
   onDelete,
   onUpdated,
 }: Props) {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [seller, setSeller] = useState<AdminUser | null>(null);
   const [index, setIndex] = useState(0);
   const [editing, setEditing] = useState(false);
@@ -138,7 +145,7 @@ export function AdReviewModal({
       setEditing(false);
       onUpdated?.(next);
     } catch (e) {
-      setEditError(e instanceof Error ? e.message : "Save failed");
+      setEditError(e instanceof Error ? e.message : t(locale, "saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -167,7 +174,7 @@ export function AdReviewModal({
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClass(localCar.status)}`}
                 >
-                  {localCar.status}
+                  {listingStatusLabel(locale, localCar.status)}
                 </span>
               ) : null}
             </div>
@@ -183,14 +190,14 @@ export function AdReviewModal({
               }}
               className="rounded-[var(--radius-control)] bg-input px-3 py-1.5 text-xs font-semibold"
             >
-              {editing ? "Cancel edit" : "Edit fields"}
+              {editing ? t(locale, "cancelEdit") : t(locale, "editFields")}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="rounded-[var(--radius-control)] bg-input px-3 py-1.5 text-xs font-semibold"
             >
-              Close
+              {t(locale, "close")}
             </button>
           </div>
         </div>
@@ -228,7 +235,7 @@ export function AdReviewModal({
             </div>
           ) : (
             <div className="flex h-40 items-center justify-center rounded-xl bg-input text-sm text-muted">
-              No photos
+              {t(locale, "noPhotos")}
             </div>
           )}
         </div>
@@ -241,17 +248,17 @@ export function AdReviewModal({
             <div className="grid gap-3 sm:grid-cols-2">
               {(
                 [
-                  ["priceValue", "Price"],
-                  ["year", "Year"],
-                  ["mileageValue", "Mileage"],
-                  ["city", "City"],
-                  ["province", "Province"],
-                  ["fuelKey", "Fuel"],
-                  ["transmissionKey", "Transmission"],
+                  ["priceValue", "sellPrice"],
+                  ["year", "specYear"],
+                  ["mileageValue", "specMileage"],
+                  ["city", "specCity"],
+                  ["province", "sellProvince"],
+                  ["fuelKey", "specFuel"],
+                  ["transmissionKey", "specTransmission"],
                 ] as const
-              ).map(([key, label]) => (
+              ).map(([key, labelKey]) => (
                 <label key={key} className="text-xs font-semibold text-muted">
-                  {label}
+                  {t(locale, labelKey)}
                   <input
                     value={form[key]}
                     onChange={(e) =>
@@ -263,7 +270,7 @@ export function AdReviewModal({
               ))}
             </div>
             <label className="block text-xs font-semibold text-muted">
-              Description
+              {t(locale, "description")}
               <textarea
                 value={form.description}
                 onChange={(e) =>
@@ -279,42 +286,58 @@ export function AdReviewModal({
               onClick={() => void saveEdit()}
               className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
             >
-              {saving ? "Saving…" : "Save changes"}
+              {saving ? t(locale, "saving") : t(locale, "saveChanges")}
             </button>
           </div>
         ) : (
           <>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <Field
-                label="Price"
+                label={t(locale, "sellPrice")}
                 value={
                   localCar.priceValue != null
                     ? formatMoney(localCar.priceValue, localCar.currencyKey)
                     : null
                 }
               />
-              <Field label="Year" value={localCar.year} />
-              <Field label="Mileage" value={localCar.mileageValue} />
+              <Field label={t(locale, "specYear")} value={localCar.year} />
               <Field
-                label="City"
+                label={t(locale, "specMileage")}
+                value={localCar.mileageValue}
+              />
+              <Field
+                label={t(locale, "specCity")}
                 value={[localCar.city, localCar.province]
                   .filter(Boolean)
                   .join(", ")}
               />
-              <Field label="Fuel" value={localCar.fuelKey} />
-              <Field label="Transmission" value={localCar.transmissionKey} />
+              <Field label={t(locale, "specFuel")} value={localCar.fuelKey} />
               <Field
-                label="Condition"
+                label={t(locale, "specTransmission")}
+                value={localCar.transmissionKey}
+              />
+              <Field
+                label={t(locale, "specCondition")}
                 value={localCar.conditionKey || localCar.condition}
               />
-              <Field label="Status" value={localCar.status} />
-              <Field label="Highest bid" value={localCar.highestBid} />
+              <Field
+                label={t(locale, "colStatus")}
+                value={
+                  localCar.status
+                    ? listingStatusLabel(locale, localCar.status)
+                    : localCar.status
+                }
+              />
+              <Field
+                label={t(locale, "bid")}
+                value={localCar.highestBid}
+              />
             </div>
 
             {localCar.description ? (
               <div className="mt-5">
                 <p className="text-[11px] uppercase tracking-wide text-muted">
-                  Description
+                  {t(locale, "description")}
                 </p>
                 <p className="mt-1 whitespace-pre-wrap text-sm">
                   {String(localCar.description)}
@@ -325,24 +348,30 @@ export function AdReviewModal({
         )}
 
         <div className="mt-5 rounded-xl bg-input/60 p-4">
-          <p className="text-[11px] uppercase tracking-wide text-muted">Seller</p>
+          <p className="text-[11px] uppercase tracking-wide text-muted">
+            {t(locale, "sellerDefault")}
+          </p>
           <p className="mt-1 text-sm font-semibold">
             {seller?.displayName ||
               seller?.showroomName ||
               localCar.sellerId ||
-              "Unknown"}
+              t(locale, "unknown")}
           </p>
           <p className="text-xs text-muted">
-            {[seller?.accountType, seller?.phone, seller?.city]
+            {[
+              accountTypeLabel(locale, seller?.accountType),
+              seller?.phone,
+              seller?.city,
+            ]
               .filter(Boolean)
-              .join(" · ") || "Profile unavailable without Admin credentials"}
+              .join(" · ") || t(locale, "sellerProfileUnavailable")}
           </p>
           {localCar.sellerId ? (
             <Link
               href={`/admin/listings?sellerId=${encodeURIComponent(localCar.sellerId)}`}
               className="mt-2 inline-block text-xs font-semibold text-primary"
             >
-              View seller listings
+              {t(locale, "viewSellerListings")}
             </Link>
           ) : null}
         </div>
@@ -352,7 +381,7 @@ export function AdReviewModal({
             href={`/cars/${localCar.id}`}
             className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
           >
-            Open page
+            {t(locale, "openPage")}
           </Link>
           {localCar.status !== "active" ? (
             <button
@@ -361,7 +390,9 @@ export function AdReviewModal({
               onClick={onApprove}
               className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
             >
-              {localCar.status === "pending" ? "Approve" : "Activate"}
+              {localCar.status === "pending"
+                ? t(locale, "approve")
+                : t(locale, "activate")}
             </button>
           ) : null}
           {localCar.status !== "rejected" ? (
@@ -371,7 +402,7 @@ export function AdReviewModal({
               onClick={onReject}
               className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-50"
             >
-              Reject
+              {t(locale, "reject")}
             </button>
           ) : null}
           {onExpire && localCar.status !== "expired" ? (
@@ -381,7 +412,7 @@ export function AdReviewModal({
               onClick={onExpire}
               className="rounded-[var(--radius-control)] px-3 py-2 text-xs font-semibold text-muted hover:bg-input disabled:opacity-50"
             >
-              Expire
+              {t(locale, "expire")}
             </button>
           ) : null}
           {onSold && localCar.status !== "sold" ? (
@@ -391,7 +422,7 @@ export function AdReviewModal({
               onClick={onSold}
               className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-50"
             >
-              Mark sold
+              {t(locale, "dashMarkSold")}
             </button>
           ) : null}
           {onDelete ? (
@@ -401,7 +432,7 @@ export function AdReviewModal({
               onClick={onDelete}
               className="rounded-[var(--radius-control)] px-3 py-2 text-xs font-semibold text-red-600 hover:bg-input disabled:opacity-50"
             >
-              Delete
+              {t(locale, "dashDelete")}
             </button>
           ) : null}
         </div>

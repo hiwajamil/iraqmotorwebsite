@@ -221,7 +221,7 @@ export function buildCompareSections(cars: Car[], locale: Locale): CompareSectio
       label: t(locale, "specHorsepower"),
       cells: cars.map((car) => {
         const hp = stringField(car, "horsepower");
-        return textCell(hp ? `${hp} HP` : "");
+        return textCell(hp ? `${hp} ${t(locale, "specHorsepowerUnit")}` : "");
       }),
     },
     {

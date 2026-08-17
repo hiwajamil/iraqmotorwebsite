@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n";
+
 /** Popular brands shown on the home strip — mirrors Flutter `homeStripBrands`. */
 export const HOME_STRIP_BRANDS = [
   { id: "toyota", name: "Toyota", logo: "/brands/27_Toyota.png" },
@@ -27,3 +29,12 @@ export const HOME_CITIES = [
 ] as const;
 
 export type ConditionFilter = "all" | "new" | "used" | "electric";
+
+export function homeCityLabel(
+  city: (typeof HOME_CITIES)[number],
+  locale: Locale,
+): string {
+  if (locale === "ar") return city.ar;
+  if (locale === "ku") return city.ku;
+  return city.en;
+}

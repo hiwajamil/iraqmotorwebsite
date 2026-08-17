@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 type Brand = { id: string; name?: string };
 type Model = { id: string; key?: string; name?: string; trims?: string[] };
 
 export default function AdminCatalogPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [models, setModels] = useState<Model[]>([]);
   const [brandId, setBrandId] = useState<string | null>(null);
@@ -33,7 +36,7 @@ export default function AdminCatalogPage() {
 
   useEffect(() => {
     void loadBrands().catch((e) =>
-      setError(e instanceof Error ? e.message : "Failed to load brands"),
+      setError(e instanceof Error ? e.message : t(locale, "failedToLoadBrands")),
     );
   }, []);
 
@@ -44,7 +47,7 @@ export default function AdminCatalogPage() {
       return;
     }
     void loadModels(brandId).catch((e) =>
-      setError(e instanceof Error ? e.message : "Failed to load models"),
+      setError(e instanceof Error ? e.message : t(locale, "failedToLoad")),
     );
   }, [brandId]);
 
@@ -71,7 +74,7 @@ export default function AdminCatalogPage() {
       await action();
       setMessage(ok);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Action failed");
+      setError(e instanceof Error ? e.message : t(locale, "actionFailed"));
     } finally {
       setBusy(false);
     }
@@ -88,9 +91,9 @@ export default function AdminCatalogPage() {
   return (
     <div>
       <div>
-        <h1 className="text-3xl font-bold">Catalog</h1>
+        <h1 className="text-3xl font-bold">{t(locale, "adminCatalogTitle")}</h1>
         <p className="mt-1 text-sm text-muted">
-          Create, rename, and delete brands, models, and trims
+          {t(locale, "adminCatalogSubtitle")}
         </p>
       </div>
 
@@ -99,11 +102,13 @@ export default function AdminCatalogPage() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <section className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline">
-          <h2 className="font-semibold">Brands ({brands.length})</h2>
+          <h2 className="font-semibold">
+            {t(locale, "specBrand")} ({brands.length})
+          </h2>
           <input
             value={brandQuery}
             onChange={(e) => setBrandQuery(e.target.value)}
-            placeholder="Search brands"
+            placeholder={t(locale, "searchBrands")}
             className="mt-3 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
           />
           <form
@@ -117,13 +122,13 @@ export default function AdminCatalogPage() {
                 });
                 setNewBrand("");
                 await loadBrands();
-              }, "Brand created");
+              }, t(locale, "brandCreated"));
             }}
           >
             <input
               value={newBrand}
               onChange={(e) => setNewBrand(e.target.value)}
-              placeholder="New brand id"
+              placeholder={t(locale, "newBrandId")}
               className="min-w-0 flex-1 rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
             />
             <button
@@ -131,13 +136,13 @@ export default function AdminCatalogPage() {
               disabled={busy}
               className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
             >
-              Add
+              {t(locale, "add")}
             </button>
           </form>
           <div className="mt-3 max-h-[420px] space-y-1 overflow-y-auto">
             {filteredBrands.length === 0 ? (
               <p className="px-2 py-6 text-center text-sm text-muted">
-                No brands found.
+                {t(locale, "noBrandsFound")}
               </p>
             ) : (
               filteredBrands.map((b) => (
@@ -162,7 +167,10 @@ export default function AdminCatalogPage() {
                     disabled={busy}
                     className="text-xs font-semibold text-muted hover:text-foreground disabled:opacity-50"
                     onClick={() => {
-                      const next = promptRename(`Rename brand ${b.id}`, b.id);
+                      const next = promptRename(
+                        `${t(locale, "edit")} ${b.id}`,
+                        b.id,
+                      );
                       if (!next) return;
                       void run(async () => {
                         await api.patch(
@@ -174,17 +182,17 @@ export default function AdminCatalogPage() {
                           setModelKey(null);
                         }
                         await loadBrands();
-                      }, "Brand renamed");
+                      }, t(locale, "brandRenamed"));
                     }}
                   >
-                    Ren
+                    {t(locale, "renameShort")}
                   </button>
                   <button
                     type="button"
                     disabled={busy}
                     className="text-xs font-semibold text-red-600 disabled:opacity-50"
                     onClick={() => {
-                      if (!window.confirm(`Delete brand ${b.id}?`)) return;
+                      if (!window.confirm(`${t(locale, "dashDelete")} ${b.id}?`)) return;
                       void run(async () => {
                         await api.delete(
                           `/admin/catalog/brands/${encodeURIComponent(b.id)}`,
@@ -194,10 +202,10 @@ export default function AdminCatalogPage() {
                           setModelKey(null);
                         }
                         await loadBrands();
-                      }, "Brand deleted");
+                      }, t(locale, "brandDeleted"));
                     }}
                   >
-                    Del
+                    {t(locale, "deleteShort")}
                   </button>
                 </div>
               ))
@@ -207,10 +215,12 @@ export default function AdminCatalogPage() {
 
         <section className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline">
           <h2 className="font-semibold">
-            Models {brandId ? `(${brandId})` : ""}
+            {t(locale, "specModel")} {brandId ? `(${brandId})` : ""}
           </h2>
           {!brandId ? (
-            <p className="mt-4 text-sm text-muted">Select a brand.</p>
+            <p className="mt-4 text-sm text-muted">
+              {t(locale, "catalogSelectBrand")}
+            </p>
           ) : (
             <>
               <form
@@ -225,13 +235,13 @@ export default function AdminCatalogPage() {
                     );
                     setNewModel("");
                     await loadModels(brandId);
-                  }, "Model created");
+                  }, t(locale, "modelCreated"));
                 }}
               >
                 <input
                   value={newModel}
                   onChange={(e) => setNewModel(e.target.value)}
-                  placeholder="New model name"
+                  placeholder={t(locale, "newModelName")}
                   className="min-w-0 flex-1 rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
                 />
                 <button
@@ -239,12 +249,12 @@ export default function AdminCatalogPage() {
                   disabled={busy}
                   className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                 >
-                  Add
+                  {t(locale, "add")}
                 </button>
               </form>
               <div className="mt-3 max-h-[420px] space-y-1 overflow-y-auto">
                 {models.length === 0 ? (
-                  <p className="text-sm text-muted">No models yet. Add one above.</p>
+                  <p className="text-sm text-muted">{t(locale, "noModelsYet")}</p>
                 ) : (
                   models.map((m) => {
                     const key = String(m.key ?? m.id ?? m.name);
@@ -271,7 +281,7 @@ export default function AdminCatalogPage() {
                           className="text-xs font-semibold text-muted hover:text-foreground disabled:opacity-50"
                           onClick={() => {
                             const next = promptRename(
-                              `Rename model ${key}`,
+                              `${t(locale, "edit")} ${key}`,
                               key,
                             );
                             if (!next) return;
@@ -282,27 +292,27 @@ export default function AdminCatalogPage() {
                               );
                               if (modelKey === key) setModelKey(next);
                               await loadModels(brandId);
-                            }, "Model renamed");
+                            }, t(locale, "modelRenamed"));
                           }}
                         >
-                          Ren
+                          {t(locale, "renameShort")}
                         </button>
                         <button
                           type="button"
                           disabled={busy}
                           className="text-xs font-semibold text-red-600 disabled:opacity-50"
                           onClick={() => {
-                            if (!window.confirm(`Delete model ${key}?`)) return;
+                            if (!window.confirm(`${t(locale, "dashDelete")} ${key}?`)) return;
                             void run(async () => {
                               await api.delete(
                                 `/admin/catalog/brands/${encodeURIComponent(brandId)}/models/${encodeURIComponent(key)}`,
                               );
                               if (modelKey === key) setModelKey(null);
                               await loadModels(brandId);
-                            }, "Model deleted");
+                            }, t(locale, "modelDeleted"));
                           }}
                         >
-                          Del
+                          {t(locale, "deleteShort")}
                         </button>
                       </div>
                     );
@@ -315,10 +325,12 @@ export default function AdminCatalogPage() {
 
         <section className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline">
           <h2 className="font-semibold">
-            Trims {modelKey ? `(${modelKey})` : ""}
+            {t(locale, "sellTrim")} {modelKey ? `(${modelKey})` : ""}
           </h2>
           {!brandId || !modelKey ? (
-            <p className="mt-4 text-sm text-muted">Select a model.</p>
+            <p className="mt-4 text-sm text-muted">
+              {t(locale, "catalogSelectModel")}
+            </p>
           ) : (
             <>
               <form
@@ -333,13 +345,13 @@ export default function AdminCatalogPage() {
                     );
                     setNewTrim("");
                     await loadModels(brandId);
-                  }, "Trim created");
+                  }, t(locale, "trimCreated"));
                 }}
               >
                 <input
                   value={newTrim}
                   onChange={(e) => setNewTrim(e.target.value)}
-                  placeholder="New trim"
+                  placeholder={t(locale, "newTrim")}
                   className="min-w-0 flex-1 rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
                 />
                 <button
@@ -347,12 +359,12 @@ export default function AdminCatalogPage() {
                   disabled={busy}
                   className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                 >
-                  Add
+                  {t(locale, "add")}
                 </button>
               </form>
               <div className="mt-3 max-h-[420px] space-y-1 overflow-y-auto">
                 {trims.length === 0 ? (
-                  <p className="text-sm text-muted">No trims yet. Add one above.</p>
+                  <p className="text-sm text-muted">{t(locale, "noTrimsYet")}</p>
                 ) : (
                   trims.map((trim) => (
                     <div
@@ -365,7 +377,10 @@ export default function AdminCatalogPage() {
                         disabled={busy}
                         className="text-xs font-semibold text-muted hover:text-foreground disabled:opacity-50"
                         onClick={() => {
-                          const next = promptRename(`Rename trim ${trim}`, trim);
+                          const next = promptRename(
+                            `${t(locale, "edit")} ${trim}`,
+                            trim,
+                          );
                           if (!next) return;
                           void run(async () => {
                             await api.patch(
@@ -373,26 +388,26 @@ export default function AdminCatalogPage() {
                               { newName: next },
                             );
                             await loadModels(brandId);
-                          }, "Trim renamed");
+                          }, t(locale, "trimRenamed"));
                         }}
                       >
-                        Ren
+                        {t(locale, "renameShort")}
                       </button>
                       <button
                         type="button"
                         disabled={busy}
                         className="text-xs font-semibold text-red-600 disabled:opacity-50"
                         onClick={() => {
-                          if (!window.confirm(`Delete trim ${trim}?`)) return;
+                          if (!window.confirm(`${t(locale, "dashDelete")} ${trim}?`)) return;
                           void run(async () => {
                             await api.delete(
                               `/admin/catalog/brands/${encodeURIComponent(brandId)}/models/${encodeURIComponent(modelKey)}/trims/${encodeURIComponent(trim)}`,
                             );
                             await loadModels(brandId);
-                          }, "Trim deleted");
+                          }, t(locale, "trimDeleted"));
                         }}
                       >
-                        Del
+                        {t(locale, "deleteShort")}
                       </button>
                     </div>
                   ))

@@ -10,8 +10,11 @@ import {
   setCarStatuses,
 } from "@/lib/admin";
 import { AdReviewModal } from "@/components/admin-ad-review";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 export default function AdminPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [pending, setPending] = useState<Car[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +33,7 @@ export default function AdminPage() {
       setSelected(new Set());
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load admin");
+      setError(e instanceof Error ? e.message : t(locale, "failedToLoad"));
     }
   }
 
@@ -48,7 +51,9 @@ export default function AdminPage() {
       const res = await setCarStatuses(ids, status);
       const done = new Set(res.updated);
       if (res.failed?.length) {
-        setError(`Failed for ${res.failed.length} listing(s)`);
+        setError(
+          t(locale, "failedForListings", { count: res.failed.length }),
+        );
       }
       setPending((list) => list.filter((c) => !done.has(c.id)));
       setStats((s) =>
@@ -68,7 +73,7 @@ export default function AdminPage() {
       });
       if (review && done.has(review.id)) setReview(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed");
+      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
     } finally {
       setBusy(false);
     }
@@ -87,9 +92,11 @@ export default function AdminPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Admin dashboard</h1>
+          <h1 className="text-3xl font-bold">
+            {t(locale, "adminDashboardTitle")}
+          </h1>
           <p className="mt-1 text-sm text-muted">
-            Platform stats and pending listing queue
+            {t(locale, "adminDashboardSubtitle")}
           </p>
         </div>
         <button
@@ -97,7 +104,7 @@ export default function AdminPage() {
           onClick={() => void load()}
           className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
         >
-          Refresh
+          {t(locale, "refresh")}
         </button>
       </div>
 
@@ -108,20 +115,24 @@ export default function AdminPage() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
             {(
               [
-                ["Active", stats.activeCars, "/admin/listings?status=active"],
-                ["Pending", stats.pendingCars, "/admin/approvals"],
-                ["Sold", stats.soldCars, "/admin/listings?status=sold"],
-                ["Users", stats.users, "/admin/users"],
-                ["Showrooms", stats.showrooms ?? 0, "/admin/showrooms"],
+                [
+                  "statusActive",
+                  stats.activeCars,
+                  "/admin/listings?status=active",
+                ],
+                ["statusPending", stats.pendingCars, "/admin/approvals"],
+                ["sold", stats.soldCars, "/admin/listings?status=sold"],
+                ["statUsers", stats.users, "/admin/users"],
+                ["showrooms", stats.showrooms ?? 0, "/admin/showrooms"],
               ] as const
-            ).map(([label, value, href]) => (
+            ).map(([labelKey, value, href]) => (
               <Link
-                key={label}
+                key={labelKey}
                 href={href}
                 className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline transition hover:ring-primary"
               >
                 <p className="text-xs uppercase tracking-wide text-muted">
-                  {label}
+                  {t(locale, labelKey)}
                 </p>
                 <p className="mt-2 text-2xl font-bold">{value}</p>
               </Link>
@@ -133,7 +144,7 @@ export default function AdminPage() {
               className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline transition hover:ring-primary"
             >
               <p className="text-xs uppercase tracking-wide text-muted">
-                Open flags
+                {t(locale, "statOpenFlags")}
               </p>
               <p className="mt-2 text-2xl font-bold">{stats.openFlags ?? 0}</p>
             </Link>
@@ -142,7 +153,7 @@ export default function AdminPage() {
               className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline transition hover:ring-primary"
             >
               <p className="text-xs uppercase tracking-wide text-muted">
-                Open tickets
+                {t(locale, "statOpenTickets")}
               </p>
               <p className="mt-2 text-2xl font-bold">{stats.openTickets ?? 0}</p>
             </Link>
@@ -151,19 +162,21 @@ export default function AdminPage() {
               className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline transition hover:ring-primary"
             >
               <p className="text-xs uppercase tracking-wide text-muted">
-                All listings
+                {t(locale, "statAllListings")}
               </p>
-              <p className="mt-2 text-sm font-semibold text-primary">Manage →</p>
+              <p className="mt-2 text-sm font-semibold text-primary">
+                {t(locale, "manage")}
+              </p>
             </Link>
             <Link
               href="/admin/ads"
               className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline transition hover:ring-primary"
             >
               <p className="text-xs uppercase tracking-wide text-muted">
-                Ads
+                {t(locale, "statAds")}
               </p>
               <p className="mt-2 text-sm font-semibold text-primary">
-                Manage →
+                {t(locale, "manage")}
               </p>
             </Link>
             <Link
@@ -171,10 +184,10 @@ export default function AdminPage() {
               className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline transition hover:ring-primary"
             >
               <p className="text-xs uppercase tracking-wide text-muted">
-                Analytics
+                {t(locale, "statAnalytics")}
               </p>
               <p className="mt-2 text-sm font-semibold text-primary">
-                Reports →
+                {t(locale, "reports")}
               </p>
             </Link>
           </div>
@@ -182,25 +195,29 @@ export default function AdminPage() {
       ) : null}
 
       <div className="mt-10 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">Pending approvals</h2>
+        <h2 className="text-xl font-semibold">
+          {t(locale, "pendingApprovals")}
+        </h2>
         <Link
           href="/admin/approvals"
           className="text-xs font-semibold text-primary"
         >
-          View all
+          {t(locale, "viewAll")}
         </Link>
       </div>
 
       {selected.size > 0 ? (
         <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[var(--radius-card)] bg-card p-3 ring-1 ring-outline">
-          <span className="text-xs font-semibold">{selected.size} selected</span>
+          <span className="text-xs font-semibold">
+            {t(locale, "selectedCount", { count: selected.size })}
+          </span>
           <button
             type="button"
             disabled={busy}
             className="rounded-[var(--radius-control)] bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary disabled:opacity-50"
             onClick={() => void setStatus([...selected], "active")}
           >
-            Approve selected
+            {t(locale, "approveSelected")}
           </button>
           <button
             type="button"
@@ -208,7 +225,7 @@ export default function AdminPage() {
             className="rounded-[var(--radius-control)] bg-input px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
             onClick={() => void setStatus([...selected], "rejected")}
           >
-            Reject selected
+            {t(locale, "rejectSelected")}
           </button>
         </div>
       ) : null}
@@ -216,15 +233,15 @@ export default function AdminPage() {
       <div className="mt-4 space-y-3">
         {pending.length === 0 ? (
           <div className="rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
-            <p className="font-semibold">Queue is empty</p>
+            <p className="font-semibold">{t(locale, "queueEmpty")}</p>
             <p className="mt-1 text-sm text-muted">
-              Nothing waiting for approval right now.
+              {t(locale, "queueEmptyHint")}
             </p>
             <Link
               href="/admin/listings"
               className="mt-4 inline-block text-xs font-semibold text-primary"
             >
-              Manage all listings →
+              {t(locale, "manageAllListings")}
             </Link>
           </div>
         ) : (
@@ -250,7 +267,7 @@ export default function AdminPage() {
                     />
                   ) : (
                     <div className="flex h-14 w-20 items-center justify-center rounded-lg bg-input text-xs text-muted">
-                      No photo
+                      {t(locale, "noPhoto")}
                     </div>
                   )}
                   <div className="min-w-0">
@@ -273,7 +290,7 @@ export default function AdminPage() {
                     className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
                     onClick={() => setReview(car)}
                   >
-                    Review
+                    {t(locale, "review")}
                   </button>
                   <button
                     type="button"
@@ -281,7 +298,7 @@ export default function AdminPage() {
                     className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                     onClick={() => void setStatus([car.id], "active")}
                   >
-                    Approve
+                    {t(locale, "approve")}
                   </button>
                   <button
                     type="button"
@@ -289,7 +306,7 @@ export default function AdminPage() {
                     className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-50"
                     onClick={() => void setStatus([car.id], "rejected")}
                   >
-                    Reject
+                    {t(locale, "reject")}
                   </button>
                 </div>
               </div>

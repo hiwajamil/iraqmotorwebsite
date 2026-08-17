@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 type AdminEntry = { email: string; phone: string; name: string };
 
@@ -39,6 +41,7 @@ function maskSecrets(config: PlatformConfig): PlatformConfig {
 }
 
 export default function AdminSettingsPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [config, setConfig] = useState<PlatformConfig>({});
   const [maintenance, setMaintenance] = useState(false);
   const [boost, setBoost] = useState("10000");
@@ -101,7 +104,9 @@ export default function AdminSettingsPage() {
     void api
       .get<{ config: PlatformConfig | null }>("/admin/settings")
       .then((d) => applyConfig(d.config))
-      .catch((e) => setError(e instanceof Error ? e.message : "Failed"));
+      .catch((e) =>
+        setError(e instanceof Error ? e.message : t(locale, "failedGeneric")),
+      );
   }, []);
 
   const cityCount = useMemo(
@@ -156,9 +161,9 @@ export default function AdminSettingsPage() {
         patch,
       );
       applyConfig(res.config);
-      setMessage("Settings saved");
+      setMessage(t(locale, "settingsSaved"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Save failed");
+      setError(e instanceof Error ? e.message : t(locale, "saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -179,9 +184,11 @@ export default function AdminSettingsPage() {
         parsed,
       );
       applyConfig(res.config);
-      setMessage("Advanced JSON saved");
+      setMessage(t(locale, "advancedJsonSaved"));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Invalid JSON / save failed");
+      setError(
+        e instanceof Error ? e.message : t(locale, "invalidJsonSaveFailed"),
+      );
     } finally {
       setSaving(false);
     }
@@ -190,9 +197,9 @@ export default function AdminSettingsPage() {
   return (
     <div>
       <div>
-        <h1 className="text-3xl font-bold">Settings</h1>
+        <h1 className="text-3xl font-bold">{t(locale, "adminSettingsTitle")}</h1>
         <p className="mt-1 text-sm text-muted">
-          Platform config stored in `system_config/platform`
+          {t(locale, "adminSettingsSubtitle")}
         </p>
       </div>
 
@@ -200,18 +207,18 @@ export default function AdminSettingsPage() {
       {message ? <p className="mt-4 text-sm text-primary">{message}</p> : null}
 
       <section className="mt-8 space-y-4 rounded-[var(--radius-card)] bg-card p-5 ring-1 ring-outline">
-        <h2 className="text-lg font-semibold">General</h2>
+        <h2 className="text-lg font-semibold">{t(locale, "settingsGeneral")}</h2>
         <label className="flex items-center gap-3 text-sm">
           <input
             type="checkbox"
             checked={maintenance}
             onChange={(e) => setMaintenance(e.target.checked)}
           />
-          Maintenance mode
+          {t(locale, "maintenanceMode")}
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-semibold text-muted">
-            Boost package price
+            {t(locale, "boostPackagePrice")}
             <input
               value={boost}
               onChange={(e) => setBoost(e.target.value)}
@@ -219,7 +226,7 @@ export default function AdminSettingsPage() {
             />
           </label>
           <label className="text-xs font-semibold text-muted">
-            Super boost package price
+            {t(locale, "superBoostPackagePrice")}
             <input
               value={superBoost}
               onChange={(e) => setSuperBoost(e.target.value)}
@@ -231,10 +238,10 @@ export default function AdminSettingsPage() {
 
       <section className="mt-6 space-y-3 rounded-[var(--radius-card)] bg-card p-5 ring-1 ring-outline">
         <h2 className="text-lg font-semibold">
-          Active cities{" "}
+          {t(locale, "activeCities")}{" "}
           <span className="text-sm font-normal text-muted">({cityCount})</span>
         </h2>
-        <p className="text-xs text-muted">One city / governorate per line</p>
+        <p className="text-xs text-muted">{t(locale, "activeCitiesHint")}</p>
         <textarea
           value={citiesText}
           onChange={(e) => setCitiesText(e.target.value)}
@@ -245,7 +252,7 @@ export default function AdminSettingsPage() {
 
       <section className="mt-6 space-y-3 rounded-[var(--radius-card)] bg-card p-5 ring-1 ring-outline">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Admin accounts</h2>
+          <h2 className="text-lg font-semibold">{t(locale, "adminAccounts")}</h2>
           <button
             type="button"
             className="text-xs font-semibold text-primary"
@@ -253,16 +260,13 @@ export default function AdminSettingsPage() {
               setAdmins((list) => [...list, { email: "", phone: "", name: "" }])
             }
           >
-            + Add
+            {t(locale, "addAdmin")}
           </button>
         </div>
-        <p className="text-xs text-muted">
-          Stored in platform config for reference. Super-admin access still
-          comes from `SUPER_ADMIN_EMAILS` on the API.
-        </p>
+        <p className="text-xs text-muted">{t(locale, "adminAccountsHint")}</p>
         <div className="space-y-3">
           {admins.length === 0 ? (
-            <p className="text-sm text-muted">No admin entries yet.</p>
+            <p className="text-sm text-muted">{t(locale, "noAdminEntries")}</p>
           ) : (
             admins.map((admin, index) => (
               <div
@@ -278,7 +282,7 @@ export default function AdminSettingsPage() {
                       ),
                     )
                   }
-                  placeholder="Name"
+                  placeholder={t(locale, "placeholderName")}
                   className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
                 />
                 <input
@@ -290,7 +294,7 @@ export default function AdminSettingsPage() {
                       ),
                     )
                   }
-                  placeholder="Email"
+                  placeholder={t(locale, "placeholderEmail")}
                   className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
                 />
                 <input
@@ -302,7 +306,7 @@ export default function AdminSettingsPage() {
                       ),
                     )
                   }
-                  placeholder="Phone"
+                  placeholder={t(locale, "placeholderPhone")}
                   className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
                 />
                 <button
@@ -312,7 +316,7 @@ export default function AdminSettingsPage() {
                     setAdmins((list) => list.filter((_, i) => i !== index))
                   }
                 >
-                  Remove
+                  {t(locale, "remove")}
                 </button>
               </div>
             ))
@@ -321,10 +325,10 @@ export default function AdminSettingsPage() {
       </section>
 
       <section className="mt-6 space-y-3 rounded-[var(--radius-card)] bg-card p-5 ring-1 ring-outline">
-        <h2 className="text-lg font-semibold">R2 storage</h2>
+        <h2 className="text-lg font-semibold">{t(locale, "r2Storage")}</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs font-semibold text-muted sm:col-span-2">
-            Endpoint
+            {t(locale, "r2Endpoint")}
             <input
               value={r2Endpoint}
               onChange={(e) => setR2Endpoint(e.target.value)}
@@ -332,7 +336,7 @@ export default function AdminSettingsPage() {
             />
           </label>
           <label className="text-xs font-semibold text-muted">
-            Bucket
+            {t(locale, "r2Bucket")}
             <input
               value={r2Bucket}
               onChange={(e) => setR2Bucket(e.target.value)}
@@ -340,7 +344,7 @@ export default function AdminSettingsPage() {
             />
           </label>
           <label className="text-xs font-semibold text-muted">
-            Region
+            {t(locale, "r2Region")}
             <input
               value={r2Region}
               onChange={(e) => setR2Region(e.target.value)}
@@ -348,7 +352,7 @@ export default function AdminSettingsPage() {
             />
           </label>
           <label className="text-xs font-semibold text-muted sm:col-span-2">
-            Public base URL
+            {t(locale, "r2PublicBaseUrl")}
             <input
               value={r2PublicBaseUrl}
               onChange={(e) => setR2PublicBaseUrl(e.target.value)}
@@ -356,7 +360,7 @@ export default function AdminSettingsPage() {
             />
           </label>
           <label className="text-xs font-semibold text-muted">
-            Access key (leave blank to keep)
+            {t(locale, "r2AccessKeyLabel")}
             <input
               type="password"
               value={r2AccessKey}
@@ -366,7 +370,7 @@ export default function AdminSettingsPage() {
             />
           </label>
           <label className="text-xs font-semibold text-muted">
-            Secret key (leave blank to keep)
+            {t(locale, "r2SecretKeyLabel")}
             <input
               type="password"
               value={r2SecretKey}
@@ -384,7 +388,7 @@ export default function AdminSettingsPage() {
         onClick={() => void saveStructured()}
         className="mt-6 rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
       >
-        {saving ? "Saving…" : "Save settings"}
+        {saving ? t(locale, "saving") : t(locale, "saveSettings")}
       </button>
 
       <div className="mt-10">
@@ -393,7 +397,9 @@ export default function AdminSettingsPage() {
           className="text-sm font-semibold text-primary"
           onClick={() => setShowAdvanced((v) => !v)}
         >
-          {showAdvanced ? "Hide" : "Show"} advanced JSON
+          {showAdvanced
+            ? t(locale, "hideAdvancedJson")
+            : t(locale, "showAdvancedJson")}
         </button>
         {showAdvanced ? (
           <div className="mt-4">
@@ -409,7 +415,7 @@ export default function AdminSettingsPage() {
               onClick={() => void saveAdvanced()}
               className="mt-3 rounded-[var(--radius-control)] bg-input px-4 py-2 text-sm font-semibold disabled:opacity-50"
             >
-              Save JSON
+              {t(locale, "saveJson")}
             </button>
           </div>
         ) : null}

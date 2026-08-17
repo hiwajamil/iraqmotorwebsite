@@ -145,13 +145,13 @@ export function buildTrustChips(input: {
   } else if (vin?.isComplete || vin?.last4) {
     chips.push({
       key: "vin",
-      label: vin.last4 ? `VIN ···${vin.last4}` : t(locale, "vinOnFile"),
+      label: vin.last4 ? t(locale, "vinMasked", { last4: vin.last4 }) : t(locale, "vinOnFile"),
       tone: "neutral",
     });
   } else if (vinNumber && String(vinNumber).trim()) {
     const raw = String(vinNumber).trim();
     const last4 = raw.length >= 4 ? raw.slice(-4) : raw;
-    chips.push({ key: "vin-legacy", label: `VIN ···${last4}`, tone: "neutral" });
+    chips.push({ key: "vin-legacy", label: t(locale, "vinMasked", { last4 }), tone: "neutral" });
   }
 
   if (report?.hasAccidentHistory) {
@@ -172,7 +172,7 @@ export function buildTrustChips(input: {
     chips.push({
       key: "inspected",
       label: report.inspectionGrade
-        ? `Grade ${report.inspectionGrade}`
+        ? t(locale, "inspectionGrade", { grade: report.inspectionGrade })
         : t(locale, "inspected"),
       tone: "positive",
     });

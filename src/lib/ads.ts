@@ -1,4 +1,5 @@
 import { api, type Car } from "@/lib/api";
+import { t, type Locale } from "@/lib/i18n";
 
 /** Matches backend / iQ Cars AdType. */
 export const AdvertiseType = {
@@ -220,6 +221,7 @@ export function resolveHomeBannerContent(
   ad: Advertise | null | undefined,
   viewport: AdViewport,
   overrides: AdBannerContent = {},
+  locale: Locale = "en",
 ): Required<AdBannerContent> {
   const imageUrl =
     overrides.imageUrl !== undefined
@@ -239,7 +241,7 @@ export function resolveHomeBannerContent(
     description:
       overrides.description ||
       ad?.description ||
-      DEFAULT_HOME_BANNER.description,
+      t(locale, "adDefaultDescription"),
     imageUrl,
     targetLink,
   };
@@ -298,8 +300,8 @@ export const AD_CREATIVE_SLOTS = [
 ];
 
 export const AD_SLOTS = [
-  { key: "home_banner", label: "Homepage banner" },
-  { key: "grid_tile", label: "Listing grid tile" },
+  { key: "home_banner", labelKey: "adSlotHomeBanner" as const },
+  { key: "grid_tile", labelKey: "adSlotGridTile" as const },
 ] as const;
 
 export function adImageUrl(ad: AdvertiseAdmin): string | null {
@@ -317,8 +319,9 @@ export function adIsActive(ad: AdvertiseAdmin): boolean {
   return ad.isActive ?? ad.active !== false;
 }
 
-export function adSlotLabel(slot?: string | null): string {
-  return AD_SLOTS.find((s) => s.key === slot)?.label || slot || "Banner";
+export function adSlotLabel(locale: Locale, slot?: string | null): string {
+  const found = AD_SLOTS.find((s) => s.key === slot);
+  return found ? t(locale, found.labelKey) : slot || t(locale, "adSlotBanner");
 }
 
 export function formatAdDate(iso: string | null | undefined): string {

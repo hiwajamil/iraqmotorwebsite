@@ -4,8 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { groupByCity, type AdminUser } from "@/lib/admin";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 export default function AdminShowroomsPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [items, setItems] = useState<AdminUser[]>([]);
   const [city, setCity] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +25,7 @@ export default function AdminShowroomsPage() {
       setItems(d.items ?? []);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed");
+      setError(e instanceof Error ? e.message : t(locale, "failedGeneric"));
     }
   }
 
@@ -35,9 +38,9 @@ export default function AdminShowroomsPage() {
     const next = !u.banned;
     if (
       !window.confirm(
-        next
-          ? `Ban showroom ${u.showroomName || u.displayName || u.uid}?`
-          : `Unban showroom ${u.showroomName || u.displayName || u.uid}?`,
+        t(locale, next ? "confirmBanShowroom" : "confirmUnbanShowroom", {
+          name: u.showroomName || u.displayName || u.uid,
+        }),
       )
     ) {
       return;
@@ -55,7 +58,7 @@ export default function AdminShowroomsPage() {
         ),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ban failed");
+      setError(e instanceof Error ? e.message : t(locale, "banFailed"));
     } finally {
       setBusyId(null);
     }
@@ -64,7 +67,9 @@ export default function AdminShowroomsPage() {
   async function demote(u: AdminUser) {
     if (
       !window.confirm(
-        `Demote ${u.showroomName || u.displayName || u.uid} to individual?`,
+        t(locale, "confirmDemoteShowroom", {
+          name: u.showroomName || u.displayName || u.uid,
+        }),
       )
     ) {
       return;
@@ -74,7 +79,7 @@ export default function AdminShowroomsPage() {
       await api.patch(`/admin/users/${u.uid}`, { accountType: "individual" });
       setItems((list) => list.filter((row) => row.uid !== u.uid));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Demote failed");
+      setError(e instanceof Error ? e.message : t(locale, "demoteFailed"));
     } finally {
       setBusyId(null);
     }
@@ -92,9 +97,9 @@ export default function AdminShowroomsPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Showrooms</h1>
+          <h1 className="text-3xl font-bold">{t(locale, "adminShowroomsTitle")}</h1>
           <p className="mt-1 text-sm text-muted">
-            Dealer accounts ({items.length})
+            {t(locale, "adminShowroomsSubtitle", { count: items.length })}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -103,13 +108,13 @@ export default function AdminShowroomsPage() {
             onClick={() => setView(view === "list" ? "cities" : "list")}
             className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
           >
-            {view === "list" ? "By city" : "List view"}
+            {view === "list" ? t(locale, "viewByCity") : t(locale, "viewList")}
           </button>
           <Link
             href="/showrooms"
             className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold text-primary"
           >
-            Public directory →
+            {t(locale, "publicDirectoryLink")}
           </Link>
         </div>
       </div>
@@ -124,14 +129,14 @@ export default function AdminShowroomsPage() {
         <input
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          placeholder="Filter by city (server)"
+          placeholder={t(locale, "filterByCityServer")}
           className="w-full max-w-sm rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
         />
         <button
           type="submit"
           className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary"
         >
-          Filter
+          {t(locale, "filter")}
         </button>
         {cityFilter ? (
           <button
@@ -139,7 +144,12 @@ export default function AdminShowroomsPage() {
             onClick={() => setCityFilter(null)}
             className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
           >
-            City: {cityFilter} ×
+            {t(locale, "cityFilterChip", {
+              name:
+                cityFilter === "Unknown"
+                  ? t(locale, "unknownCity")
+                  : cityFilter,
+            })}
           </button>
         ) : null}
       </form>
@@ -150,8 +160,10 @@ export default function AdminShowroomsPage() {
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {cities.length === 0 ? (
             <div className="rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline sm:col-span-2 lg:col-span-3">
-              <p className="font-semibold">No showrooms found</p>
-              <p className="mt-1 text-sm text-muted">Try clearing the city filter.</p>
+              <p className="font-semibold">{t(locale, "showroomsEmptyTitle")}</p>
+              <p className="mt-1 text-sm text-muted">
+                {t(locale, "usersEmptyHint")}
+              </p>
             </div>
           ) : (
             cities.map((group) => (
@@ -164,9 +176,15 @@ export default function AdminShowroomsPage() {
                 }}
                 className="rounded-[var(--radius-card)] bg-card p-4 text-left ring-1 ring-outline transition hover:ring-primary"
               >
-                <p className="font-semibold">{group.city}</p>
+                <p className="font-semibold">
+                  {group.city === "Unknown"
+                    ? t(locale, "unknownCity")
+                    : group.city}
+                </p>
                 <p className="mt-2 text-2xl font-bold">{group.items.length}</p>
-                <p className="text-xs text-muted">showrooms</p>
+                <p className="text-xs text-muted">
+                  {t(locale, "showroomsCountLabel")}
+                </p>
               </button>
             ))
           )}
@@ -175,11 +193,11 @@ export default function AdminShowroomsPage() {
         <div className="mt-6 space-y-3">
           {visible.length === 0 ? (
             <div className="rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
-              <p className="font-semibold">No showrooms found</p>
+              <p className="font-semibold">{t(locale, "showroomsEmptyTitle")}</p>
               <p className="mt-1 text-sm text-muted">
                 {city.trim()
-                  ? `Nothing matched “${city.trim()}”.`
-                  : "Dealer accounts will appear here."}
+                  ? t(locale, "showroomsNoMatch", { city: city.trim() })
+                  : t(locale, "showroomsDefaultEmptyHint")}
               </p>
             </div>
           ) : (
@@ -190,7 +208,9 @@ export default function AdminShowroomsPage() {
               >
                 <div>
                   <p className="font-semibold">
-                    {u.showroomName || u.displayName || "Showroom"}
+                    {u.showroomName ||
+                      u.displayName ||
+                      t(locale, "showroomDefaultName")}
                   </p>
                   <p className="text-xs text-muted">
                     {[u.ownerName, u.phone, u.city].filter(Boolean).join(" · ") ||
@@ -198,7 +218,7 @@ export default function AdminShowroomsPage() {
                   </p>
                   {u.banned ? (
                     <p className="mt-1 text-xs font-semibold text-red-600">
-                      Banned
+                      {t(locale, "statusBanned")}
                     </p>
                   ) : null}
                 </div>
@@ -207,7 +227,7 @@ export default function AdminShowroomsPage() {
                     href={`/admin/listings?sellerId=${encodeURIComponent(u.uid)}`}
                     className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
                   >
-                    Listings
+                    {t(locale, "listingsLink")}
                   </Link>
                   <button
                     type="button"
@@ -215,7 +235,7 @@ export default function AdminShowroomsPage() {
                     className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-50"
                     onClick={() => void demote(u)}
                   >
-                    Demote
+                    {t(locale, "demote")}
                   </button>
                   <button
                     type="button"
@@ -223,7 +243,7 @@ export default function AdminShowroomsPage() {
                     className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                     onClick={() => void toggleBan(u)}
                   >
-                    {u.banned ? "Unban" : "Ban"}
+                    {u.banned ? t(locale, "unban") : t(locale, "ban")}
                   </button>
                 </div>
               </div>

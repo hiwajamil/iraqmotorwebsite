@@ -138,6 +138,40 @@ export const SEAT_COUNT_KEYS = [
   "seats_10_plus",
 ] as const;
 
+export const BODY_TYPE_KEYS = [
+  "body_suv",
+  "body_sedan",
+  "body_crossover",
+  "body_hatchback",
+  "body_pickup",
+  "body_coupe",
+  "body_convertible",
+  "body_minivan",
+  "body_van",
+] as const;
+
+export const SEARCH_CITY_KEYS = [
+  "baghdad",
+  "erbil",
+  "sulaymaniyah",
+  "basra",
+  "kirkuk",
+  "dohuk",
+  "mosul",
+  "najaf",
+  "karbala",
+  "anbar",
+  "halabja",
+  "maysan",
+  "babylon",
+  "diyala",
+  "wasit",
+  "muthanna",
+  "qadisiyyah",
+  "dhi_qar",
+  "salahuddin",
+] as const;
+
 export const PAINTED_PARTS_KEYS = [
   "condition_clean_title",
   "condition_no_paint",

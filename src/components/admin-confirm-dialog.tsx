@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 export function AdminConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
+  confirmLabel,
+  cancelLabel,
   danger = false,
   busy = false,
   onConfirm,
@@ -23,6 +25,10 @@ export function AdminConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const locale = useAppSelector((s) => s.preferences.locale);
+  confirmLabel = confirmLabel ?? t(locale, "confirm");
+  cancelLabel = cancelLabel ?? t(locale, "dashCancel");
+
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -70,7 +76,7 @@ export function AdminConfirmDialog({
               danger ? "bg-red-600" : "bg-primary text-on-primary"
             }`}
           >
-            {busy ? "Working…" : confirmLabel}
+            {busy ? t(locale, "working") : confirmLabel}
           </button>
         </div>
       </div>

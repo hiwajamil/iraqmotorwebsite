@@ -13,6 +13,9 @@ import {
 import { api, ApiError } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/components/auth-provider";
+import { LoadingFallback } from "@/components/loading-fallback";
+import { t, type Locale } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 /** Keep in sync with Flutter `kSuperAdminEmail` / backend `SUPER_ADMIN_EMAILS`. */
 const SUPER_ADMIN_EMAIL = "hiwa.constructions@gmail.com";
@@ -91,9 +94,9 @@ function firebaseErrorCode(err: unknown): string | null {
   return match ? match[0].toLowerCase() : null;
 }
 
-function mapAuthError(err: unknown): string {
+function mapAuthError(err: unknown, locale: Locale): string {
   if (err instanceof ApiError) {
-    return err.message || `Request failed (${err.status})`;
+    return err.message || t(locale, "authRequestFailed", { status: err.status });
   }
 
   const code = firebaseErrorCode(err);
@@ -101,22 +104,22 @@ function mapAuthError(err: unknown): string {
     case "auth/invalid-credential":
     case "auth/wrong-password":
     case "auth/user-not-found":
-      return "Incorrect phone/email or password";
+      return t(locale, "authInvalidCredentials");
     case "auth/email-already-in-use":
-      return "An account with this email already exists";
+      return t(locale, "authEmailInUse");
     case "auth/weak-password":
-      return "Password must be at least 6 characters";
+      return t(locale, "authWeakPassword");
     case "auth/too-many-requests":
-      return "Too many attempts — try again later";
+      return t(locale, "authTooManyRequests");
     case "auth/invalid-email":
-      return "Enter a valid email address";
+      return t(locale, "helpInvalidEmail");
     case "auth/network-request-failed":
-      return "Network error — check your connection and try again";
+      return t(locale, "authNetworkError");
     default:
       break;
   }
 
-  return err instanceof Error ? err.message : "Auth failed";
+  return err instanceof Error ? err.message : t(locale, "authFailed");
 }
 
 async function signInWithPhonePassword(
@@ -133,6 +136,7 @@ async function signInAsSuperAdmin(
   email: string,
   phone: string,
   password: string,
+  locale: Locale,
 ) {
   let lastFailure: unknown;
 
@@ -151,7 +155,7 @@ async function signInAsSuperAdmin(
   if (cleanedPhone) {
     if (!isSuperAdminPhone(phone)) {
       if (lastFailure) throw lastFailure;
-      throw new Error("Enter a valid Iraqi phone (e.g. 0750xxxxxxx)");
+      throw new Error(t(locale, "authInvalidIraqPhone"));
     }
     try {
       await signInWithPhonePassword(auth, phone, password);
@@ -174,6 +178,7 @@ function AuthForm() {
   const searchParams = useSearchParams();
   const nextPath = safeNextPath(searchParams.get("next"));
   const { user, me, loading, refreshMe } = useAuth();
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -214,9 +219,7 @@ function AuthForm() {
     try {
       const auth = getFirebaseAuth();
       if (!auth) {
-        throw new Error(
-          "Firebase failed to initialize. Check the web app config.",
-        );
+        throw new Error(t(locale, "authFirebaseInitFailed"));
       }
 
       const trimmedEmail = email.trim();
@@ -224,10 +227,10 @@ function AuthForm() {
 
       if (mode === "register") {
         if (!isValidIraqMobile(trimmedPhone)) {
-          throw new Error("Enter a valid Iraqi phone (e.g. 0750xxxxxxx)");
+          throw new Error(t(locale, "authInvalidIraqPhone"));
         }
         if (!trimmedEmail) {
-          throw new Error("Email is required to register");
+          throw new Error(t(locale, "authEmailRequired"));
         }
         const normalizedPhone = normalizeIraqPhone(trimmedPhone);
         const cred = await createUserWithEmailAndPassword(
@@ -248,7 +251,7 @@ function AuthForm() {
             phone: normalizedPhone,
             displayName: displayName.trim() || trimmedEmail.split("@")[0],
             ...(accountType === "showroom"
-              ? { showroomName: displayName.trim() || "Showroom" }
+              ? { showroomName: displayName.trim() || t(locale, "showroomDefaultName") }
               : {}),
           });
         } catch (registerErr) {
@@ -261,7 +264,7 @@ function AuthForm() {
           throw registerErr;
         }
       } else if (isSuperAdminUser(trimmedEmail, trimmedPhone)) {
-        await signInAsSuperAdmin(auth, trimmedEmail, trimmedPhone, password);
+        await signInAsSuperAdmin(auth, trimmedEmail, trimmedPhone, password, locale);
       } else if (trimmedEmail.includes("@")) {
         try {
           await signInWithEmailAndPassword(auth, trimmedEmail, password);
@@ -273,7 +276,7 @@ function AuthForm() {
         }
       } else {
         if (!isValidIraqMobile(trimmedPhone)) {
-          throw new Error("Enter a valid Iraqi phone (e.g. 0750xxxxxxx)");
+          throw new Error(t(locale, "authInvalidIraqPhone"));
         }
         await signInWithPhonePassword(auth, trimmedPhone, password);
       }
@@ -286,7 +289,7 @@ function AuthForm() {
 
       await redirectAfterAuth();
     } catch (err) {
-      setError(mapAuthError(err));
+      setError(mapAuthError(err, locale));
     } finally {
       setBusy(false);
     }
@@ -297,21 +300,19 @@ function AuthForm() {
     setInfo(null);
     const trimmed = email.trim();
     if (!trimmed) {
-      setError("Enter your email above, then click Forgot password");
+      setError(t(locale, "authForgotPasswordHint"));
       return;
     }
     setBusy(true);
     try {
       const auth = getFirebaseAuth();
       if (!auth) {
-        throw new Error(
-          "Firebase failed to initialize. Check the web app config.",
-        );
+        throw new Error(t(locale, "authFirebaseInitFailed"));
       }
       await sendPasswordResetEmail(auth, trimmed);
-      setInfo("Password reset email sent. Check your inbox.");
+      setInfo(t(locale, "authResetEmailSent"));
     } catch (err) {
-      setError(mapAuthError(err));
+      setError(mapAuthError(err, locale));
     } finally {
       setBusy(false);
     }
@@ -329,12 +330,12 @@ function AuthForm() {
             <IraqMotorsWordmark />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">
-            {mode === "login" ? "Sign in" : "Create account"}
+            {mode === "login" ? t(locale, "signIn") : t(locale, "authRegisterTitle")}
           </h1>
           <p className="mt-2 text-sm text-muted">
             {mode === "login"
-              ? "Sign in with your phone and password. Email is for super admin."
-              : "Create an account with email, phone, and password."}
+              ? t(locale, "authSignInSubtitle")
+              : t(locale, "authRegisterSubtitle")}
           </p>
         </div>
 
@@ -344,7 +345,7 @@ function AuthForm() {
               <input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Display name"
+                placeholder={t(locale, "dashDisplayName")}
                 className={fieldClass}
               />
               <select
@@ -354,8 +355,8 @@ function AuthForm() {
                 }
                 className={fieldClass}
               >
-                <option value="individual">Individual</option>
-                <option value="showroom">Showroom</option>
+                <option value="individual">{t(locale, "accountTypeIndividual")}</option>
+                <option value="showroom">{t(locale, "accountTypeShowroom")}</option>
               </select>
             </>
           ) : null}
@@ -365,7 +366,9 @@ function AuthForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={
-              mode === "login" ? "Email (super admin)" : "Email"
+              mode === "login"
+                ? t(locale, "authEmailLoginPlaceholder")
+                : t(locale, "helpEmail")
             }
             required={mode === "register"}
             className={fieldClass}
@@ -385,7 +388,7 @@ function AuthForm() {
               className={`${fieldClass} ps-16`}
               autoComplete="tel"
               inputMode="tel"
-              aria-label="Phone number"
+              aria-label={t(locale, "authPhoneLabel")}
             />
           </div>
 
@@ -396,7 +399,7 @@ function AuthForm() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
+              placeholder={t(locale, "authPassword")}
               className={fieldClass}
               autoComplete={
                 mode === "login" ? "current-password" : "new-password"
@@ -407,7 +410,7 @@ function AuthForm() {
               onClick={() => setShowPassword((v) => !v)}
               className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted"
             >
-              {showPassword ? "Hide" : "Show"}
+              {showPassword ? t(locale, "hide") : t(locale, "show")}
             </button>
           </div>
           {mode === "login" ? (
@@ -418,7 +421,7 @@ function AuthForm() {
                 onClick={() => void onForgotPassword()}
                 className="text-xs font-semibold text-muted hover:text-primary disabled:opacity-60"
               >
-                Forgot password?
+                {t(locale, "authForgotPassword")}
               </button>
             </div>
           ) : null}
@@ -443,7 +446,11 @@ function AuthForm() {
             disabled={busy}
             className="mt-2 w-full rounded-[12px] bg-primary py-3.5 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110 disabled:opacity-60"
           >
-            {busy ? "Please wait…" : mode === "login" ? "Sign in" : "Register"}
+            {busy
+              ? t(locale, "pleaseWait")
+              : mode === "login"
+                ? t(locale, "signIn")
+                : t(locale, "authRegisterButton")}
           </button>
         </form>
         <button
@@ -456,8 +463,8 @@ function AuthForm() {
           }}
         >
           {mode === "login"
-            ? "Need an account? Register"
-            : "Already have an account? Sign in"}
+            ? t(locale, "authSwitchToRegister")
+            : t(locale, "authSwitchToSignIn")}
         </button>
       </div>
     </div>
@@ -468,7 +475,7 @@ export default function AuthPage() {
   return (
     <Suspense
       fallback={
-        <p className="px-[4%] pt-28 text-center text-muted">Loading…</p>
+        <LoadingFallback className="px-[4%] pt-28 text-center text-muted" />
       }
     >
       <AuthForm />

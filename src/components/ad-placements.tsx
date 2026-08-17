@@ -11,10 +11,10 @@ import {
   type Advertise,
   type AdViewport,
 } from "@/lib/ads";
+import { t, type Locale } from "@/lib/i18n";
 
 function SponsoredLabel({ locale }: { locale?: string }) {
-  const label =
-    locale === "ar" ? "إعلان" : locale === "ku" ? "ڕیکلام" : "Sponsored";
+  const label = t((locale as Locale) || "en", "sponsored");
   return (
     <span className="pointer-events-none absolute start-3 top-3 z-10 rounded-md bg-black/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
       {label}
@@ -122,7 +122,7 @@ export function AdHomeBanner({
     description,
     imageUrl,
     targetLink,
-  });
+  }, (locale as Locale) || "en");
   const aspect =
     viewport === "desktop" ? "aspect-[1440/180]" : "aspect-[1200/390]";
 

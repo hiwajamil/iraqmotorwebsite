@@ -10,8 +10,11 @@ import {
 } from "@/lib/admin";
 import { AdReviewModal } from "@/components/admin-ad-review";
 import { formatMoney } from "@/lib/car-pricing-trust";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 export default function AdminApprovalsPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [items, setItems] = useState<Car[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -32,7 +35,7 @@ export default function AdminApprovalsPage() {
       setError(null);
       setSuccess(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed");
+      setError(e instanceof Error ? e.message : t(locale, "failedGeneric"));
     }
   }
 
@@ -48,7 +51,11 @@ export default function AdminApprovalsPage() {
     if (
       (status === "rejected" || status === "expired") &&
       !window.confirm(
-        `${status === "rejected" ? "Reject" : "Expire"} ${ids.length} listing(s)?`,
+        t(
+          locale,
+          status === "rejected" ? "confirmRejectListings" : "confirmExpireListings",
+          { count: ids.length },
+        ),
       )
     ) {
       return;
@@ -59,17 +66,22 @@ export default function AdminApprovalsPage() {
       const res = await setCarStatuses(ids, status);
       const done = new Set(res.updated);
       if (res.failed?.length) {
-        setError(`Failed for ${res.failed.length} listing(s)`);
+        setError(t(locale, "failedForListings", { count: res.failed.length }));
       } else {
         setError(null);
       }
-      const label =
-        status === "active"
-          ? "approved"
-          : status === "rejected"
-            ? "rejected"
-            : "expired";
-      if (done.size) setSuccess(`${done.size} listing(s) ${label}`);
+      if (done.size)
+        setSuccess(
+          t(
+            locale,
+            status === "active"
+              ? "listingsApproved"
+              : status === "rejected"
+                ? "listingsRejected"
+                : "listingsExpired",
+            { count: done.size },
+          ),
+        );
       setItems((list) => list.filter((c) => !done.has(c.id)));
       setSelected((prev) => {
         const next = new Set(prev);
@@ -78,7 +90,7 @@ export default function AdminApprovalsPage() {
       });
       if (review && done.has(review.id)) setReview(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed");
+      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
     } finally {
       setBusy(false);
     }
@@ -142,9 +154,9 @@ export default function AdminApprovalsPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Approvals</h1>
+          <h1 className="text-3xl font-bold">{t(locale, "adminApprovalsTitle")}</h1>
           <p className="mt-1 text-sm text-muted">
-            Review and publish pending listings ({items.length})
+            {t(locale, "adminApprovalsSubtitle", { count: items.length })}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -153,14 +165,14 @@ export default function AdminApprovalsPage() {
             onClick={() => setView(view === "list" ? "cities" : "list")}
             className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
           >
-            {view === "list" ? "By city" : "List view"}
+            {view === "list" ? t(locale, "viewByCity") : t(locale, "viewList")}
           </button>
           <button
             type="button"
             onClick={() => void load()}
             className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
           >
-            Refresh
+            {t(locale, "refresh")}
           </button>
         </div>
       </div>
@@ -169,7 +181,7 @@ export default function AdminApprovalsPage() {
         <input
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter by brand, city, seller…"
+          placeholder={t(locale, "listingsFilterPlaceholder")}
           className="w-full max-w-md rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
         />
         {cityFilter ? (
@@ -178,7 +190,12 @@ export default function AdminApprovalsPage() {
             onClick={() => setCityFilter(null)}
             className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
           >
-            City: {cityFilter} ×
+            {t(locale, "cityFilterChip", {
+              name:
+                cityFilter === "Unknown"
+                  ? t(locale, "unknownCity")
+                  : cityFilter,
+            })}
           </button>
         ) : null}
       </div>
@@ -186,7 +203,7 @@ export default function AdminApprovalsPage() {
       {selectedVisible.length > 0 ? (
         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-[var(--radius-card)] bg-card p-3 ring-1 ring-outline">
           <span className="text-xs font-semibold">
-            {selectedVisible.length} selected
+            {t(locale, "selectedCount", { count: selectedVisible.length })}
           </span>
           <button
             type="button"
@@ -194,7 +211,7 @@ export default function AdminApprovalsPage() {
             className="rounded-[var(--radius-control)] bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary disabled:opacity-50"
             onClick={() => void setStatus(selectedVisible, "active")}
           >
-            Approve selected
+            {t(locale, "approveSelected")}
           </button>
           <button
             type="button"
@@ -202,7 +219,7 @@ export default function AdminApprovalsPage() {
             className="rounded-[var(--radius-control)] bg-input px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
             onClick={() => void setStatus(selectedVisible, "rejected")}
           >
-            Reject selected
+            {t(locale, "rejectSelected")}
           </button>
           <button
             type="button"
@@ -210,14 +227,14 @@ export default function AdminApprovalsPage() {
             className="rounded-[var(--radius-control)] bg-input px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
             onClick={() => void setStatus(selectedVisible, "expired")}
           >
-            Expire selected
+            {t(locale, "expireSelected")}
           </button>
           <button
             type="button"
             className="text-xs font-semibold text-muted"
             onClick={() => setSelected(new Set())}
           >
-            Clear
+            {t(locale, "clearSelection")}
           </button>
         </div>
       ) : null}
@@ -236,7 +253,7 @@ export default function AdminApprovalsPage() {
       {view === "cities" ? (
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {cities.length === 0 ? (
-            <p className="text-sm text-muted">Queue is empty.</p>
+            <p className="text-sm text-muted">{t(locale, "queueEmpty")}</p>
           ) : (
             cities.map((group) => (
               <button
@@ -248,9 +265,13 @@ export default function AdminApprovalsPage() {
                 }}
                 className="rounded-[var(--radius-card)] bg-card p-4 text-left ring-1 ring-outline transition hover:ring-primary"
               >
-                <p className="font-semibold">{group.city}</p>
+                <p className="font-semibold">
+                  {group.city === "Unknown"
+                    ? t(locale, "unknownCity")
+                    : group.city}
+                </p>
                 <p className="mt-2 text-2xl font-bold">{group.items.length}</p>
-                <p className="text-xs text-muted">pending</p>
+                <p className="text-xs text-muted">{t(locale, "pendingLabel")}</p>
               </button>
             ))
           )}
@@ -260,12 +281,14 @@ export default function AdminApprovalsPage() {
           {visible.length === 0 ? (
             <div className="rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
               <p className="font-semibold">
-                {items.length === 0 ? "Queue is empty" : "No matches"}
+                {items.length === 0
+                  ? t(locale, "queueEmpty")
+                  : t(locale, "noMatches")}
               </p>
               <p className="mt-1 text-sm text-muted">
                 {items.length === 0
-                  ? "New pending listings will show up here for review."
-                  : "Try clearing filters or switching city view."}
+                  ? t(locale, "approvalsEmptyHint")
+                  : t(locale, "approvalsNoMatchesHint")}
               </p>
             </div>
           ) : (
@@ -279,7 +302,7 @@ export default function AdminApprovalsPage() {
                   }
                   onChange={toggleAll}
                 />
-                Select all visible
+                {t(locale, "selectAllVisible")}
               </label>
               {visible.map((car) => {
                 const img = carImage(car);
@@ -303,7 +326,7 @@ export default function AdminApprovalsPage() {
                         />
                       ) : (
                         <div className="flex h-16 w-24 items-center justify-center rounded-lg bg-input text-xs text-muted">
-                          No photo
+                          {t(locale, "noPhoto")}
                         </div>
                       )}
                       <div className="min-w-0">
@@ -325,7 +348,7 @@ export default function AdminApprovalsPage() {
                         className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
                         onClick={() => setReview(car)}
                       >
-                        Review
+                        {t(locale, "review")}
                       </button>
                       <button
                         type="button"
@@ -333,7 +356,7 @@ export default function AdminApprovalsPage() {
                         className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                         onClick={() => void setStatus([car.id], "active")}
                       >
-                        Approve
+                        {t(locale, "approve")}
                       </button>
                       <button
                         type="button"
@@ -341,7 +364,7 @@ export default function AdminApprovalsPage() {
                         className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-50"
                         onClick={() => void setStatus([car.id], "rejected")}
                       >
-                        Reject
+                        {t(locale, "reject")}
                       </button>
                     </div>
                   </div>

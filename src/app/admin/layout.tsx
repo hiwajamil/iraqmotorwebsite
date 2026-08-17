@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { ADMIN_NAV } from "@/lib/admin";
 import { getFirebaseAuth, sendEmailVerification } from "@/lib/firebase";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 export default function AdminLayout({
   children,
@@ -15,6 +17,7 @@ export default function AdminLayout({
   const { user, me, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState<string | null>(null);
   const firebaseUser = getFirebaseAuth()?.currentUser;
@@ -34,16 +37,20 @@ export default function AdminLayout({
     setVerifyMsg(null);
     try {
       await sendEmailVerification(current);
-      setVerifyMsg("Verification email sent. Check your inbox, then refresh.");
+      setVerifyMsg(t(locale, "adminVerificationEmailSent"));
     } catch (err) {
-      setVerifyMsg(err instanceof Error ? err.message : "Could not send email");
+      setVerifyMsg(
+        err instanceof Error ? err.message : t(locale, "adminCouldNotSendEmail"),
+      );
     } finally {
       setVerifyBusy(false);
     }
   }
 
   if (loading) {
-    return <p className="px-4 py-16 text-center text-muted">Loading…</p>;
+    return (
+      <p className="px-4 py-16 text-center text-muted">{t(locale, "loading")}</p>
+    );
   }
 
   if (!user) {
@@ -54,21 +61,21 @@ export default function AdminLayout({
   if (!me) {
     if (loading) {
       return (
-        <p className="px-4 py-16 text-center text-muted">Checking access…</p>
+        <p className="px-4 py-16 text-center text-muted">
+          {t(locale, "adminCheckingAccess")}
+        </p>
       );
     }
     return (
       <div className="mx-auto max-w-lg px-[4%] pb-16 pt-24 text-center">
-        <h1 className="text-2xl font-bold">Access denied</h1>
+        <h1 className="text-2xl font-bold">{t(locale, "adminAccessDenied")}</h1>
         <p className="mt-2 text-sm text-muted">
-          Could not verify admin access. Sign in again with a verified
-          super-admin account.
+          {t(locale, "adminAccessVerifyFailed")}
         </p>
         {!emailVerified ? (
           <div className="mt-4 space-y-2">
             <p className="text-sm text-muted">
-              Your email is not verified yet. Super-admin access requires a
-              verified email.
+              {t(locale, "adminEmailNotVerified")}
             </p>
             <button
               type="button"
@@ -76,7 +83,9 @@ export default function AdminLayout({
               onClick={() => void resendVerification()}
               className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
             >
-              {verifyBusy ? "Sending…" : "Resend verification email"}
+              {verifyBusy
+                ? t(locale, "sending")
+                : t(locale, "adminResendVerification")}
             </button>
             {verifyMsg ? (
               <p className="text-xs text-muted">{verifyMsg}</p>
@@ -84,7 +93,7 @@ export default function AdminLayout({
           </div>
         ) : null}
         <Link href="/auth" className="mt-6 inline-block text-sm font-semibold text-primary">
-          Sign in
+          {t(locale, "signIn")}
         </Link>
       </div>
     );
@@ -93,14 +102,14 @@ export default function AdminLayout({
   if (!me.isSuperAdmin) {
     return (
       <div className="mx-auto max-w-lg px-[4%] pb-16 pt-24 text-center">
-        <h1 className="text-2xl font-bold">Access denied</h1>
+        <h1 className="text-2xl font-bold">{t(locale, "adminAccessDenied")}</h1>
         <p className="mt-2 text-sm text-muted">
-          Super admin access is required for this area.
+          {t(locale, "adminSuperAdminRequired")}
         </p>
         {!emailVerified ? (
           <div className="mt-4 space-y-2">
             <p className="text-sm text-muted">
-              Verify your email if you expect admin access.
+              {t(locale, "adminVerifyEmailForAccess")}
             </p>
             <button
               type="button"
@@ -108,7 +117,9 @@ export default function AdminLayout({
               onClick={() => void resendVerification()}
               className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
             >
-              {verifyBusy ? "Sending…" : "Resend verification email"}
+              {verifyBusy
+                ? t(locale, "sending")
+                : t(locale, "adminResendVerification")}
             </button>
             {verifyMsg ? (
               <p className="text-xs text-muted">{verifyMsg}</p>
@@ -116,7 +127,7 @@ export default function AdminLayout({
           </div>
         ) : null}
         <Link href="/" className="mt-6 inline-block text-sm font-semibold text-primary">
-          Back to home
+          {t(locale, "adminBackToHome")}
         </Link>
       </div>
     );
@@ -126,7 +137,7 @@ export default function AdminLayout({
     <div className="mx-auto grid w-full max-w-none gap-6 px-4 pb-16 pt-24 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8 lg:px-8 xl:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="space-y-1 lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
         <p className="mb-3 hidden text-xs font-bold uppercase tracking-wider text-muted lg:block">
-          Admin
+          {t(locale, "admin")}
         </p>
         <nav className="scrollbar-none -mx-4 flex gap-1 overflow-x-auto border-b border-outline px-4 pb-3 sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-1 lg:overflow-visible lg:border-0 lg:px-0 lg:pb-0">
           {ADMIN_NAV.map((item) => {
@@ -144,7 +155,7 @@ export default function AdminLayout({
                     : "hover:bg-input"
                 }`}
               >
-                {item.label}
+                {t(locale, item.labelKey)}
               </Link>
             );
           })}
@@ -154,13 +165,13 @@ export default function AdminLayout({
             href="/cars"
             className="block rounded-[var(--radius-control)] px-3 py-2 text-xs font-medium text-muted hover:bg-input hover:text-foreground"
           >
-            Browse cars
+            {t(locale, "browseCars")}
           </Link>
           <Link
             href="/showrooms"
             className="block rounded-[var(--radius-control)] px-3 py-2 text-xs font-medium text-muted hover:bg-input hover:text-foreground"
           >
-            Public showrooms
+            {t(locale, "adminPublicShowrooms")}
           </Link>
         </div>
       </aside>

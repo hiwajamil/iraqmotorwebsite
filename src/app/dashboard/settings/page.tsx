@@ -190,7 +190,7 @@ export default function DashboardSettingsPage() {
               onClick={() => void saveProfile()}
               className="rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary disabled:opacity-60"
             >
-              {saving ? "…" : t(locale, "dashSaveProfile")}
+              {saving ? t(locale, "saving") : t(locale, "dashSaveProfile")}
             </button>
           </div>
         </div>

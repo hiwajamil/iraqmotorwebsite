@@ -4,8 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { groupByCity, type AdminUser } from "@/lib/admin";
+import { t, accountTypeLabel } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 export default function AdminUsersPage() {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [items, setItems] = useState<AdminUser[]>([]);
   const [city, setCity] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +30,7 @@ export default function AdminUsersPage() {
       setItems(d.items ?? []);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed");
+      setError(e instanceof Error ? e.message : t(locale, "failedGeneric"));
     }
   }
 
@@ -40,9 +43,9 @@ export default function AdminUsersPage() {
     const next = !u.banned;
     if (
       !window.confirm(
-        next
-          ? `Ban ${u.displayName || u.showroomName || u.uid}?`
-          : `Unban ${u.displayName || u.showroomName || u.uid}?`,
+        t(locale, next ? "confirmBan" : "confirmUnban", {
+          name: u.displayName || u.showroomName || u.uid,
+        }),
       )
     ) {
       return;
@@ -60,7 +63,7 @@ export default function AdminUsersPage() {
         ),
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ban failed");
+      setError(e instanceof Error ? e.message : t(locale, "banFailed"));
     } finally {
       setBusyId(null);
     }
@@ -92,7 +95,7 @@ export default function AdminUsersPage() {
       );
       setEditing(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed");
+      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
     } finally {
       setBusyId(null);
     }
@@ -110,9 +113,9 @@ export default function AdminUsersPage() {
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Users</h1>
+          <h1 className="text-3xl font-bold">{t(locale, "adminUsersTitle")}</h1>
           <p className="mt-1 text-sm text-muted">
-            Ban, change account type, or update city ({items.length})
+            {t(locale, "adminUsersSubtitle", { count: items.length })}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -121,13 +124,13 @@ export default function AdminUsersPage() {
             onClick={() => setView(view === "list" ? "cities" : "list")}
             className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
           >
-            {view === "list" ? "By city" : "List view"}
+            {view === "list" ? t(locale, "viewByCity") : t(locale, "viewList")}
           </button>
           <Link
             href="/admin/showrooms"
             className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold text-primary"
           >
-            Showrooms →
+            {t(locale, "showrooms")}
           </Link>
         </div>
       </div>
@@ -142,14 +145,14 @@ export default function AdminUsersPage() {
         <input
           value={city}
           onChange={(e) => setCity(e.target.value)}
-          placeholder="Filter by city (server)"
+          placeholder={t(locale, "filterByCityServer")}
           className="w-full max-w-sm rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
         />
         <button
           type="submit"
           className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary"
         >
-          Filter
+          {t(locale, "filter")}
         </button>
         {cityFilter ? (
           <button
@@ -157,7 +160,12 @@ export default function AdminUsersPage() {
             onClick={() => setCityFilter(null)}
             className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
           >
-            City: {cityFilter} ×
+            {t(locale, "cityFilterChip", {
+              name:
+                cityFilter === "Unknown"
+                  ? t(locale, "unknownCity")
+                  : cityFilter,
+            })}
           </button>
         ) : null}
       </form>
@@ -168,8 +176,10 @@ export default function AdminUsersPage() {
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {cities.length === 0 ? (
             <div className="rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline sm:col-span-2 lg:col-span-3">
-              <p className="font-semibold">No users found</p>
-              <p className="mt-1 text-sm text-muted">Try clearing the city filter.</p>
+              <p className="font-semibold">{t(locale, "usersEmptyTitle")}</p>
+              <p className="mt-1 text-sm text-muted">
+                {t(locale, "usersEmptyHint")}
+              </p>
             </div>
           ) : (
             cities.map((group) => (
@@ -182,9 +192,13 @@ export default function AdminUsersPage() {
                 }}
                 className="rounded-[var(--radius-card)] bg-card p-4 text-left ring-1 ring-outline transition hover:ring-primary"
               >
-                <p className="font-semibold">{group.city}</p>
+                <p className="font-semibold">
+                  {group.city === "Unknown"
+                    ? t(locale, "unknownCity")
+                    : group.city}
+                </p>
                 <p className="mt-2 text-2xl font-bold">{group.items.length}</p>
-                <p className="text-xs text-muted">users</p>
+                <p className="text-xs text-muted">{t(locale, "usersCountLabel")}</p>
               </button>
             ))
           )}
@@ -194,19 +208,19 @@ export default function AdminUsersPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-input text-xs uppercase text-muted">
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Phone</th>
-                <th className="px-4 py-3">City</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3">{t(locale, "colName")}</th>
+                <th className="px-4 py-3">{t(locale, "colPhone")}</th>
+                <th className="px-4 py-3">{t(locale, "colCity")}</th>
+                <th className="px-4 py-3">{t(locale, "colType")}</th>
+                <th className="px-4 py-3">{t(locale, "colStatus")}</th>
+                <th className="px-4 py-3">{t(locale, "colActions")}</th>
               </tr>
             </thead>
             <tbody>
               {visible.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-muted">
-                    No users found.
+                    {t(locale, "usersEmptyTitle")}
                   </td>
                 </tr>
               ) : (
@@ -241,11 +255,15 @@ export default function AdminUsersPage() {
                           }
                           className="rounded bg-input px-2 py-1 text-xs"
                         >
-                          <option value="individual">individual</option>
-                          <option value="showroom">showroom</option>
+                          <option value="individual">
+                            {accountTypeLabel(locale, "individual")}
+                          </option>
+                          <option value="showroom">
+                            {accountTypeLabel(locale, "showroom")}
+                          </option>
                         </select>
                       ) : (
-                        u.accountType || "—"
+                        accountTypeLabel(locale, u.accountType) || "—"
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -254,7 +272,9 @@ export default function AdminUsersPage() {
                           u.banned ? "text-red-600" : "text-muted"
                         }`}
                       >
-                        {u.banned ? "Banned" : "Active"}
+                        {u.banned
+                          ? t(locale, "statusBanned")
+                          : t(locale, "statusActive")}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -267,14 +287,14 @@ export default function AdminUsersPage() {
                               className="text-xs font-semibold text-primary disabled:opacity-50"
                               onClick={() => void saveEdit(u.uid)}
                             >
-                              Save
+                              {t(locale, "save")}
                             </button>
                             <button
                               type="button"
                               className="text-xs font-semibold text-muted"
                               onClick={() => setEditing(null)}
                             >
-                              Cancel
+                              {t(locale, "dashCancel")}
                             </button>
                           </>
                         ) : (
@@ -283,7 +303,7 @@ export default function AdminUsersPage() {
                             className="text-xs font-semibold text-muted hover:text-foreground"
                             onClick={() => startEdit(u)}
                           >
-                            Edit
+                            {t(locale, "edit")}
                           </button>
                         )}
                         <button
@@ -292,13 +312,13 @@ export default function AdminUsersPage() {
                           className="text-xs font-semibold text-primary disabled:opacity-50"
                           onClick={() => void toggleBan(u)}
                         >
-                          {u.banned ? "Unban" : "Ban"}
+                          {u.banned ? t(locale, "unban") : t(locale, "ban")}
                         </button>
                         <Link
                           href={`/admin/listings?sellerId=${encodeURIComponent(u.uid)}`}
                           className="text-xs font-semibold text-muted hover:text-foreground"
                         >
-                          Ads
+                          {t(locale, "userAdsLink")}
                         </Link>
                       </div>
                     </td>

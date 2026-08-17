@@ -60,9 +60,9 @@ body {
   opacity: 1;
 }
 
-.scrollbar-none {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--primary);
 }
 .scrollbar-none::-webkit-scrollbar {
   display: none;
@@ -86,6 +86,10 @@ body {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+.widget-pop {
+  animation: widget-pop 280ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

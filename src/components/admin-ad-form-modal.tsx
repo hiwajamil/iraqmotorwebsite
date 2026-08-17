@@ -8,6 +8,8 @@ import {
   adIsActive,
   type AdvertiseAdmin,
 } from "@/lib/ads";
+import { t } from "@/lib/i18n";
+import { useAppSelector } from "@/store/hooks";
 
 export type AdFormState = {
   title: string;
@@ -78,6 +80,7 @@ export function AdminAdFormModal({
   onClose: () => void;
   onSaved: (ad: AdvertiseAdmin, created: boolean) => void;
 }) {
+  const locale = useAppSelector((s) => s.preferences.locale);
   const [form, setForm] = useState<AdFormState>(emptyAdForm);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -127,12 +130,12 @@ export function AdminAdFormModal({
     e.preventDefault();
     const body = toPayload(form);
     if (!body.title) {
-      setError("Title is required");
+      setError(t(locale, "adTitleRequired"));
       return;
     }
     if (body.startDate && body.endDate) {
       if (new Date(body.endDate).getTime() < new Date(body.startDate).getTime()) {
-        setError("End date must be on or after the start date");
+        setError(t(locale, "adEndDateInvalid"));
         return;
       }
     }
@@ -151,7 +154,7 @@ export function AdminAdFormModal({
       }
       onSaved(saved, !ad?.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save advertisement");
+      setError(err instanceof Error ? err.message : t(locale, "couldNotSaveAd"));
     } finally {
       setBusy(false);
     }
@@ -173,11 +176,11 @@ export function AdminAdFormModal({
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold">
-              {editing ? "Edit advertisement" : "New advertisement"}
+              {editing
+                ? t(locale, "editAdvertisement")
+                : t(locale, "newAdvertisement")}
             </h2>
-            <p className="mt-1 text-xs text-muted">
-              Live ads replace the iraqMotors house banner on the matching slot.
-            </p>
+            <p className="mt-1 text-xs text-muted">{t(locale, "adFormHint")}</p>
           </div>
           <button
             type="button"
@@ -185,7 +188,7 @@ export function AdminAdFormModal({
             onClick={onClose}
             className="rounded-[var(--radius-control)] bg-input px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
           >
-            Close
+            {t(locale, "close")}
           </button>
         </div>
 
@@ -197,18 +200,18 @@ export function AdminAdFormModal({
 
         <div className="mt-5 space-y-4">
           <label className="block text-sm">
-            <span className="font-medium">Title</span>
+            <span className="font-medium">{t(locale, "adFieldTitle")}</span>
             <input
               value={form.title}
               onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
               className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
-              placeholder="iraqMotors spring campaign"
+              placeholder={t(locale, "adTitlePlaceholder")}
               required
             />
           </label>
 
           <label className="block text-sm">
-            <span className="font-medium">Description</span>
+            <span className="font-medium">{t(locale, "adFieldDescription")}</span>
             <textarea
               value={form.description}
               onChange={(e) =>
@@ -216,24 +219,24 @@ export function AdminAdFormModal({
               }
               rows={2}
               className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
-              placeholder="Short line shown if the image fails to load"
+              placeholder={t(locale, "adDescriptionPlaceholder")}
             />
           </label>
 
           <label className="block text-sm">
-            <span className="font-medium">Target link</span>
+            <span className="font-medium">{t(locale, "adFieldTargetLink")}</span>
             <input
               value={form.targetLink}
               onChange={(e) =>
                 setForm((p) => ({ ...p, targetLink: e.target.value }))
               }
               className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
-              placeholder="/sell or https://…"
+              placeholder={t(locale, "adTargetLinkPlaceholder")}
             />
           </label>
 
           <label className="block text-sm">
-            <span className="font-medium">Slot position</span>
+            <span className="font-medium">{t(locale, "adFieldSlot")}</span>
             <select
               value={form.slotPosition}
               onChange={(e) =>
@@ -243,7 +246,7 @@ export function AdminAdFormModal({
             >
               {AD_SLOTS.map((slot) => (
                 <option key={slot.key} value={slot.key}>
-                  {slot.label}
+                  {t(locale, slot.labelKey)}
                 </option>
               ))}
             </select>
@@ -251,7 +254,7 @@ export function AdminAdFormModal({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">
-              <span className="font-medium">Start date</span>
+              <span className="font-medium">{t(locale, "adFieldStartDate")}</span>
               <input
                 type="datetime-local"
                 value={form.startDate}
@@ -262,7 +265,7 @@ export function AdminAdFormModal({
               />
             </label>
             <label className="block text-sm">
-              <span className="font-medium">End date</span>
+              <span className="font-medium">{t(locale, "adFieldEndDate")}</span>
               <input
                 type="datetime-local"
                 value={form.endDate}
@@ -273,12 +276,10 @@ export function AdminAdFormModal({
               />
             </label>
           </div>
-          <p className="text-xs text-muted">
-            Leave dates empty to keep the ad eligible whenever it is active.
-          </p>
+          <p className="text-xs text-muted">{t(locale, "adDatesHint")}</p>
 
           <div>
-            <p className="text-sm font-medium">Banner image</p>
+            <p className="text-sm font-medium">{t(locale, "adFieldBannerImage")}</p>
             {preview ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -288,7 +289,7 @@ export function AdminAdFormModal({
               />
             ) : (
               <div className="mt-2 flex h-28 items-center justify-center rounded-xl bg-input text-xs text-muted ring-1 ring-outline">
-                No image selected
+                {t(locale, "noImageSelected")}
               </div>
             )}
             <input
@@ -307,13 +308,12 @@ export function AdminAdFormModal({
               className="mt-2 w-full text-xs"
             />
             <p className="mt-1 text-xs text-muted">
-              JPEG, PNG, WebP, or GIF. Uploaded to Cloudflare R2 via{" "}
-              <code>/admin/ads/:id/image</code>.
+              {t(locale, "adImageUploadHint")}
             </p>
           </div>
 
           <label className="flex items-center justify-between gap-3 rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm">
-            <span className="font-medium">Active</span>
+            <span className="font-medium">{t(locale, "adFieldActive")}</span>
             <input
               type="checkbox"
               checked={form.isActive}
@@ -332,7 +332,7 @@ export function AdminAdFormModal({
             onClick={onClose}
             className="rounded-[var(--radius-control)] bg-input px-4 py-2 text-sm font-semibold disabled:opacity-60"
           >
-            Cancel
+            {t(locale, "dashCancel")}
           </button>
           <button
             type="submit"
@@ -340,12 +340,12 @@ export function AdminAdFormModal({
             className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
           >
             {uploading
-              ? "Uploading image…"
+              ? t(locale, "uploadingImage")
               : busy
-                ? "Saving…"
+                ? t(locale, "saving")
                 : editing
-                  ? "Save changes"
-                  : "Create ad"}
+                  ? t(locale, "saveChanges")
+                  : t(locale, "createAd")}
           </button>
         </div>
       </form>
