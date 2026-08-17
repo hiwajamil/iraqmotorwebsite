@@ -34,8 +34,11 @@ import {
 } from "@/lib/search-filters";
 import { useAppSelector } from "@/store/hooks";
 
+const CONTROL =
+  "h-12 w-full min-w-0 rounded-lg text-sm font-medium outline-none";
+
 function triggerClass(active: boolean) {
-  return `inline-flex w-full min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2.5 text-start text-sm font-medium ring-1 transition ${
+  return `inline-flex ${CONTROL} items-center justify-between gap-2 px-3 text-start ring-1 transition ${
     active
       ? "bg-primary/10 text-primary ring-primary"
       : "bg-input text-foreground ring-outline/70 hover:ring-primary/40"
@@ -59,7 +62,7 @@ function FilterMenu({
 }) {
   const locale = useAppSelector((s) => s.preferences.locale);
   return (
-    <Popover className="relative min-w-0">
+    <Popover className="relative h-12 w-full min-w-0">
       <PopoverButton type="button" className={triggerClass(active)}>
         <span className="truncate">{summary || label}</span>
         <ChevronDown className="size-4 shrink-0 opacity-60" aria-hidden />
@@ -132,7 +135,7 @@ function NumberPair({
             const n = Number(raw);
             onFrom(raw === "" || !Number.isFinite(n) ? null : n);
           }}
-          className="w-full rounded-lg bg-input px-3 py-2 text-sm outline-none ring-1 ring-outline/70 focus:ring-2 focus:ring-primary"
+          className="h-12 w-full rounded-lg bg-input px-3 text-sm outline-none ring-1 ring-outline/70 focus:ring-2 focus:ring-primary"
         />
       </label>
       <label className="block">
@@ -151,7 +154,7 @@ function NumberPair({
             const n = Number(raw);
             onTo(raw === "" || !Number.isFinite(n) ? null : n);
           }}
-          className="w-full rounded-lg bg-input px-3 py-2 text-sm outline-none ring-1 ring-outline/70 focus:ring-2 focus:ring-primary"
+          className="h-12 w-full rounded-lg bg-input px-3 text-sm outline-none ring-1 ring-outline/70 focus:ring-2 focus:ring-primary"
         />
       </label>
     </div>
@@ -289,9 +292,8 @@ export function AdvancedSearchFilter({
       }}
       className="overflow-visible rounded-xl bg-white p-4 shadow-md dark:bg-card dark:ring-1 dark:ring-outline/60"
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-stretch">
-          <div className="lg:w-[220px]">
+      <div className="grid auto-rows-[3rem] grid-cols-1 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-12">
+        <div className="col-span-1 min-w-0 lg:col-span-2">
             <FilterMenu
               label={t(locale, "filterSelectCity")}
               summary={
@@ -309,7 +311,7 @@ export function AdvancedSearchFilter({
                 value={cityQuery}
                 onChange={(e) => setCityQuery(e.target.value)}
                 placeholder={t(locale, "filterSearchCities")}
-                className="mb-2 w-full rounded-lg bg-input px-3 py-2 text-sm outline-none ring-1 ring-outline/70 focus:ring-2 focus:ring-primary"
+                className="mb-2 h-12 w-full rounded-lg bg-input px-3 text-sm outline-none ring-1 ring-outline/70 focus:ring-2 focus:ring-primary"
               />
               <div className="max-h-56 overflow-y-auto">
                 <button
@@ -350,7 +352,7 @@ export function AdvancedSearchFilter({
             </FilterMenu>
           </div>
 
-          <div className="lg:w-[180px]">
+        <div className="col-span-1 min-w-0 lg:col-span-2">
             <FilterMenu
               label={t(locale, "filterModelYear")}
               summary={yearSummary}
@@ -371,30 +373,29 @@ export function AdvancedSearchFilter({
             </FilterMenu>
           </div>
 
-          <div className="relative min-w-0 flex-1">
-            <Search
-              className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted"
-              aria-hidden
-            />
-            <input
-              value={draft.q}
-              onChange={(e) => patch({ q: e.target.value })}
-              placeholder={t(locale, "filterSearchMakeModel")}
-              className="w-full rounded-lg bg-input py-2.5 ps-10 pe-3 text-sm outline-none ring-1 ring-outline/70 focus:ring-2 focus:ring-primary"
-            />
-          </div>
+        <div className="relative col-span-1 min-w-0 lg:col-span-6">
+          <Search
+            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted"
+            aria-hidden
+          />
+          <input
+            value={draft.q}
+            onChange={(e) => patch({ q: e.target.value })}
+            placeholder={t(locale, "filterSearchMakeModel")}
+            className={`${CONTROL} bg-input ps-10 pe-3 ring-1 ring-outline/70 focus:ring-2 focus:ring-primary`}
+          />
+        </div>
 
+        <div className="col-span-1 min-w-0 lg:col-span-2">
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-on-primary shadow-sm hover:brightness-110 lg:w-[120px]"
+            className={`inline-flex ${CONTROL} items-center justify-center gap-2 bg-primary font-semibold text-on-primary shadow-sm hover:brightness-110`}
           >
-            <Search className="size-4" aria-hidden />
+            <Search className="size-4 shrink-0" aria-hidden />
             {t(locale, "filterSearch")}
           </button>
         </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <div className="sm:w-[200px]">
+        <div className="col-span-1 min-w-0 lg:col-span-2">
             <FilterMenu
               label={t(locale, "filterPriceRange", { currency: draft.currency })}
               summary={priceSummary}
@@ -403,13 +404,13 @@ export function AdvancedSearchFilter({
                 patch({ minPrice: null, maxPrice: null, currency: "USD" })
               }
             >
-              <div className="mb-3 flex rounded-lg bg-input p-1 ring-1 ring-outline/60">
+              <div className="mb-3 flex h-12 rounded-lg bg-input p-1 ring-1 ring-outline/60">
                 {(["USD", "IQD"] as const).map((code) => (
                   <button
                     key={code}
                     type="button"
                     onClick={() => patch({ currency: code })}
-                    className={`flex-1 rounded-md py-1.5 text-xs font-semibold ${
+                    className={`flex-1 rounded-md text-xs font-semibold ${
                       draft.currency === code
                         ? "bg-primary text-on-primary"
                         : "text-muted hover:text-foreground"
@@ -434,7 +435,7 @@ export function AdvancedSearchFilter({
             </FilterMenu>
           </div>
 
-          <div className="sm:w-[180px]">
+          <div className="col-span-1 min-w-0 lg:col-span-2">
             <FilterMenu
               label={t(locale, "filterMileageRange")}
               summary={mileageSummary}
@@ -454,7 +455,7 @@ export function AdvancedSearchFilter({
             </FilterMenu>
           </div>
 
-          <div className="sm:w-[160px]">
+          <div className="col-span-1 min-w-0 lg:col-span-2">
             <FilterMenu
               label={t(locale, "filterFuelType")}
               summary={fuelSummary}
@@ -485,7 +486,7 @@ export function AdvancedSearchFilter({
             </FilterMenu>
           </div>
 
-          <div className="sm:w-[160px]">
+          <div className="col-span-1 min-w-0 lg:col-span-2">
             <FilterMenu
               label={t(locale, "filterColor")}
               summary={colorSummary}
@@ -525,7 +526,7 @@ export function AdvancedSearchFilter({
             </FilterMenu>
           </div>
 
-          <div className="sm:w-[160px]">
+          <div className="col-span-1 min-w-0 lg:col-span-2">
             <FilterMenu
               label={t(locale, "filterSeats")}
               summary={seatsSummary}
@@ -560,7 +561,7 @@ export function AdvancedSearchFilter({
             </FilterMenu>
           </div>
 
-          <div className="sm:w-[190px]">
+          <div className="col-span-1 min-w-0 lg:col-span-2">
             <FilterMenu
               label={t(locale, "filterBodyTypes")}
               summary={bodySummary}
@@ -610,27 +611,29 @@ export function AdvancedSearchFilter({
             </FilterMenu>
           </div>
 
+        <div className="col-span-1 min-w-0 lg:col-span-2">
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className={`${triggerClass(moreActive)} sm:w-auto sm:min-w-[150px]`}
+            className={triggerClass(moreActive)}
           >
-            <span className="inline-flex items-center gap-2">
-              <SlidersHorizontal className="size-4" aria-hidden />
+            <span className="inline-flex min-w-0 items-center gap-2 truncate">
+              <SlidersHorizontal className="size-4 shrink-0" aria-hidden />
               {t(locale, "filterMore")}
             </span>
-            <ChevronDown className="size-4 opacity-60" aria-hidden />
+            <ChevronDown className="size-4 shrink-0 opacity-60" aria-hidden />
           </button>
+        </div>
 
-          {hasFilters ? (
-            <button
-              type="button"
-              onClick={clearAll}
-              className="px-2 py-2 text-sm font-semibold text-muted hover:text-primary"
-            >
-              {t(locale, "filterClearAll")}
-            </button>
-          ) : null}
+        <div className="col-span-1 min-w-0 lg:col-span-2">
+          <button
+            type="button"
+            onClick={clearAll}
+            disabled={!hasFilters}
+            className={`inline-flex ${CONTROL} items-center justify-center text-muted ring-1 ring-outline/70 transition hover:text-primary hover:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-40`}
+          >
+            {t(locale, "filterClearAll")}
+          </button>
         </div>
       </div>
 
