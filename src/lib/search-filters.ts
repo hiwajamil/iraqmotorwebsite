@@ -70,6 +70,7 @@ export const COLOR_FILTERS = [
 export type ColorFilterId = (typeof COLOR_FILTERS)[number]["id"];
 
 export type SearchCurrency = "USD" | "IQD";
+export type SearchMileageUnit = "km" | "mi";
 export type SearchCondition = "" | "used" | "new" | "certified";
 export type SearchSellerType = "" | "individual" | "dealer";
 
@@ -83,6 +84,7 @@ export type SearchFilterState = {
   currency: SearchCurrency;
   minMileage: number | null;
   maxMileage: number | null;
+  mileageUnit: SearchMileageUnit;
   seats: number[];
   bodyTypes: BodyTypeFilterId[];
   fuelTypes: FuelTypeFilterId[];
@@ -101,6 +103,7 @@ export const emptySearchFilters = (): SearchFilterState => ({
   currency: "USD",
   minMileage: null,
   maxMileage: null,
+  mileageUnit: "km",
   seats: [],
   bodyTypes: [],
   fuelTypes: [],
@@ -146,6 +149,7 @@ export function parseSearchFilters(
   const fuelRaw = params.get("fuelType") ?? "";
   const colorRaw = params.get("color") ?? "";
   const currencyRaw = (params.get("currency") ?? "").toUpperCase();
+  const mileageUnitRaw = (params.get("mileageUnit") ?? "").toLowerCase();
   const conditionRaw = (params.get("condition") ?? "").toLowerCase();
   const sellerRaw = (params.get("sellerType") ?? "").toLowerCase();
 
@@ -193,6 +197,12 @@ export function parseSearchFilters(
     currency: currencyRaw === "IQD" ? "IQD" : "USD",
     minMileage: optionalInt(params.get("minMileage"), 0, 10_000_000),
     maxMileage: optionalInt(params.get("maxMileage"), 0, 10_000_000),
+    mileageUnit:
+      mileageUnitRaw === "mi" ||
+      mileageUnitRaw === "mile" ||
+      mileageUnitRaw === "miles"
+        ? "mi"
+        : "km",
     seats,
     bodyTypes,
     fuelTypes,
@@ -221,6 +231,9 @@ export function serializeSearchFilters(
   }
   if (filters.maxMileage != null) {
     params.set("maxMileage", String(filters.maxMileage));
+  }
+  if (filters.minMileage != null || filters.maxMileage != null) {
+    params.set("mileageUnit", filters.mileageUnit);
   }
   if (filters.seats.length) params.set("seats", filters.seats.join(","));
   if (filters.bodyTypes.length) {
@@ -277,6 +290,9 @@ export function toCarsApiParams(
   }
   if (filters.minMileage != null) params.minMileage = String(filters.minMileage);
   if (filters.maxMileage != null) params.maxMileage = String(filters.maxMileage);
+  if (filters.minMileage != null || filters.maxMileage != null) {
+    params.mileageUnit = filters.mileageUnit;
+  }
   if (filters.seats.length) params.seats = filters.seats.join(",");
   if (filters.bodyTypes.length) params.bodyType = filters.bodyTypes.join(",");
   if (filters.fuelTypes.length) params.fuelType = filters.fuelTypes.join(",");

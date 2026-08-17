@@ -219,7 +219,11 @@ export function AdvancedSearchFilter({
     : t(locale, "filterPriceRange", { currency: draft.currency });
 
   const mileageSummary = mileageActive
-    ? `${(draft.minMileage ?? 0).toLocaleString()} – ${(draft.maxMileage ?? "∞").toLocaleString()} ${t(locale, "km")}`
+    ? `${(draft.minMileage ?? 0).toLocaleString()} – ${(draft.maxMileage ?? "∞").toLocaleString()} ${
+        draft.mileageUnit === "mi"
+          ? t(locale, "filterMileageMiles")
+          : t(locale, "filterMileageKm")
+      }`
     : t(locale, "filterMileageRange");
 
   const seatsSummary = draft.seats.length
@@ -440,8 +444,28 @@ export function AdvancedSearchFilter({
               label={t(locale, "filterMileageRange")}
               summary={mileageSummary}
               active={mileageActive}
-              onReset={() => patch({ minMileage: null, maxMileage: null })}
+              onReset={() =>
+                patch({ minMileage: null, maxMileage: null, mileageUnit: "km" })
+              }
             >
+              <div className="mb-3 flex h-12 rounded-lg bg-input p-1 ring-1 ring-outline/60">
+                {(["km", "mi"] as const).map((unit) => (
+                  <button
+                    key={unit}
+                    type="button"
+                    onClick={() => patch({ mileageUnit: unit })}
+                    className={`flex-1 rounded-md text-xs font-semibold ${
+                      draft.mileageUnit === unit
+                        ? "bg-primary text-on-primary"
+                        : "text-muted hover:text-foreground"
+                    }`}
+                  >
+                    {unit === "km"
+                      ? t(locale, "filterMileageKm")
+                      : t(locale, "filterMileageMiles")}
+                  </button>
+                ))}
+              </div>
               <NumberPair
                 locale={locale}
                 from={draft.minMileage}
