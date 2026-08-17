@@ -30,6 +30,7 @@ Requires the Express API (default `http://localhost:4000`). See [backend README]
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | |
 | `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Firebase Analytics measurement ID |
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | GA4 gtag stream (`G-…`; same as measurement ID) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key (never the secret). Empty = widget hidden, bot checks skipped until the API secret is also set. |
 
 See [`.env.example`](.env.example). Use `.env.local` for local secrets (gitignored).
 

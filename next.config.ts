@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const PRODUCTION_API = "https://api.iraqmotors.net";
+const IS_PROD =
+  process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 
 function resolveApiOrigin(): string {
   const env = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") || "";
@@ -20,10 +22,100 @@ function resolveApiOrigin(): string {
 
 const API_ORIGIN = resolveApiOrigin();
 
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self' https://*.ngenius-payments.com",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  [
+    "img-src 'self' data: blob:",
+    "https://*.r2.dev",
+    "https://www.google-analytics.com",
+    "https://*.google-analytics.com",
+    "https://www.googletagmanager.com",
+  ].join(" "),
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  [
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval'",
+    "https://challenges.cloudflare.com",
+    "https://www.googletagmanager.com",
+    "https://www.google-analytics.com",
+    "https://www.gstatic.com",
+    "https://apis.google.com",
+  ].join(" "),
+  [
+    "connect-src 'self'",
+    "http://localhost:4000",
+    "http://127.0.0.1:4000",
+    "https://api.iraqmotors.net",
+    "https://*.googleapis.com",
+    "https://*.firebaseio.com",
+    "https://*.firebaseapp.com",
+    "https://identitytoolkit.googleapis.com",
+    "https://securetoken.googleapis.com",
+    "https://securetoken.google.com",
+    "https://firebaseinstallations.googleapis.com",
+    "https://content-firebaseappcheck.googleapis.com",
+    "https://www.google-analytics.com",
+    "https://*.google-analytics.com",
+    "https://analytics.google.com",
+    "https://www.googletagmanager.com",
+    "https://challenges.cloudflare.com",
+    "https://*.r2.dev",
+    "https://*.ngenius-payments.com",
+    "wss://*.firebaseio.com",
+  ].join(" "),
+  "frame-src https://challenges.cloudflare.com https://*.firebaseapp.com https://*.ngenius-payments.com",
+  "worker-src 'self' blob:",
+  ...(IS_PROD ? ["upgrade-insecure-requests"] : []),
+].join("; ");
+
+const SECURITY_HEADERS = [
+  {
+    key: "Content-Security-Policy",
+    value: CONTENT_SECURITY_POLICY,
+  },
+  {
+    key: "X-Content-Type-Options",
+    value: "nosniff",
+  },
+  {
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
+  },
+  {
+    key: "Permissions-Policy",
+    value:
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), midi=()",
+  },
+  {
+    key: "X-Frame-Options",
+    value: "DENY",
+  },
+  ...(IS_PROD
+    ? [
+        {
+          key: "Strict-Transport-Security",
+          value: "max-age=31536000; includeSubDomains; preload",
+        },
+      ]
+    : []),
+];
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["10.201.1.99", "localhost", "127.0.0.1"],
   poweredByHeader: false,
   compress: true,
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: SECURITY_HEADERS,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

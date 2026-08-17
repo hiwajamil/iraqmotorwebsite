@@ -11,6 +11,10 @@ import {
   sendPasswordResetEmail,
 } from "@/lib/firebase";
 import { api, ApiError } from "@/lib/api";
+import {
+  TurnstileWidget,
+  isTurnstileEnabled,
+} from "@/components/turnstile-widget";
 import { trackEvent } from "@/lib/analytics";
 import { useAuth } from "@/components/auth-provider";
 import { LoadingFallback } from "@/components/loading-fallback";
@@ -97,6 +101,7 @@ function firebaseErrorCode(err: unknown): string | null {
 
 function mapAuthError(err: unknown, locale: Locale): string {
   if (err instanceof ApiError) {
+    if (err.status === 403) return t(locale, "botCheckFailed");
     return err.message || t(locale, "authRequestFailed", { status: err.status });
   }
 
@@ -193,6 +198,8 @@ function AuthForm() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   useEffect(() => {
     if (loading || !user || !me) return;
@@ -213,6 +220,17 @@ function AuthForm() {
     }
   }
 
+  async function assertHuman(action: "login" | "register") {
+    if (!isTurnstileEnabled()) return;
+    if (!turnstileToken) {
+      throw new Error(t(locale, "botCheckFailed"));
+    }
+    await api.post("/auth/bot-check", {
+      turnstileToken,
+      action,
+    });
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -223,6 +241,8 @@ function AuthForm() {
       if (!auth) {
         throw new Error(t(locale, "authFirebaseInitFailed"));
       }
+
+      await assertHuman(mode === "register" ? "register" : "login");
 
       const trimmedEmail = email.trim();
       const trimmedPhone = phone.trim();
@@ -296,6 +316,8 @@ function AuthForm() {
 
       await redirectAfterAuth();
     } catch (err) {
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
       setError(mapAuthError(err, locale));
     } finally {
       setBusy(false);
@@ -316,9 +338,12 @@ function AuthForm() {
       if (!auth) {
         throw new Error(t(locale, "authFirebaseInitFailed"));
       }
+      await assertHuman("login");
       await sendPasswordResetEmail(auth, trimmed);
       setInfo(t(locale, "authResetEmailSent"));
     } catch (err) {
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
       setError(mapAuthError(err, locale));
     } finally {
       setBusy(false);
@@ -464,9 +489,14 @@ function AuthForm() {
               {info}
             </p>
           ) : null}
+          <TurnstileWidget
+            key={turnstileKey}
+            action={mode === "register" ? "register" : "login"}
+            onToken={setTurnstileToken}
+          />
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || (isTurnstileEnabled() && !turnstileToken)}
             className="mt-2 w-full rounded-[12px] bg-primary py-3.5 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110 disabled:opacity-60"
           >
             {busy
@@ -483,6 +513,8 @@ function AuthForm() {
             setMode(mode === "login" ? "register" : "login");
             setError(null);
             setInfo(null);
+            setTurnstileToken(null);
+            setTurnstileKey((k) => k + 1);
           }}
         >
           {mode === "login"

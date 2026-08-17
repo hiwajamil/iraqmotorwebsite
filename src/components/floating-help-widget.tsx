@@ -2,8 +2,12 @@
 
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { usePathname } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { t } from "@/lib/i18n";
+import {
+  TurnstileWidget,
+  isTurnstileEnabled,
+} from "@/components/turnstile-widget";
 import {
   COUNTRY_CODES,
   INTENT_LABEL_KEYS,
@@ -92,6 +96,8 @@ export function FloatingHelpWidget() {
   const [intent, setIntent] = useState<LeadIntent | "">("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
 
   useEffect(() => {
     setHiddenNow(readDismissed());
@@ -135,16 +141,26 @@ export function FloatingHelpWidget() {
     setBusy(true);
     setError(null);
     try {
+      if (isTurnstileEnabled() && !turnstileToken) {
+        throw new Error(t(locale, "botCheckFailed"));
+      }
       await api.post("/leads", {
         name: trimmedName,
         email: trimmedEmail,
         whatsappNumber,
         intent,
+        ...(turnstileToken ? { turnstileToken } : {}),
       });
       setView("success");
     } catch (err) {
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
       setError(
-        err instanceof Error ? err.message : t(locale, "helpError"),
+        err instanceof ApiError && err.status === 403
+          ? t(locale, "botCheckFailed")
+          : err instanceof Error
+            ? err.message
+            : t(locale, "helpError"),
       );
     } finally {
       setBusy(false);
@@ -330,9 +346,15 @@ export function FloatingHelpWidget() {
                 <p className="text-xs font-medium text-red-600">{error}</p>
               ) : null}
 
+              <TurnstileWidget
+                key={turnstileKey}
+                action="lead"
+                onToken={setTurnstileToken}
+              />
+
               <button
                 type="submit"
-                disabled={busy}
+                disabled={busy || (isTurnstileEnabled() && !turnstileToken)}
                 className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-on-primary shadow-[0_8px_18px_rgba(234,88,12,0.28)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {busy ? t(locale, "helpSubmitting") : t(locale, "helpSubmit")}
