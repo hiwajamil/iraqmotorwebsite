@@ -10,22 +10,25 @@ import {
   PopoverPanel,
 } from "@headlessui/react";
 import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { localizeCity } from "@/lib/listing-labels";
+import { colorSwatch } from "@/lib/listing-form-options";
+import { localizeCity, localizeOption } from "@/lib/listing-labels";
 import { t, type Locale } from "@/lib/i18n";
 import {
   BODY_TYPE_FILTERS,
+  COLOR_FILTERS,
   CONDITION_FILTER_OPTIONS,
   FILTER_YEAR_MAX,
   FILTER_YEAR_MIN,
+  FUEL_TYPE_FILTERS,
   SEARCH_CITIES,
   SEAT_FILTER_OPTIONS,
   SELLER_TYPE_OPTIONS,
   emptySearchFilters,
   searchFiltersActive,
   serializeSearchFilters,
-  type BodyTypeFilterId,
   type SearchFilterExtras,
   type SearchFilterState,
 } from "@/lib/search-filters";
@@ -155,61 +158,6 @@ function NumberPair({
   );
 }
 
-function BodyTypeIcon({ id }: { id: BodyTypeFilterId }) {
-  const common = {
-    viewBox: "0 0 64 32",
-    className: "h-8 w-14 text-current",
-    fill: "currentColor",
-    "aria-hidden": true as const,
-  };
-  switch (id) {
-    case "SUV":
-      return (
-        <svg {...common}>
-          <path d="M10 24h44l-2-8-8-6H22l-8 6-4 8zm8-8h6v4h-6zm22 0h8v4h-8zM14 24a4 4 0 1 0 0.01 0zm28 0a4 4 0 1 0 0.01 0z" />
-        </svg>
-      );
-    case "Sedan":
-      return (
-        <svg {...common}>
-          <path d="M8 24h48l-3-7-10-5H22L12 17 8 24zm12-8h8v3h-8zm18 0h10v3H38zM14 24a3.5 3.5 0 1 0 .01 0zm32 0a3.5 3.5 0 1 0 .01 0z" />
-        </svg>
-      );
-    case "Coupe":
-      return (
-        <svg {...common}>
-          <path d="M10 24h44l-4-7-14-7H24L12 17l-2 7zm12-9h10v3H22zm16 0h10v3H38zM16 24a3.5 3.5 0 1 0 .01 0zm28 0a3.5 3.5 0 1 0 .01 0z" />
-        </svg>
-      );
-    case "Hatchback":
-      return (
-        <svg {...common}>
-          <path d="M12 24h40l-2-8-6-6H24L14 16l-2 8zm10-8h8v4h-8zm18 0h8v4h-8zM16 24a3.5 3.5 0 1 0 .01 0zm28 0a3.5 3.5 0 1 0 .01 0z" />
-        </svg>
-      );
-    case "Pickup":
-      return (
-        <svg {...common}>
-          <path d="M8 24h48v-8H36l-4-6H16L8 16v8zm8-8h8v4h-8zM14 24a3.5 3.5 0 1 0 .01 0zm32 0a3.5 3.5 0 1 0 .01 0z" />
-        </svg>
-      );
-    case "Minivan":
-      return (
-        <svg {...common}>
-          <path d="M8 24h48V14L46 8H18L8 14v10zm10-10h8v5h-8zm16 0h8v5h-8zM14 24a3.5 3.5 0 1 0 .01 0zm32 0a3.5 3.5 0 1 0 .01 0z" />
-        </svg>
-      );
-    case "Convertible":
-      return (
-        <svg {...common}>
-          <path d="M8 24h48l-4-8H14L8 24zm6-4h10v2H14zm20 0h16v2H34zM16 24a3.5 3.5 0 1 0 .01 0zm28 0a3.5 3.5 0 1 0 .01 0z" />
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
-
 function pillClass(active: boolean) {
   return `rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${
     active
@@ -287,6 +235,24 @@ export function AdvancedSearchFilter({
         })
         .join(", ")
     : t(locale, "filterBodyTypes");
+
+  const fuelSummary = draft.fuelTypes.length
+    ? draft.fuelTypes
+        .map((id) => {
+          const opt = FUEL_TYPE_FILTERS.find((item) => item.id === id);
+          return opt ? localizeOption(locale, opt.optionKey) : id;
+        })
+        .join(", ")
+    : t(locale, "filterFuelType");
+
+  const colorSummary = draft.colors.length
+    ? draft.colors
+        .map((id) => {
+          const opt = COLOR_FILTERS.find((item) => item.id === id);
+          return opt ? localizeOption(locale, opt.optionKey) : id;
+        })
+        .join(", ")
+    : t(locale, "filterColor");
 
   function patch(partial: Partial<SearchFilterState>) {
     setDraft((prev) => ({ ...prev, ...partial }));
@@ -490,6 +456,77 @@ export function AdvancedSearchFilter({
 
           <div className="sm:w-[160px]">
             <FilterMenu
+              label={t(locale, "filterFuelType")}
+              summary={fuelSummary}
+              active={draft.fuelTypes.length > 0}
+              onReset={() => patch({ fuelTypes: [] })}
+            >
+              <div className="grid grid-cols-2 gap-2">
+                {FUEL_TYPE_FILTERS.map((item) => {
+                  const selected = draft.fuelTypes.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() =>
+                        patch({
+                          fuelTypes: selected
+                            ? draft.fuelTypes.filter((id) => id !== item.id)
+                            : [...draft.fuelTypes, item.id],
+                        })
+                      }
+                      className={pillClass(selected)}
+                    >
+                      {localizeOption(locale, item.optionKey)}
+                    </button>
+                  );
+                })}
+              </div>
+            </FilterMenu>
+          </div>
+
+          <div className="sm:w-[160px]">
+            <FilterMenu
+              label={t(locale, "filterColor")}
+              summary={colorSummary}
+              active={draft.colors.length > 0}
+              onReset={() => patch({ colors: [] })}
+            >
+              <div className="grid grid-cols-2 gap-2">
+                {COLOR_FILTERS.map((item) => {
+                  const selected = draft.colors.includes(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() =>
+                        patch({
+                          colors: selected
+                            ? draft.colors.filter((id) => id !== item.id)
+                            : [...draft.colors, item.id],
+                        })
+                      }
+                      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-start text-xs font-semibold ring-1 transition ${
+                        selected
+                          ? "bg-primary/10 text-primary ring-primary"
+                          : "bg-input text-foreground ring-outline/70 hover:bg-white hover:ring-primary/30 dark:hover:bg-white/5"
+                      }`}
+                    >
+                      <span
+                        className="size-4 shrink-0 rounded-full ring-1 ring-black/15"
+                        style={{ backgroundColor: colorSwatch(item.optionKey) }}
+                        aria-hidden
+                      />
+                      {localizeOption(locale, item.optionKey)}
+                    </button>
+                  );
+                })}
+              </div>
+            </FilterMenu>
+          </div>
+
+          <div className="sm:w-[160px]">
+            <FilterMenu
               label={t(locale, "filterSeats")}
               summary={seatsSummary}
               active={draft.seats.length > 0}
@@ -528,12 +565,13 @@ export function AdvancedSearchFilter({
               label={t(locale, "filterBodyTypes")}
               summary={bodySummary}
               active={draft.bodyTypes.length > 0}
-              panelClassName="w-[22rem] max-w-[calc(100vw-2rem)]"
+              panelClassName="w-[24rem] max-w-[calc(100vw-2rem)]"
               onReset={() => patch({ bodyTypes: [] })}
             >
               <div className="grid grid-cols-2 gap-2">
                 {BODY_TYPE_FILTERS.map((item) => {
                   const selected = draft.bodyTypes.includes(item.id);
+                  const label = t(locale, item.labelKey);
                   return (
                     <button
                       key={item.id}
@@ -545,14 +583,26 @@ export function AdvancedSearchFilter({
                             : [...draft.bodyTypes, item.id],
                         })
                       }
-                      className={`flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-semibold ring-1 transition ${
+                      className={`flex flex-col items-center gap-1.5 rounded-xl px-2 py-3 text-center transition ${
                         selected
-                          ? "bg-primary/10 text-primary ring-primary"
-                          : "bg-input text-foreground ring-outline/70 hover:ring-primary/40"
+                          ? "bg-primary/10 ring-1 ring-primary"
+                          : "hover:bg-slate-50 dark:hover:bg-white/5"
                       }`}
                     >
-                      <BodyTypeIcon id={item.id} />
-                      {t(locale, item.labelKey)}
+                      <Image
+                        src={item.image}
+                        alt={label}
+                        width={80}
+                        height={40}
+                        className="h-10 w-20 object-contain"
+                      />
+                      <span
+                        className={`text-xs font-semibold ${
+                          selected ? "text-primary" : "text-foreground"
+                        }`}
+                      >
+                        {label}
+                      </span>
                     </button>
                   );
                 })}

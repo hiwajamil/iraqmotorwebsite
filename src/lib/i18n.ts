@@ -711,6 +711,8 @@ const en = {
   filterBodyConvertible: "Convertible",
   filterCurrencyUsd: "USD",
   filterCurrencyIqd: "IQD",
+  filterFuelType: "Fuel Type",
+  filterColor: "Color",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -1419,6 +1421,8 @@ const ar: Record<DictKey, string> = {
   filterBodyConvertible: "كابريوليه",
   filterCurrencyUsd: "دولار",
   filterCurrencyIqd: "دينار",
+  filterFuelType: "نوع الوقود",
+  filterColor: "اللون",
 };
 
 const ku: Record<DictKey, string> = {
@@ -2129,6 +2133,8 @@ const ku: Record<DictKey, string> = {
   filterBodyConvertible: "کابریۆلێ",
   filterCurrencyUsd: "دۆلار",
   filterCurrencyIqd: "دینار",
+  filterFuelType: "جۆری سووتەمەنی",
+  filterColor: "ڕەنگ",
 };
 
 const dict: Record<Locale, Record<DictKey, string>> = { en, ar, ku };

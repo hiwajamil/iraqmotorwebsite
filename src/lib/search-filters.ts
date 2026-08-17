@@ -9,16 +9,65 @@ export const SEARCH_CITIES = SEARCH_CITY_KEYS;
 export const SEAT_FILTER_OPTIONS = [2, 4, 5, 6, 7, 8, 9, 10] as const;
 
 export const BODY_TYPE_FILTERS = [
-  { id: "SUV", labelKey: "filterBodySuv" },
-  { id: "Sedan", labelKey: "filterBodySedan" },
-  { id: "Coupe", labelKey: "filterBodyCoupe" },
-  { id: "Hatchback", labelKey: "filterBodyHatchback" },
-  { id: "Pickup", labelKey: "filterBodyPickup" },
-  { id: "Minivan", labelKey: "filterBodyMinivan" },
-  { id: "Convertible", labelKey: "filterBodyConvertible" },
+  {
+    id: "SUV",
+    labelKey: "filterBodySuv",
+    image: "/images/body-types/suv.png",
+  },
+  {
+    id: "Sedan",
+    labelKey: "filterBodySedan",
+    image: "/images/body-types/sedan.png",
+  },
+  {
+    id: "Coupe",
+    labelKey: "filterBodyCoupe",
+    image: "/images/body-types/coupe.png",
+  },
+  {
+    id: "Hatchback",
+    labelKey: "filterBodyHatchback",
+    image: "/images/body-types/hatchback.png",
+  },
+  {
+    id: "Pickup",
+    labelKey: "filterBodyPickup",
+    image: "/images/body-types/pickup.png",
+  },
+  {
+    id: "Minivan",
+    labelKey: "filterBodyMinivan",
+    image: "/images/body-types/minivan.png",
+  },
+  {
+    id: "Convertible",
+    labelKey: "filterBodyConvertible",
+    image: "/images/body-types/convertible.png",
+  },
 ] as const;
 
 export type BodyTypeFilterId = (typeof BODY_TYPE_FILTERS)[number]["id"];
+
+export const FUEL_TYPE_FILTERS = [
+  { id: "Petrol", optionKey: "engine_petrol" },
+  { id: "Diesel", optionKey: "engine_diesel" },
+  { id: "Hybrid", optionKey: "engine_hybrid" },
+  { id: "Electric", optionKey: "engine_ev" },
+] as const;
+
+export type FuelTypeFilterId = (typeof FUEL_TYPE_FILTERS)[number]["id"];
+
+export const COLOR_FILTERS = [
+  { id: "White", optionKey: "color_white" },
+  { id: "Black", optionKey: "color_black" },
+  { id: "Silver", optionKey: "color_silver" },
+  { id: "Gray", optionKey: "color_gray" },
+  { id: "Red", optionKey: "color_red" },
+  { id: "Blue", optionKey: "color_blue" },
+  { id: "Green", optionKey: "color_green" },
+] as const;
+
+export type ColorFilterId = (typeof COLOR_FILTERS)[number]["id"];
 
 export type SearchCurrency = "USD" | "IQD";
 export type SearchCondition = "" | "used" | "new" | "certified";
@@ -36,6 +85,8 @@ export type SearchFilterState = {
   maxMileage: number | null;
   seats: number[];
   bodyTypes: BodyTypeFilterId[];
+  fuelTypes: FuelTypeFilterId[];
+  colors: ColorFilterId[];
   condition: SearchCondition;
   sellerType: SearchSellerType;
 };
@@ -52,6 +103,8 @@ export const emptySearchFilters = (): SearchFilterState => ({
   maxMileage: null,
   seats: [],
   bodyTypes: [],
+  fuelTypes: [],
+  colors: [],
   condition: "",
   sellerType: "",
 });
@@ -74,11 +127,21 @@ function isBodyTypeId(value: string): value is BodyTypeFilterId {
   return BODY_TYPE_FILTERS.some((item) => item.id === value);
 }
 
+function isFuelTypeId(value: string): value is FuelTypeFilterId {
+  return FUEL_TYPE_FILTERS.some((item) => item.id === value);
+}
+
+function isColorId(value: string): value is ColorFilterId {
+  return COLOR_FILTERS.some((item) => item.id === value);
+}
+
 export function parseSearchFilters(
   params: URLSearchParams | { get(name: string): string | null },
 ): SearchFilterState {
   const seatsRaw = params.get("seats") ?? "";
   const bodyRaw = params.get("bodyType") ?? "";
+  const fuelRaw = params.get("fuelType") ?? "";
+  const colorRaw = params.get("color") ?? "";
   const currencyRaw = (params.get("currency") ?? "").toUpperCase();
   const conditionRaw = (params.get("condition") ?? "").toLowerCase();
   const sellerRaw = (params.get("sellerType") ?? "").toLowerCase();
@@ -92,6 +155,16 @@ export function parseSearchFilters(
     .split(",")
     .map((part) => part.trim())
     .filter(isBodyTypeId);
+
+  const fuelTypes = fuelRaw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(isFuelTypeId);
+
+  const colors = colorRaw
+    .split(",")
+    .map((part) => part.trim())
+    .filter(isColorId);
 
   const condition: SearchCondition =
     conditionRaw === "used" ||
@@ -119,6 +192,8 @@ export function parseSearchFilters(
     maxMileage: optionalInt(params.get("maxMileage"), 0, 10_000_000),
     seats,
     bodyTypes,
+    fuelTypes,
+    colors,
     condition,
     sellerType,
   };
@@ -148,6 +223,10 @@ export function serializeSearchFilters(
   if (filters.bodyTypes.length) {
     params.set("bodyType", filters.bodyTypes.join(","));
   }
+  if (filters.fuelTypes.length) {
+    params.set("fuelType", filters.fuelTypes.join(","));
+  }
+  if (filters.colors.length) params.set("color", filters.colors.join(","));
   if (filters.condition) params.set("condition", filters.condition);
   if (filters.sellerType) params.set("sellerType", filters.sellerType);
   if (extras.brandId) params.set("brandId", extras.brandId);
@@ -169,6 +248,8 @@ export function searchFiltersActive(filters: SearchFilterState): boolean {
       filters.maxMileage != null ||
       filters.seats.length ||
       filters.bodyTypes.length ||
+      filters.fuelTypes.length ||
+      filters.colors.length ||
       filters.condition ||
       filters.sellerType,
   );
@@ -192,6 +273,8 @@ export function toCarsApiParams(
   if (filters.maxMileage != null) params.maxMileage = String(filters.maxMileage);
   if (filters.seats.length) params.seats = filters.seats.join(",");
   if (filters.bodyTypes.length) params.bodyType = filters.bodyTypes.join(",");
+  if (filters.fuelTypes.length) params.fuelType = filters.fuelTypes.join(",");
+  if (filters.colors.length) params.color = filters.colors.join(",");
   if (filters.condition) params.condition = filters.condition;
   if (filters.sellerType) params.sellerType = filters.sellerType;
   if (extras.brandId) params.brandId = extras.brandId;

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AdGridTile, AdHomeBanner } from "@/components/ad-placements";
 import { AdvancedSearchFilter } from "@/components/advanced-search-filter";
+import { BrowseBrands } from "@/components/browse-brands";
 import { CarCard } from "@/components/car-card";
 import { useAdViewport } from "@/hooks/use-ad-viewport";
 import { useAdvertise } from "@/hooks/use-advertise";
@@ -14,7 +15,6 @@ import {
 } from "@/lib/ads";
 import { api, type Car } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
-import { HOME_STRIP_BRANDS } from "@/lib/home-data";
 import { t } from "@/lib/i18n";
 import {
   parseSearchFilters,
@@ -173,6 +173,12 @@ export default function CarsClient() {
       </div>
 
       <div className="mb-6">
+        <BrowseBrands
+          onBrandChange={(next) => writeUrl({ brandId: next })}
+        />
+      </div>
+
+      <div className="mb-6">
         <AdvancedSearchFilter
           variant="results"
           initial={filters}
@@ -183,47 +189,6 @@ export default function CarsClient() {
             status: statusParam || null,
           }}
         />
-      </div>
-
-      <div className="mb-6 flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-        <button
-          type="button"
-          onClick={() => {
-            dispatch(setBrandId(null));
-            writeUrl({ brandId: null });
-          }}
-          className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${
-            !brandId
-              ? "bg-primary text-on-primary"
-              : "bg-card ring-1 ring-outline"
-          }`}
-        >
-          {t(locale, "all")}
-        </button>
-        {HOME_STRIP_BRANDS.map((b) => (
-          <button
-            key={b.id}
-            type="button"
-            onClick={() => {
-              const next = brandId === b.id ? null : b.id;
-              dispatch(setBrandId(next));
-              writeUrl({ brandId: next });
-            }}
-            className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold ${
-              brandId === b.id
-                ? "bg-primary text-on-primary"
-                : "bg-card ring-1 ring-outline"
-            }`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={b.logo}
-              alt=""
-              className="h-5 w-5 rounded-full bg-white object-contain p-0.5"
-            />
-            {b.name}
-          </button>
-        ))}
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
