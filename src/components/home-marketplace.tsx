@@ -99,7 +99,7 @@ export function HomeMarketplace({
           <h1 className="max-w-4xl text-3xl font-bold tracking-tight text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.4)] md:text-6xl md:leading-[1.1] md:tracking-[-0.04em]">
             {t(locale, "heroTitle")}
           </h1>
-          <p className="mt-4 max-w-xl text-base text-white/70 md:mt-5 md:text-xl">
+          <p className="mt-4 max-w-2xl text-base text-white/70 md:mt-5 md:text-xl">
             {t(locale, "heroSubtitle")}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
