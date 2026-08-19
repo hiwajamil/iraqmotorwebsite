@@ -291,6 +291,24 @@ export function rowDiffers(row: CompareRow): boolean {
   return !rowIsCommon(row);
 }
 
+/** True when every text cell is a dash / blank. Boolean rows are never empty. */
+export function rowIsEmpty(row: CompareRow): boolean {
+  return row.cells.every((cell) => {
+    if (cell.kind === "bool") return false;
+    const text = cell.text.trim();
+    return text.length === 0 || text === "—";
+  });
+}
+
+export function filterCompareRows(
+  rows: CompareRow[],
+  opts: { hideCommon: boolean },
+): CompareRow[] {
+  const nonempty = rows.filter((row) => !rowIsEmpty(row));
+  if (!opts.hideCommon) return nonempty;
+  return nonempty.filter((row) => rowDiffers(row));
+}
+
 export function compareTitle(car: CompareCar | Car, locale: Locale): string {
   return formatCarTitle(car, locale) || t(locale, "carListing");
 }

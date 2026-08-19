@@ -34,7 +34,7 @@ export function CompareDock() {
 
   return (
     <aside
-      className="fixed bottom-0 right-4 z-50 w-72 overflow-hidden rounded-t-xl bg-white shadow-2xl transform transition-transform duration-300 sm:right-10 sm:w-80"
+      className="fixed bottom-0 end-4 z-50 w-72 overflow-hidden rounded-t-xl bg-white shadow-2xl transform transition-transform duration-300 sm:end-10 sm:w-80"
       aria-label={t(locale, "compare")}
     >
       <div className="rounded-t-xl bg-primary px-4 py-2 text-center text-sm font-bold tracking-wide text-on-primary">

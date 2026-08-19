@@ -272,6 +272,8 @@ const en = {
   compareEmptyHint:
     "Tap the scale icon on any listing card to add up to 3 cars.",
   browseToCompare: "Browse cars",
+  compareAddCar: "Add car",
+  compareFeaturesMatch: "All listed features match.",
   specBrand: "Brand",
   specModel: "Model",
   specCity: "City",
@@ -1284,6 +1286,8 @@ const ar: Record<DictKey, string> = {
   compareEmptyTitle: "لا توجد سيارات للمقارنة",
   compareEmptyHint: "اضغط أيقونة الميزان على أي إعلان لإضافة حتى 3 سيارات.",
   browseToCompare: "تصفح السيارات",
+  compareAddCar: "أضف سيارة",
+  compareFeaturesMatch: "كل التجهيزات المدرجة متطابقة.",
   specBrand: "العلامة",
   specModel: "الموديل",
   specCity: "المدينة",
@@ -2291,6 +2295,8 @@ const ku: Record<DictKey, string> = {
   compareEmptyHint:
     "ئایکۆنی تەرازوو لەسەر هەر ڕیکلامێک داگرە بۆ زیادکردنی تا 3 ئۆتۆمبێل.",
   browseToCompare: "گەڕان بە ئۆتۆمبێل",
+  compareAddCar: "ئۆتۆمبێل زیاد بکە",
+  compareFeaturesMatch: "هەموو تایبەتمەندییە لیستکراوەکان یەکدەگرنەوە.",
   specBrand: "براند",
   specModel: "مۆدێل",
   specCity: "شار",

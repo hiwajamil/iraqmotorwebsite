@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, Minus, X } from "lucide-react";
+import { Check, Minus, Plus, X } from "lucide-react";
 import { api, type Car } from "@/lib/api";
 import { useAppSelector } from "@/store/hooks";
-import { useCompareStore } from "@/store/compare-store";
+import { MAX_COMPARE, useCompareStore } from "@/store/compare-store";
 import {
   buildCompareSections,
   carCoverImage,
@@ -14,11 +14,16 @@ import {
   compareMileage,
   comparePrice,
   compareTitle,
+  filterCompareRows,
   parseCompareIds,
   rowDiffers,
   rowIsCommon,
+  rowIsEmpty,
 } from "@/lib/compare";
 import { t } from "@/lib/i18n";
+
+const LABEL_COL = 180;
+const CAR_COL = 220;
 
 function IosSwitch({
   checked,
@@ -31,7 +36,7 @@ function IosSwitch({
 }) {
   return (
     <label className="inline-flex cursor-pointer items-center gap-3 select-none">
-      <span className="text-sm font-medium text-gray-600">{label}</span>
+      <span className="text-sm font-medium text-muted">{label}</span>
       <button
         type="button"
         role="switch"
@@ -39,7 +44,7 @@ function IosSwitch({
         aria-label={label}
         onClick={() => onChange(!checked)}
         className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 ${
-          checked ? "bg-primary" : "bg-[#e5e5ea]"
+          checked ? "bg-primary" : "bg-input"
         }`}
       >
         <span
@@ -62,12 +67,12 @@ function EmptyState({
   locale: "en" | "ar" | "ku";
 }) {
   return (
-    <div className="bg-white">
+    <div className="bg-surface">
       <div className="mx-auto max-w-3xl px-[4%] py-28 text-center">
-        <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
           {title}
         </h1>
-        <p className="mt-3 text-sm text-gray-500">{hint}</p>
+        <p className="mt-3 text-sm text-muted">{hint}</p>
         <Link
           href="/cars"
           className="mt-8 inline-flex rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-on-primary transition hover:brightness-110"
@@ -76,6 +81,34 @@ function EmptyState({
         </Link>
       </div>
     </div>
+  );
+}
+
+function SoldBadge({ locale }: { locale: "en" | "ar" | "ku" }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-surface/90 px-2 py-0.5 text-[10px] font-semibold text-foreground backdrop-blur">
+      {t(locale, "sold")}
+    </span>
+  );
+}
+
+function AddCarSlot({
+  locale,
+  compact = false,
+}: {
+  locale: "en" | "ar" | "ku";
+  compact?: boolean;
+}) {
+  return (
+    <Link
+      href="/cars"
+      className={`flex min-w-0 flex-col items-center justify-center rounded-lg border border-dashed border-outline text-muted transition hover:border-primary hover:text-primary ${
+        compact ? "min-h-[4.5rem] px-3 py-2" : "aspect-[16/9] px-4"
+      }`}
+    >
+      <Plus size={compact ? 18 : 22} strokeWidth={2.2} />
+      <span className="mt-1 text-sm font-semibold">{t(locale, "compareAddCar")}</span>
+    </Link>
   );
 }
 
@@ -95,10 +128,24 @@ export default function CompareClient() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(ids.length > 0);
   const [error, setError] = useState<string | null>(null);
-  const [hideCommon, setHideCommon] = useState(false);
+  const [hideCommon, setHideCommon] = useState(true);
   const [highlightDiffs, setHighlightDiffs] = useState(true);
 
   const idsKey = ids.join(",");
+  const heroScroll = useRef<HTMLDivElement>(null);
+  const stickyScroll = useRef<HTMLDivElement>(null);
+  const bodyScroll = useRef<HTMLDivElement>(null);
+  const syncing = useRef(false);
+
+  function syncScroll(from: HTMLDivElement) {
+    if (syncing.current) return;
+    syncing.current = true;
+    const left = from.scrollLeft;
+    for (const el of [heroScroll.current, stickyScroll.current, bodyScroll.current]) {
+      if (el && el !== from && el.scrollLeft !== left) el.scrollLeft = left;
+    }
+    syncing.current = false;
+  }
 
   useEffect(() => {
     if (!idsKey) {
@@ -110,9 +157,10 @@ export default function CompareClient() {
     setLoading(true);
     void (async () => {
       try {
-        const data = await api.get<{ items: Car[] }>("/cars/compare", {
-          ids: idsKey,
-        });
+        const data = await api.get<{ items: Car[]; missingIds?: string[] }>(
+          "/cars/compare",
+          { ids: idsKey },
+        );
         if (cancelled) return;
         setCars(data.items ?? []);
         setError(null);
@@ -136,10 +184,11 @@ export default function CompareClient() {
     [cars, locale],
   );
 
-  const colCount = Math.max(cars.length, 1);
+  const showAdd = cars.length < MAX_COMPARE;
+  const colCount = cars.length + (showAdd ? 1 : 0);
   const gridStyle = {
-    gridTemplateColumns: `250px repeat(${colCount}, minmax(0, 1fr))`,
-    minWidth: 250 + colCount * 220,
+    gridTemplateColumns: `${LABEL_COL}px repeat(${colCount}, minmax(${CAR_COL}px, 1fr))`,
+    minWidth: LABEL_COL + colCount * CAR_COL,
   } as const;
 
   function removeCar(id: string) {
@@ -164,15 +213,15 @@ export default function CompareClient() {
 
   if (loading) {
     return (
-      <div className="bg-white">
+      <div className="bg-surface">
         <div className="mx-auto max-w-6xl px-[4%] py-28">
-          <div className="h-9 w-56 animate-pulse rounded-lg bg-gray-100" />
+          <div className="h-9 w-56 animate-pulse rounded-lg bg-input" />
           <div className="mt-10 grid gap-6 sm:grid-cols-3">
             {[0, 1, 2].map((i) => (
               <div key={i} className="overflow-hidden rounded-lg">
-                <div className="aspect-[16/9] animate-pulse bg-gray-100" />
-                <div className="mt-4 h-4 w-3/4 animate-pulse rounded bg-gray-100" />
-                <div className="mt-2 h-6 w-1/2 animate-pulse rounded bg-gray-100" />
+                <div className="aspect-[16/9] animate-pulse bg-input" />
+                <div className="mt-4 h-4 w-3/4 animate-pulse rounded bg-input" />
+                <div className="mt-2 h-6 w-1/2 animate-pulse rounded bg-input" />
               </div>
             ))}
           </div>
@@ -201,18 +250,15 @@ export default function CompareClient() {
     );
   }
 
-  const stickyHeader =
-    "sticky top-16 z-20 border-b border-gray-200 bg-white/90 px-4 py-5 shadow-sm backdrop-blur-md";
-
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       <div className="mx-auto max-w-[1400px] px-[4%] pb-24 pt-24">
         <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">
               {t(locale, "compareDockTitle", { count: cars.length })}
             </p>
-            <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-gray-900">
+            <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-foreground">
               {t(locale, "compare")}
             </h1>
           </div>
@@ -231,17 +277,19 @@ export default function CompareClient() {
         </header>
 
         {cars.length < ids.length ? (
-          <p className="mb-5 text-xs font-medium text-gray-500">
+          <p className="mb-5 text-xs font-medium text-muted">
             {t(locale, "compareMissing")}
           </p>
         ) : null}
 
-        <div className="overflow-x-auto">
-          <div
-            className="grid grid-cols-[250px_repeat(auto-fit,minmax(0,1fr))]"
-            style={gridStyle}
-          >
-            <div className={stickyHeader} />
+        {/* Full 16:9 photos — not sticky; own overflow so extra columns can scroll. */}
+        <div
+          ref={heroScroll}
+          onScroll={(e) => syncScroll(e.currentTarget)}
+          className="overflow-x-auto scrollbar-none"
+        >
+          <div className="grid" style={gridStyle}>
+            <div />
             {cars.map((car) => {
               const title = compareTitle(car, locale);
               const meta = [
@@ -251,8 +299,9 @@ export default function CompareClient() {
               ]
                 .filter((part) => part && part !== "—")
                 .join(" · ");
+              const sold = car.status === "sold";
               return (
-                <div key={car.id} className={`${stickyHeader} min-w-0`}>
+                <div key={car.id} className="min-w-0 px-3 pb-5">
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -260,17 +309,22 @@ export default function CompareClient() {
                       alt={title}
                       className="aspect-[16/9] w-full rounded-lg object-cover shadow-sm"
                     />
+                    {sold ? (
+                      <span className="absolute start-2 top-2 z-[1]">
+                        <SoldBadge locale={locale} />
+                      </span>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => removeCar(car.id)}
-                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-red-500"
+                      className="absolute top-2 end-2 flex h-7 w-7 items-center justify-center rounded-full bg-surface/90 text-muted shadow-sm backdrop-blur transition hover:bg-card hover:text-red-500"
                       aria-label={t(locale, "removeFromCompare")}
                     >
                       <X size={14} strokeWidth={2.4} />
                     </button>
                   </div>
                   <h2
-                    className="mt-3 line-clamp-2 text-sm font-bold leading-snug text-gray-900"
+                    className="mt-3 line-clamp-2 text-sm font-bold leading-snug text-foreground"
                     dir="auto"
                   >
                     {title}
@@ -279,47 +333,124 @@ export default function CompareClient() {
                     {comparePrice(car)}
                   </p>
                   {meta ? (
-                    <p className="mt-1 truncate text-xs text-gray-400" dir="auto">
+                    <p className="mt-1 truncate text-xs text-muted" dir="auto">
                       {meta}
                     </p>
                   ) : null}
                   <Link
                     href={`/cars/${car.id}`}
-                    className="mt-3 inline-flex rounded-full border border-gray-300 px-4 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
+                    className="mt-3 inline-flex rounded-full border border-outline px-4 py-1.5 text-sm text-foreground transition hover:bg-input"
                   >
                     {t(locale, "viewDetails")}
                   </Link>
                 </div>
               );
             })}
+            {showAdd ? (
+              <div className="min-w-0 px-3 pb-5">
+                <AddCarSlot locale={locale} />
+              </div>
+            ) : null}
+          </div>
+        </div>
 
+        {/* Compact headers stick on a parent that does not use overflow-x. */}
+        <div className="sticky top-16 z-20 border-b border-outline bg-surface/95 shadow-sm backdrop-blur-md">
+          <div
+            ref={stickyScroll}
+            onScroll={(e) => syncScroll(e.currentTarget)}
+            className="overflow-x-auto scrollbar-none"
+          >
+            <div className="grid" style={gridStyle}>
+              <div className="bg-surface/95" />
+              {cars.map((car) => {
+                const title = compareTitle(car, locale);
+                const sold = car.status === "sold";
+                return (
+                  <div key={car.id} className="relative min-w-0 px-3 py-2.5">
+                    <div className="flex min-w-0 items-center gap-2.5 pe-7">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={carCoverImage(car)}
+                        alt=""
+                        className="h-10 w-14 shrink-0 rounded-md object-cover"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h2
+                            className="truncate text-xs font-bold text-foreground"
+                            dir="auto"
+                          >
+                            {title}
+                          </h2>
+                          {sold ? <SoldBadge locale={locale} /> : null}
+                        </div>
+                        <p className="truncate text-sm font-bold text-primary" dir="ltr">
+                          {comparePrice(car)}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeCar(car.id)}
+                      className="absolute top-2 end-2 flex h-6 w-6 items-center justify-center rounded-full bg-card text-muted shadow-sm ring-1 ring-outline transition hover:text-red-500"
+                      aria-label={t(locale, "removeFromCompare")}
+                    >
+                      <X size={12} strokeWidth={2.4} />
+                    </button>
+                  </div>
+                );
+              })}
+              {showAdd ? (
+                <div className="min-w-0 px-3 py-2">
+                  <AddCarSlot locale={locale} compact />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        <div
+          ref={bodyScroll}
+          onScroll={(e) => syncScroll(e.currentTarget)}
+          className="overflow-x-auto"
+        >
+          <div className="grid" style={gridStyle}>
             {sections.map((section) => {
-              const rows = hideCommon
-                ? section.rows.filter((row) => rowDiffers(row))
-                : section.rows;
-              if (!rows.length) return null;
+              const rows = filterCompareRows(section.rows, { hideCommon });
+              const featuresAllMatch =
+                section.id === "features" &&
+                !rows.length &&
+                hideCommon &&
+                section.rows.some((row) => !rowIsEmpty(row));
+              if (!rows.length && !featuresAllMatch) return null;
               return (
                 <div key={section.id} className="contents">
-                  <div className="col-span-full bg-gray-100/80 px-4 py-2 text-xs font-bold tracking-wider text-gray-800 uppercase">
+                  <div className="col-span-full bg-input px-4 py-2 text-xs font-bold tracking-wider text-foreground uppercase">
                     {section.title}
                   </div>
+                  {featuresAllMatch ? (
+                    <div className="col-span-full bg-card px-4 py-4 text-sm text-muted">
+                      {t(locale, "compareFeaturesMatch")}
+                    </div>
+                  ) : null}
                   {rows.map((row) => {
                     const differs = rowDiffers(row);
                     const common = rowIsCommon(row);
                     return (
                       <div key={row.id} className="contents">
-                        <div className="flex items-center border-b border-gray-100 bg-gray-50/50 px-4 py-4 text-sm font-medium text-gray-500">
+                        <div className="flex items-center border-b border-outline bg-input/50 px-4 py-4 text-sm font-medium text-muted">
                           {row.label}
                         </div>
                         {row.cells.map((cell, i) => (
                           <div
                             key={`${row.id}-${cars[i]?.id ?? i}`}
-                            className={`flex items-center justify-center border-b border-gray-100 px-3 py-4 text-center text-sm font-semibold text-gray-900 ${
+                            className={`flex items-center justify-center border-b border-outline px-3 py-4 text-center text-sm font-semibold text-foreground ${
                               highlightDiffs && differs
                                 ? "bg-primary/[0.04]"
-                                : "bg-white"
+                                : "bg-card"
                             } ${
-                              highlightDiffs && common ? "font-medium text-gray-400" : ""
+                              highlightDiffs && common ? "font-medium text-muted" : ""
                             }`}
                           >
                             {cell.kind === "bool" ? (
@@ -341,6 +472,9 @@ export default function CompareClient() {
                             )}
                           </div>
                         ))}
+                        {showAdd ? (
+                          <div className="border-b border-outline bg-card" />
+                        ) : null}
                       </div>
                     );
                   })}
