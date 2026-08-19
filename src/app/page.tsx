@@ -3,32 +3,22 @@ import { api, type Car } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
+const HOME_CARS_LIMIT = "24";
+
 async function loadHomeData() {
   try {
-    const [list, recommendedRes, trendingRes] = await Promise.all([
-      api.get<{ items: Car[] }>("/cars", { limit: "24" }, { revalidate: 30 }),
-      api
-        .get<{ items: Car[] }>("/cars/recommended", undefined, { revalidate: 60 })
-        .catch(() => ({ items: [] as Car[] })),
-      api
-        .get<{ items: Car[] }>("/cars/trending", undefined, { revalidate: 60 })
-        .catch(() => ({ items: [] as Car[] })),
-    ]);
-    const items = list.items ?? [];
-    const recommended =
-      (recommendedRes.items?.length
-        ? recommendedRes.items
-        : trendingRes.items?.length
-          ? trendingRes.items
-          : items
-      ).slice(0, 8);
-    return { cars: items, recommended };
+    const list = await api.get<{ items: Car[] }>(
+      "/cars",
+      { status: "active", limit: HOME_CARS_LIMIT },
+      { revalidate: 30 },
+    );
+    return { cars: list.items ?? [], loadError: false };
   } catch {
-    return { cars: [], recommended: [] };
+    return { cars: [] as Car[], loadError: true };
   }
 }
 
 export default async function HomePage() {
-  const { cars, recommended } = await loadHomeData();
-  return <HomeMarketplace initialCars={cars} recommended={recommended} />;
+  const { cars, loadError } = await loadHomeData();
+  return <HomeMarketplace initialCars={cars} loadError={loadError} />;
 }

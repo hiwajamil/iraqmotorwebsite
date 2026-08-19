@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { AdGridTile, AdHomeBanner } from "@/components/ad-placements";
 import { AdvancedSearchFilter } from "@/components/advanced-search-filter";
 import { BrowseBrands } from "@/components/browse-brands";
@@ -9,93 +11,73 @@ import { CarCard } from "@/components/car-card";
 import { ApiStatus } from "@/components/api-status";
 import { useAdViewport } from "@/hooks/use-ad-viewport";
 import { useAdvertise } from "@/hooks/use-advertise";
-import {
-  interleaveAdsInGrid,
-  pickHomeBannerAd,
-} from "@/lib/ads";
+import { interleaveAdsInGrid, pickHomeBannerAd } from "@/lib/ads";
 import { api, type Car } from "@/lib/api";
 import { t } from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
 
+const HOME_CARS_QUERY = { status: "active", limit: "24" } as const;
+
 export function HomeMarketplace({
   initialCars,
-  recommended,
+  loadError = false,
 }: {
   initialCars: Car[];
-  recommended: Car[];
+  loadError?: boolean;
 }) {
+  const router = useRouter();
   const locale = useAppSelector((s) => s.preferences.locale);
-  const brandId = useAppSelector((s) => s.filters.brandId);
-  const city = useAppSelector((s) => s.filters.city);
   const [cars, setCars] = useState<Car[]>(initialCars);
+  const [failed, setFailed] = useState(loadError);
   const [loading, setLoading] = useState(false);
   const viewport = useAdViewport();
-  const { ads } = useAdvertise({
+  const { ads: bannerAds } = useAdvertise({
     langCode: locale,
-    locationId: city,
+    slot: "home_banner",
+    listSize: 4,
+  });
+  const { ads: gridAds } = useAdvertise({
+    langCode: locale,
+    slot: "grid_tile",
     listSize: 12,
   });
-  const bannerAd = useMemo(() => pickHomeBannerAd(ads), [ads]);
+  const bannerAd = useMemo(() => pickHomeBannerAd(bannerAds), [bannerAds]);
   const gridItems = useMemo(
-    () => interleaveAdsInGrid(cars, ads),
-    [cars, ads],
+    () => interleaveAdsInGrid(cars, gridAds),
+    [cars, gridAds],
   );
 
-  const hasFilters = Boolean(brandId);
-
-  useEffect(() => {
-    let cancelled = false;
-    const handle = window.setTimeout(() => {
-      void (async () => {
-        if (!hasFilters) {
-          if (!cancelled) {
-            setCars(initialCars);
-            setLoading(false);
-          }
-          return;
-        }
-        if (!cancelled) setLoading(true);
-        try {
-          const data = await api.get<{ items: Car[] }>("/cars", {
-            limit: "48",
-            ...(brandId ? { brandId } : {}),
-          });
-          if (!cancelled) setCars(data.items ?? []);
-        } catch {
-          if (!cancelled) setCars(initialCars);
-        } finally {
-          if (!cancelled) setLoading(false);
-        }
-      })();
-    }, 120);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(handle);
-    };
-  }, [brandId, hasFilters, initialCars]);
-
-  const browseHref =
-    brandId || city
-      ? `/cars?${new URLSearchParams({
-          ...(brandId ? { brandId } : {}),
-          ...(city ? { city } : {}),
-        }).toString()}`
-      : "/cars";
+  async function retryCars() {
+    setLoading(true);
+    try {
+      const data = await api.get<{ items: Car[] }>("/cars", {
+        ...HOME_CARS_QUERY,
+      });
+      setCars(data.items ?? []);
+      setFailed(false);
+    } catch {
+      setFailed(true);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div>
-      <section className="relative isolate min-h-[42vh] w-full overflow-hidden md:min-h-[600px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+      <section className="relative isolate min-h-[32vh] w-full overflow-hidden md:min-h-[600px]">
+        <Image
           src="/hero_bg.jpg"
           alt=""
-          className="absolute inset-0 h-full w-full object-cover"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
         />
         <div
-          className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-[var(--surface)]"
+          className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-[var(--surface)]"
           aria-hidden
         />
-        <div className="relative mx-auto flex min-h-[42vh] max-w-[1400px] flex-col items-center justify-center px-[4%] pb-16 pt-28 text-center md:min-h-[600px] md:pb-24 md:pt-32">
+        <div className="relative mx-auto flex min-h-[32vh] max-w-[1400px] flex-col items-center justify-center px-[4%] pb-16 pt-28 text-center md:min-h-[600px] md:pb-24 md:pt-32">
           <h1 className="max-w-4xl text-3xl font-bold tracking-tight text-white drop-shadow-[0_2px_16px_rgba(0,0,0,0.4)] md:text-6xl md:leading-[1.1] md:tracking-[-0.04em]">
             {t(locale, "heroTitle")}
           </h1>
@@ -127,36 +109,22 @@ export function HomeMarketplace({
           <AdHomeBanner ad={bannerAd} viewport={viewport} locale={locale} />
         </div>
 
-        <BrowseBrands />
+        <BrowseBrands
+          onBrandChange={(next) => {
+            router.push(next ? `/cars?brandId=${encodeURIComponent(next)}` : "/cars");
+          }}
+        />
 
         <div className="py-6">
           <AdvancedSearchFilter variant="home" />
         </div>
 
-        {recommended.length > 0 && !hasFilters ? (
-          <section className="py-8">
-            <div className="mb-4 flex items-end justify-between">
-              <h2 className="text-xl font-bold md:text-2xl">
-                {t(locale, "recommended")}
-              </h2>
-              <Link href="/cars" className="text-sm font-semibold text-primary">
-                {t(locale, "viewAll")}
-              </Link>
-            </div>
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
-              {recommended.map((car) => (
-                <CarCard key={car.id} car={car} compact />
-              ))}
-            </div>
-          </section>
-        ) : null}
-
         <section className="pb-16 pt-4">
           <div className="mb-6 flex items-end justify-between gap-4">
             <h2 className="text-xl font-bold md:text-2xl">
-              {t(locale, "availableListings")}
+              {t(locale, "latestListings")}
             </h2>
-            <Link href={browseHref} className="text-sm font-semibold text-primary">
+            <Link href="/cars" className="text-sm font-semibold text-primary">
               {t(locale, "viewAll")}
             </Link>
           </div>
@@ -169,9 +137,20 @@ export function HomeMarketplace({
                 />
               ))}
             </div>
+          ) : failed ? (
+            <div className="rounded-[16px] bg-card p-10 text-center ring-1 ring-outline">
+              <p className="text-muted">{t(locale, "carsLoadFailed")}</p>
+              <button
+                type="button"
+                onClick={() => void retryCars()}
+                className="mt-4 inline-block text-sm font-semibold text-primary"
+              >
+                {t(locale, "retry")}
+              </button>
+            </div>
           ) : cars.length === 0 ? (
             <div className="rounded-[16px] bg-card p-10 text-center ring-1 ring-outline">
-              <p className="text-muted">{t(locale, "homeEmptyFilters")}</p>
+              <p className="text-muted">{t(locale, "carsEmptyHint")}</p>
               <Link
                 href="/cars"
                 className="mt-4 inline-block text-sm font-semibold text-primary"

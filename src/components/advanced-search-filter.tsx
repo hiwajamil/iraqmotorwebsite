@@ -405,7 +405,7 @@ export function AdvancedSearchFilter({
               summary={priceSummary}
               active={priceActive}
               onReset={() =>
-                patch({ minPrice: null, maxPrice: null, currency: "USD" })
+                patch({ minPrice: null, maxPrice: null, currency: "IQD" })
               }
             >
               <div className="mb-3 flex h-12 rounded-lg bg-input p-1 ring-1 ring-outline/60">

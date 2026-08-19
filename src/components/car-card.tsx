@@ -101,18 +101,12 @@ export function CarCard({
         >
           {sold ? t(locale, "soldFor", { price: displayPrice }) : displayPrice}
         </p>
-        {!sold ? (
+        {!sold && bidLabel ? (
           <p
-            className={`text-[11px] ${
-              bidLabel
-                ? "font-medium text-red-600 dark:text-red-400"
-                : "text-muted"
-            }`}
+            className="text-[11px] font-medium text-red-600 dark:text-red-400"
             dir="auto"
           >
-            {bidLabel
-              ? t(locale, "latestBid", { amount: bidLabel })
-              : t(locale, "noBids")}
+            {t(locale, "latestBid", { amount: bidLabel })}
           </p>
         ) : null}
       </Link>

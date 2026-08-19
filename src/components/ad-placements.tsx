@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   adHref,
   DEFAULT_HOME_BANNER,
+  isExternalAd,
   resolveAdImage,
   resolveHomeBannerContent,
   type AdBannerContent,
@@ -13,8 +14,17 @@ import {
 } from "@/lib/ads";
 import { t, type Locale } from "@/lib/i18n";
 
-function SponsoredLabel({ locale }: { locale?: string }) {
-  const label = t((locale as Locale) || "en", "sponsored");
+function AdBadge({
+  sponsored,
+  locale,
+}: {
+  sponsored: boolean;
+  locale?: string;
+}) {
+  const label = t(
+    (locale as Locale) || "en",
+    sponsored ? "sponsored" : "iraqMotorsPromo",
+  );
   return (
     <span className="pointer-events-none absolute start-3 top-3 z-10 rounded-md bg-black/55 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
       {label}
@@ -130,7 +140,7 @@ export function AdHomeBanner({
     <div
       className={`relative w-full overflow-hidden rounded-[14px] bg-input ring-1 ring-outline/40 ${aspect}`}
     >
-      <SponsoredLabel locale={locale} />
+      <AdBadge sponsored={Boolean(ad && isExternalAd(ad))} locale={locale} />
       {content.imageUrl ? (
         <AdCreative
           src={content.imageUrl}
@@ -172,7 +182,7 @@ export function AdGridTile({
         viewport === "desktop" ? "max-h-[320px]" : ""
       }`}
     >
-      <SponsoredLabel locale={locale} />
+      <AdBadge sponsored={Boolean(ad && isExternalAd(ad))} locale={locale} />
       <div
         className={`relative w-full flex-1 overflow-hidden bg-input ${
           viewport === "desktop" ? "min-h-[220px]" : "aspect-[1200/390]"

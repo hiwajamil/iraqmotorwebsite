@@ -137,13 +137,11 @@ export function isExternalAd(ad: Advertise): boolean {
  * Returns null when none is active so the UI can fall back to DEFAULT_HOME_BANNER.
  */
 export function pickHomeBannerAd(ads: Advertise[]): Advertise | null {
-  const external = ads.filter(isExternalAd);
-  if (!external.length) return null;
-  const banners = external.filter((ad) => {
-    const slot = (ad.slotPosition || "home_banner").replace(/-/g, "_");
-    return slot === "home_banner" || slot === "homeBanner";
+  const banners = ads.filter((ad) => {
+    if (!isExternalAd(ad)) return false;
+    return normalizeAdSlot(ad.slotPosition) === "home_banner";
   });
-  return (banners[0] ?? external[0]) ?? null;
+  return banners[0] ?? null;
 }
 
 export function interleaveAdsInGrid(
@@ -152,7 +150,9 @@ export function interleaveAdsInGrid(
   every = AD_GRID_EVERY,
 ): GridItem[] {
   if (!cars.length) return [];
-  const pool = ads.filter(Boolean);
+  const pool = ads.filter(
+    (ad) => Boolean(ad) && normalizeAdSlot(ad.slotPosition) === "grid_tile",
+  );
   const out: GridItem[] = [];
   let adCursor = 0;
 
@@ -173,33 +173,18 @@ export async function fetchAds(opts?: {
   langCode?: string;
   locationId?: string | null;
   listSize?: number;
+  slot?: string;
   advertiseTypeIds?: AdvertiseTypeId[];
 }): Promise<Advertise[]> {
-  const locationId = opts?.locationId || undefined;
   try {
-    const data = await api.post<{ items: Advertise[] }>(
-      `/ads?${new URLSearchParams({
-        langCode: opts?.langCode || "en",
-        listSize: String(opts?.listSize ?? 12),
-        ...(locationId ? { locationId } : {}),
-      }).toString()}`,
-      {
-        LocationIds: locationId ? [locationId] : [],
-        AdvertiseTypeIds: opts?.advertiseTypeIds ?? [1, 2, 3],
-      },
-    );
+    const data = await api.get<{ items: Advertise[] }>("/ads", {
+      langCode: opts?.langCode || "en",
+      listSize: String(opts?.listSize ?? 12),
+      ...(opts?.slot ? { slot: opts.slot } : {}),
+    });
     return data.items ?? [];
   } catch {
-    try {
-      const data = await api.get<{ items: Advertise[] }>("/ads", {
-        langCode: opts?.langCode || "en",
-        listSize: String(opts?.listSize ?? 12),
-        ...(locationId ? { locationId } : {}),
-      });
-      return data.items ?? [];
-    } catch {
-      return [];
-    }
+    return [];
   }
 }
 

@@ -16,6 +16,14 @@ const navLinks = [
   { href: "/services", labelKey: "services" as const },
 ];
 
+function accountChipLabel(displayName: unknown, locale: Locale) {
+  const name = typeof displayName === "string" ? displayName.trim() : "";
+  if (!name || /^super\s*admin$/i.test(name) || /^admin$/i.test(name)) {
+    return t(locale, "dashboard");
+  }
+  return name;
+}
+
 export function SiteHeader() {
   const { user, me, signOut } = useAuth();
   const pathname = usePathname();
@@ -137,7 +145,7 @@ export function SiteHeader() {
                   immersive ? "bg-white/15 text-white" : "bg-input"
                 }`}
               >
-                {(me?.profile?.displayName as string) || t(locale, "dashboard")}
+                {accountChipLabel(me?.profile?.displayName, locale)}
               </Link>
               <button
                 type="button"
@@ -200,7 +208,7 @@ export function SiteHeader() {
                   href="/dashboard"
                   className="rounded-[12px] px-3 py-3 text-sm font-semibold hover:bg-input"
                 >
-                  {(me?.profile?.displayName as string) || t(locale, "dashboard")}
+                  {accountChipLabel(me?.profile?.displayName, locale)}
                 </Link>
                 {me?.isSuperAdmin ? (
                   <Link

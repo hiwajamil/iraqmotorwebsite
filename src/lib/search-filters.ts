@@ -100,7 +100,7 @@ export const emptySearchFilters = (): SearchFilterState => ({
   q: "",
   minPrice: null,
   maxPrice: null,
-  currency: "USD",
+  currency: "IQD",
   minMileage: null,
   maxMileage: null,
   mileageUnit: "km",
@@ -194,7 +194,7 @@ export function parseSearchFilters(
     q: params.get("q") ?? params.get("search") ?? "",
     minPrice: optionalInt(params.get("minPrice"), 0, 1_000_000_000),
     maxPrice: optionalInt(params.get("maxPrice"), 0, 1_000_000_000),
-    currency: currencyRaw === "IQD" ? "IQD" : "USD",
+    currency: currencyRaw === "USD" ? "USD" : "IQD",
     minMileage: optionalInt(params.get("minMileage"), 0, 10_000_000),
     maxMileage: optionalInt(params.get("maxMileage"), 0, 10_000_000),
     mileageUnit:

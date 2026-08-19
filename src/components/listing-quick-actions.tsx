@@ -82,7 +82,7 @@ export function ListingQuickActions({
   }
 
   return (
-    <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
+    <div className="absolute top-3 end-3 z-10 flex flex-col gap-1.5">
       <button
         type="button"
         onClick={(e) => void onFavorite(e)}

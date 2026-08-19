@@ -8,13 +8,14 @@ import {
 } from "@/lib/ads";
 
 /**
- * Loads promotional creatives for a locale + optional city filter.
+ * Loads promotional creatives for a locale and optional slot.
  * Fails soft (empty list) so listings never break when ads are down.
  */
 export function useAdvertise(opts: {
   langCode: string;
   locationId?: string | null;
   listSize?: number;
+  slot?: string;
   advertiseTypeIds?: AdvertiseTypeId[];
 }) {
   const [ads, setAds] = useState<Advertise[]>([]);
@@ -25,9 +26,8 @@ export function useAdvertise(opts: {
     setLoading(true);
     void fetchAds({
       langCode: opts.langCode,
-      locationId: opts.locationId,
       listSize: opts.listSize,
-      advertiseTypeIds: opts.advertiseTypeIds,
+      slot: opts.slot,
     }).then((items) => {
       if (!cancelled) {
         setAds(items);
@@ -37,13 +37,7 @@ export function useAdvertise(opts: {
     return () => {
       cancelled = true;
     };
-  }, [
-    opts.langCode,
-    opts.locationId,
-    opts.listSize,
-    // stringify type ids for stable deps
-    (opts.advertiseTypeIds ?? [1, 2, 3]).join(","),
-  ]);
+  }, [opts.langCode, opts.listSize, opts.slot]);
 
   return { ads, loading };
 }
