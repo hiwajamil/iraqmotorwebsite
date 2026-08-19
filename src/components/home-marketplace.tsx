@@ -165,7 +165,7 @@ export function HomeMarketplace({
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
-                  className="aspect-[4/5] animate-pulse rounded-[16px] bg-input"
+                  className="aspect-[4/5] animate-pulse rounded-xl bg-input"
                 />
               ))}
             </div>

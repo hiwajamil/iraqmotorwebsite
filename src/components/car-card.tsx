@@ -47,11 +47,11 @@ export function CarCard({
 
   return (
     <article
-      className={`group flex h-full flex-col overflow-hidden rounded-[16px] bg-[var(--color-card-low,#f8fafc)] ring-1 ring-outline/40 transition duration-300 hover:-translate-y-0.5 hover:ring-primary/30 dark:bg-card ${
+      className={`group flex h-full flex-col overflow-hidden rounded-xl bg-[var(--color-card-low,#f8fafc)] ring-1 ring-outline/40 transition duration-300 hover:-translate-y-0.5 hover:ring-primary/30 dark:bg-card ${
         compact ? "min-w-[272px] max-w-[272px]" : ""
       }`}
     >
-      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-t-[16px] bg-input">
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-t-xl bg-input">
         <Link href={`/cars/${car.id}`} className="absolute inset-0 block">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
