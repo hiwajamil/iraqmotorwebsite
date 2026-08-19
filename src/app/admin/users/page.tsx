@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { groupByCity, type AdminUser } from "@/lib/admin";
 import { t, accountTypeLabel } from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
+import { UserStatsWidget } from "@/components/user-stats-widget";
 
 export default function AdminUsersPage() {
   const locale = useAppSelector((s) => s.preferences.locale);
@@ -134,6 +135,8 @@ export default function AdminUsersPage() {
           </Link>
         </div>
       </div>
+
+      <UserStatsWidget />
 
       <form
         className="mt-4 flex flex-wrap gap-2"

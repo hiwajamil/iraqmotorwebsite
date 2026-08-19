@@ -89,6 +89,17 @@ export type AnalyticsReport = {
   gaError?: string | null;
 };
 
+export type UserRegistrationStats = {
+  totalRegistrations: number;
+  platformBreakdown: {
+    ios: number;
+    android: number;
+    web: number;
+    unknown: number;
+  };
+  chartData: { date: string; count: number }[];
+};
+
 export const ADMIN_NAV = [
   { href: "/admin", labelKey: "adminNavOverview" as const },
   { href: "/admin/approvals", labelKey: "adminNavApprovals" as const },
@@ -211,12 +222,16 @@ export async function logAdminActivity(input: {
   }
 }
 
-export function defaultAnalyticsRange(): { startDate: string; endDate: string } {
+export function presetRange(days: number): { startDate: string; endDate: string } {
   const end = new Date();
   const start = new Date();
-  start.setUTCDate(end.getUTCDate() - 29);
+  start.setUTCDate(end.getUTCDate() - (days - 1));
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   return { startDate: fmt(start), endDate: fmt(end) };
+}
+
+export function defaultAnalyticsRange(): { startDate: string; endDate: string } {
+  return presetRange(30);
 }
 
 export async function setCarStatuses(

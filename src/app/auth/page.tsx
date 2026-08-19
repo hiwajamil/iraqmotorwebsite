@@ -277,6 +277,7 @@ function AuthForm() {
             phone: normalizedPhone,
             displayName: displayName.trim() || trimmedEmail.split("@")[0],
             city: trimmedCity,
+            registrationPlatform: "web",
             ...(accountType === "showroom"
               ? { showroomName: displayName.trim() || t(locale, "showroomDefaultName") }
               : {}),
