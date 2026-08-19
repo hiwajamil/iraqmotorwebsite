@@ -25,6 +25,13 @@ export type ServiceCategory = {
   sortOrder?: number;
 };
 
+export type UserServiceSubmitter = {
+  userId: string;
+  displayName?: string | null;
+  showroomName?: string | null;
+  phone?: string | null;
+};
+
 export type UserService = {
   id: string;
   userId: string;
@@ -37,8 +44,24 @@ export type UserService = {
   description: string;
   phone: string;
   status: ServiceStatus;
+  rejectionReason?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  submitter?: UserServiceSubmitter;
   createdAt: string;
   updatedAt: string;
+};
+
+export type ServiceCounts = {
+  pending: number;
+  approved: number;
+  rejected: number;
+};
+
+export type ServiceListResponse = {
+  items: UserService[];
+  total: number;
+  counts: ServiceCounts;
 };
 
 export const SERVICE_CITIES = HOME_CITIES.filter(

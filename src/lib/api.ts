@@ -36,6 +36,7 @@ export class ApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    public details?: unknown,
   ) {
     super(message);
     this.name = "ApiError";
@@ -102,7 +103,11 @@ async function parse(res: Response) {
       (res.status === 500 || res.status === 502 || res.status === 503
         ? "API unavailable — start the backend (port 4000) and retry"
         : `Request failed (${res.status})`);
-    throw new ApiError(message, res.status);
+    const details =
+      data && typeof data === "object" && "details" in data
+        ? (data as { details: unknown }).details
+        : undefined;
+    throw new ApiError(message, res.status, details);
   }
   return data;
 }

@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { AdminConfirmDialog } from "@/components/admin-confirm-dialog";
 import { api } from "@/lib/api";
 import {
+  AD_CREATIVE_SIZES,
   AD_SLOTS,
   adImageUrl,
-  adIsActive,
+  adIsEnabled,
+  formatAdDateIraq,
+  formatAdDateUtc,
+  liveAdsInSlot,
+  type AdSlotKey,
   type AdvertiseAdmin,
 } from "@/lib/ads";
 import { t } from "@/lib/i18n";
@@ -45,6 +51,10 @@ function toIsoOrNull(local: string): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+function isSlotKey(value: string): value is AdSlotKey {
+  return AD_SLOTS.some((s) => s.key === value);
+}
+
 export function formFromAd(ad: AdvertiseAdmin): AdFormState {
   return {
     title: ad.title || "",
@@ -53,7 +63,7 @@ export function formFromAd(ad: AdvertiseAdmin): AdFormState {
     slotPosition: ad.slotPosition || "home_banner",
     startDate: toLocalInput(ad.startDate),
     endDate: toLocalInput(ad.endDate),
-    isActive: adIsActive(ad),
+    isActive: adIsEnabled(ad),
   };
 }
 
@@ -72,11 +82,13 @@ function toPayload(form: AdFormState) {
 export function AdminAdFormModal({
   open,
   ad,
+  existingAds = [],
   onClose,
   onSaved,
 }: {
   open: boolean;
   ad: AdvertiseAdmin | null;
+  existingAds?: AdvertiseAdmin[];
   onClose: () => void;
   onSaved: (ad: AdvertiseAdmin, created: boolean) => void;
 }) {
@@ -87,6 +99,7 @@ export function AdminAdFormModal({
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingNoImage, setPendingNoImage] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -96,22 +109,39 @@ export function AdminAdFormModal({
     setError(null);
     setBusy(false);
     setUploading(false);
+    setPendingNoImage(false);
   }, [open, ad]);
 
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !busy && !uploading) onClose();
+      if (e.key === "Escape" && !busy && !uploading && !pendingNoImage) onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, busy, uploading, onClose]);
+  }, [open, busy, uploading, pendingNoImage, onClose]);
 
   useEffect(() => {
     return () => {
       if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
     };
   }, [preview]);
+
+  const slotKey: AdSlotKey = isSlotKey(form.slotPosition)
+    ? form.slotPosition
+    : "home_banner";
+  const creative = AD_CREATIVE_SIZES[slotKey];
+  const bannerPreview = slotKey === "home_banner";
+
+  const competing = useMemo(
+    () => liveAdsInSlot(existingAds, form.slotPosition, ad?.id),
+    [existingAds, form.slotPosition, ad?.id],
+  );
+
+  const startIso = toIsoOrNull(form.startDate);
+  const endIso = toIsoOrNull(form.endDate);
+
+  const hasCreative = Boolean(file) || Boolean(ad && adImageUrl(ad));
 
   if (!open) return null;
 
@@ -126,20 +156,8 @@ export function AdminAdFormModal({
     }
   }
 
-  async function onSubmit(e: FormEvent) {
-    e.preventDefault();
+  async function save() {
     const body = toPayload(form);
-    if (!body.title) {
-      setError(t(locale, "adTitleRequired"));
-      return;
-    }
-    if (body.startDate && body.endDate) {
-      if (new Date(body.endDate).getTime() < new Date(body.startDate).getTime()) {
-        setError(t(locale, "adEndDateInvalid"));
-        return;
-      }
-    }
-
     setBusy(true);
     setError(null);
     try {
@@ -160,12 +178,32 @@ export function AdminAdFormModal({
     }
   }
 
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    const body = toPayload(form);
+    if (!body.title) {
+      setError(t(locale, "adTitleRequired"));
+      return;
+    }
+    if (body.startDate && body.endDate) {
+      if (new Date(body.endDate).getTime() < new Date(body.startDate).getTime()) {
+        setError(t(locale, "adEndDateInvalid"));
+        return;
+      }
+    }
+    if (form.isActive && !hasCreative) {
+      setPendingNoImage(true);
+      return;
+    }
+    await save();
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
       <div
         className="absolute inset-0"
         onClick={() => {
-          if (!busy && !uploading) onClose();
+          if (!busy && !uploading && !pendingNoImage) onClose();
         }}
         role="presentation"
       />
@@ -195,6 +233,12 @@ export function AdminAdFormModal({
         {error ? (
           <p className="mt-4 text-sm text-red-600" role="alert">
             {error}
+          </p>
+        ) : null}
+
+        {competing.length > 0 ? (
+          <p className="mt-4 rounded-[var(--radius-control)] bg-amber-500/15 px-3 py-2 text-xs font-medium text-amber-800">
+            {t(locale, "adsSlotConflict")}
           </p>
         ) : null}
 
@@ -250,6 +294,9 @@ export function AdminAdFormModal({
                 </option>
               ))}
             </select>
+            <p className="mt-1 text-xs text-muted">
+              {t(locale, "adsCreativeSizeHint", { size: creative.size })}
+            </p>
           </label>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -277,6 +324,31 @@ export function AdminAdFormModal({
             </label>
           </div>
           <p className="text-xs text-muted">{t(locale, "adDatesHint")}</p>
+          {startIso ? (
+            <p className="text-xs text-muted">
+              {t(locale, "adsGoesLiveAt", {
+                iraq: formatAdDateIraq(startIso),
+                utc: formatAdDateUtc(startIso).replace(/ UTC$/, ""),
+              })}
+            </p>
+          ) : endIso ? (
+            <p className="text-xs text-muted">
+              {t(locale, "adsEndsAt", {
+                iraq: formatAdDateIraq(endIso),
+                utc: formatAdDateUtc(endIso).replace(/ UTC$/, ""),
+              })}
+            </p>
+          ) : (
+            <p className="text-xs text-muted">{t(locale, "adsOpenEnded")}</p>
+          )}
+          {startIso && endIso ? (
+            <p className="text-xs text-muted">
+              {t(locale, "adsEndsAt", {
+                iraq: formatAdDateIraq(endIso),
+                utc: formatAdDateUtc(endIso).replace(/ UTC$/, ""),
+              })}
+            </p>
+          ) : null}
 
           <div>
             <p className="text-sm font-medium">{t(locale, "adFieldBannerImage")}</p>
@@ -285,10 +357,22 @@ export function AdminAdFormModal({
               <img
                 src={preview}
                 alt=""
-                className="mt-2 h-28 w-full rounded-xl object-cover ring-1 ring-outline"
+                style={{ aspectRatio: creative.aspect }}
+                className={
+                  bannerPreview
+                    ? "mt-2 w-full min-h-16 rounded-xl object-cover ring-1 ring-outline"
+                    : "mt-2 w-40 rounded-xl object-cover ring-1 ring-outline"
+                }
               />
             ) : (
-              <div className="mt-2 flex h-28 items-center justify-center rounded-xl bg-input text-xs text-muted ring-1 ring-outline">
+              <div
+                style={{ aspectRatio: creative.aspect }}
+                className={
+                  bannerPreview
+                    ? "mt-2 flex min-h-16 w-full items-center justify-center rounded-xl bg-input text-xs text-muted ring-1 ring-outline"
+                    : "mt-2 flex w-40 items-center justify-center rounded-xl bg-input text-xs text-muted ring-1 ring-outline"
+                }
+              >
                 {t(locale, "noImageSelected")}
               </div>
             )}
@@ -310,6 +394,11 @@ export function AdminAdFormModal({
             <p className="mt-1 text-xs text-muted">
               {t(locale, "adImageUploadHint")}
             </p>
+            {form.isActive && !hasCreative ? (
+              <p className="mt-2 text-xs font-medium text-amber-700">
+                {t(locale, "adsNoImageWarning")}
+              </p>
+            ) : null}
           </div>
 
           <label className="flex items-center justify-between gap-3 rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm">
@@ -349,6 +438,19 @@ export function AdminAdFormModal({
           </button>
         </div>
       </form>
+
+      <AdminConfirmDialog
+        open={pendingNoImage}
+        title={t(locale, "adsSaveWithoutImageTitle")}
+        description={t(locale, "adsSaveWithoutImage")}
+        confirmLabel={t(locale, "confirm")}
+        busy={busy}
+        onCancel={() => setPendingNoImage(false)}
+        onConfirm={() => {
+          setPendingNoImage(false);
+          void save();
+        }}
+      />
     </div>
   );
 }

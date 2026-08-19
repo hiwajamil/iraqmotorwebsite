@@ -94,6 +94,7 @@ export function FloatingHelpWidget() {
   const [countryDial, setCountryDial] = useState("+964");
   const [phone, setPhone] = useState("");
   const [intent, setIntent] = useState<LeadIntent | "">("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -149,6 +150,11 @@ export function FloatingHelpWidget() {
         email: trimmedEmail,
         whatsappNumber,
         intent,
+        ...(message.trim() ? { message: message.trim().slice(0, 1000) } : {}),
+        sourceUrl:
+          typeof window !== "undefined"
+            ? window.location.href.slice(0, 512)
+            : (pathname || "").slice(0, 512),
         ...(turnstileToken ? { turnstileToken } : {}),
       });
       setView("success");
@@ -340,6 +346,19 @@ export function FloatingHelpWidget() {
                     </option>
                   ))}
                 </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-600">
+                  {t(locale, "helpMessage")}
+                </span>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
+                  placeholder={t(locale, "helpMessagePlaceholder")}
+                  rows={3}
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/20"
+                />
               </label>
 
               {error ? (

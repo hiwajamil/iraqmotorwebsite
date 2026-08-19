@@ -1,93 +1,214 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { api } from "@/lib/api";
 import {
   type AnalyticsReport,
   defaultAnalyticsRange,
   downloadCsv,
+  presetRange,
 } from "@/lib/admin";
-import { t } from "@/lib/i18n";
+import { t, type DictKey } from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
 
-function presetRange(days: number): { startDate: string; endDate: string } {
-  const end = new Date();
-  const start = new Date();
-  start.setUTCDate(end.getUTCDate() - (days - 1));
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  return { startDate: fmt(start), endDate: fmt(end) };
+const DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_SPAN = 366;
+const PRESETS = [7, 14, 30, 90] as const;
+const PRESET_LABEL: Record<(typeof PRESETS)[number], DictKey> = {
+  7: "preset7",
+  14: "preset14",
+  30: "preset30",
+  90: "preset90",
+};
+
+function isDay(value: string): boolean {
+  return DAY_RE.test(value);
+}
+
+function spanDays(startDate: string, endDate: string): number {
+  const start = Date.UTC(
+    Number(startDate.slice(0, 4)),
+    Number(startDate.slice(5, 7)) - 1,
+    Number(startDate.slice(8, 10)),
+  );
+  const end = Date.UTC(
+    Number(endDate.slice(0, 4)),
+    Number(endDate.slice(5, 7)) - 1,
+    Number(endDate.slice(8, 10)),
+  );
+  return Math.floor((end - start) / 86_400_000) + 1;
+}
+
+function isValidRange(startDate: string, endDate: string): boolean {
+  return (
+    isDay(startDate) &&
+    isDay(endDate) &&
+    startDate <= endDate &&
+    spanDays(startDate, endDate) <= MAX_SPAN
+  );
 }
 
 function formatIqd(n: number) {
   return `${n.toLocaleString()} IQD`;
 }
 
-function MiniBars({
+function matchingPreset(startDate: string, endDate: string): number | null {
+  for (const days of PRESETS) {
+    const range = presetRange(days);
+    if (range.startDate === startDate && range.endDate === endDate) return days;
+  }
+  return null;
+}
+
+function DailyArea({
   data,
-  max,
-  colorClass = "bg-primary/80",
+  emptyLabel,
 }: {
   data: { date: string; count: number }[];
-  max: number;
-  colorClass?: string;
+  emptyLabel: string;
 }) {
-  const locale = useAppSelector((s) => s.preferences.locale);
   if (data.length === 0) {
-    return <p className="text-sm text-muted">{t(locale, "noData")}</p>;
+    return <p className="text-sm text-muted">{emptyLabel}</p>;
   }
   return (
-    <div className="flex h-40 items-end gap-1 overflow-x-auto">
-      {data.map((day) => (
-        <div
-          key={day.date}
-          className="group flex min-w-[10px] flex-1 flex-col items-center justify-end"
-          title={`${day.date}: ${day.count.toLocaleString()}`}
-        >
-          <span className="mb-1 hidden text-[9px] text-muted opacity-0 group-hover:inline group-hover:opacity-100">
-            {day.count}
-          </span>
-          <div
-            className={`w-full rounded-t ${colorClass} transition group-hover:opacity-100`}
-            style={{
-              height: `${Math.max(4, (day.count / Math.max(max, 1)) * 100)}%`,
-            }}
+    <div className="h-40">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data}>
+          <CartesianGrid stroke="var(--outline)" strokeDasharray="3 3" />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 11, fill: "var(--muted)" }}
+            tickLine={false}
+            axisLine={{ stroke: "var(--outline)" }}
+            minTickGap={28}
           />
-        </div>
-      ))}
+          <YAxis
+            allowDecimals={false}
+            tick={{ fontSize: 11, fill: "var(--muted)" }}
+            tickLine={false}
+            axisLine={{ stroke: "var(--outline)" }}
+            width={36}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "var(--card)",
+              border: "1px solid var(--outline)",
+              borderRadius: 12,
+              fontSize: 12,
+            }}
+            labelStyle={{ color: "var(--foreground)" }}
+          />
+          <Area
+            type="monotone"
+            dataKey="count"
+            stroke="var(--primary)"
+            fill="var(--primary)"
+            fillOpacity={0.18}
+            strokeWidth={2}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
 
-export default function AdminAnalyticsPage() {
+function Kpi({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline">
+      <p className="text-xs uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-2 text-2xl font-bold">{value}</p>
+      {hint ? <p className="mt-1 text-[11px] text-muted">{hint}</p> : null}
+    </div>
+  );
+}
+
+function KpiSkeleton() {
+  return (
+    <div className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline">
+      <div className="h-3 w-24 animate-pulse rounded bg-input" />
+      <div className="mt-3 h-7 w-20 animate-pulse rounded bg-input" />
+    </div>
+  );
+}
+
+function AnalyticsInner() {
   const locale = useAppSelector((s) => s.preferences.locale);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const defaults = defaultAnalyticsRange();
-  const [startDate, setStartDate] = useState(defaults.startDate);
-  const [endDate, setEndDate] = useState(defaults.endDate);
+  const urlStart = searchParams.get("start") || "";
+  const urlEnd = searchParams.get("end") || "";
+  const initial = isValidRange(urlStart, urlEnd)
+    ? { startDate: urlStart, endDate: urlEnd }
+    : defaults;
+
+  const [startDate, setStartDate] = useState(initial.startDate);
+  const [endDate, setEndDate] = useState(initial.endDate);
   const [report, setReport] = useState<AnalyticsReport | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  async function generate(nextStart = startDate, nextEnd = endDate) {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await api.post<AnalyticsReport>("/admin/analytics", {
-        startDate: nextStart,
-        endDate: nextEnd,
-      });
-      setReport(data);
-      if (data.gaError && !data.gaAvailable) {
-        setError(t(locale, "gaWarning", { error: data.gaError }));
+  const writeRange = useCallback(
+    (start: string, end: string) => {
+      const params = new URLSearchParams();
+      params.set("start", start);
+      params.set("end", end);
+      router.replace(`/admin/analytics?${params.toString()}`, { scroll: false });
+    },
+    [router],
+  );
+
+  const generate = useCallback(
+    async (nextStart = startDate, nextEnd = endDate) => {
+      if (!isValidRange(nextStart, nextEnd)) {
+        setError(t(locale, "failedToLoadAnalytics"));
+        setLoading(false);
+        return;
       }
-    } catch (e) {
-      setReport(null);
-      setError(
-        e instanceof Error ? e.message : t(locale, "failedToLoadAnalytics"),
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await api.post<AnalyticsReport>("/admin/analytics", {
+          startDate: nextStart,
+          endDate: nextEnd,
+        });
+        setReport(data);
+        writeRange(nextStart, nextEnd);
+      } catch (e) {
+        setReport(null);
+        setError(
+          e instanceof Error ? e.message : t(locale, "failedToLoadAnalytics"),
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [startDate, endDate, locale, writeRange],
+  );
+
+  useEffect(() => {
+    void generate(initial.startDate, initial.endDate);
+    // First paint only; later range changes go through Generate / presets.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function applyPreset(days: number) {
     const range = presetRange(days);
@@ -96,14 +217,14 @@ export default function AdminAnalyticsPage() {
     void generate(range.startDate, range.endDate);
   }
 
-  const maxDau = Math.max(
-    1,
-    ...(report?.dailyActiveUsers.map((d) => d.count) ?? [1]),
-  );
-  const maxAds = Math.max(
-    1,
-    ...(report?.dailyNewAds?.map((d) => d.count) ?? [1]),
-  );
+  const activePreset = matchingPreset(startDate, endDate);
+  const gaOk = report?.gaAvailable === true;
+  const estimated =
+    report?.estimatedListingFees ??
+    (report?.revenueCard ?? 0) +
+      (report?.revenueEWallet ?? 0) +
+      (report?.revenueUnknown ?? 0);
+  const paid = report?.paidRevenue ?? report?.totalRevenue ?? 0;
 
   const cities = useMemo(
     () =>
@@ -118,6 +239,8 @@ export default function AdminAnalyticsPage() {
     [report],
   );
 
+  const showSkeleton = loading && !report;
+
   return (
     <div>
       <div>
@@ -127,25 +250,23 @@ export default function AdminAnalyticsPage() {
         <p className="mt-1 text-sm text-muted">
           {t(locale, "adminAnalyticsSubtitle")}
         </p>
+        <p className="mt-1 text-xs text-muted">{t(locale, "analyticsUtcHint")}</p>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {(
-          [
-            [7, "preset7"],
-            [14, "preset14"],
-            [30, "preset30"],
-            [90, "preset90"],
-          ] as const
-        ).map(([days, labelKey]) => (
+        {PRESETS.map((days) => (
           <button
             key={days}
             type="button"
             disabled={loading}
             onClick={() => applyPreset(days)}
-            className="rounded-full bg-input px-3 py-1 text-xs font-semibold disabled:opacity-50"
+            className={`rounded-full px-3 py-1 text-xs font-semibold disabled:opacity-50 ${
+              activePreset === days
+                ? "bg-primary text-on-primary"
+                : "bg-input text-muted"
+            }`}
           >
-            {t(locale, labelKey)}
+            {t(locale, PRESET_LABEL[days])}
           </button>
         ))}
       </div>
@@ -189,24 +310,41 @@ export default function AdminAnalyticsPage() {
             onClick={() => {
               const rows: string[][] = [
                 ["Metric", "Value"],
-                [t(locale, "metricTodaysDau"), String(report.todaysActiveUsers)],
-                [t(locale, "metricAppDownloads"), String(report.totalAppDownloads)],
                 [t(locale, "metricNewAds"), String(report.totalNewAds ?? 0)],
-                [t(locale, "metricTotalRevenue"), String(report.totalRevenue ?? 0)],
-                [t(locale, "metricCardRevenue"), String(report.revenueCard ?? 0)],
+                [t(locale, "metricEstimatedFees"), String(estimated)],
+                [t(locale, "metricPaidRevenue"), String(paid)],
+                [t(locale, "metricPaidCount"), String(report.paidCount ?? 0)],
+                [
+                  t(locale, "metricCardRevenue"),
+                  String(report.estimatedFeesCard ?? report.revenueCard ?? 0),
+                ],
                 [
                   t(locale, "metricEwalletRevenue"),
-                  String(report.revenueEWallet ?? 0),
+                  String(
+                    report.estimatedFeesEWallet ?? report.revenueEWallet ?? 0,
+                  ),
+                ],
+                [
+                  t(locale, "metricUnknownPayment"),
+                  String(report.estimatedFeesUnknown ?? report.revenueUnknown ?? 0),
+                ],
+                [
+                  t(locale, "metricTodaysDau"),
+                  gaOk ? String(report.todaysActiveUsers) : "",
+                ],
+                [
+                  t(locale, "metricAppDownloads"),
+                  gaOk ? String(report.totalAppDownloads) : "",
                 ],
                 [],
-                ["Date", t(locale, "chartDailyDau")],
-                ...report.dailyActiveUsers.map((d) => [
+                ["Date", t(locale, "metricNewAds")],
+                ...(report.dailyNewAds ?? []).map((d) => [
                   d.date,
                   String(d.count),
                 ]),
                 [],
-                ["Date", t(locale, "metricNewAds")],
-                ...(report.dailyNewAds ?? []).map((d) => [
+                ["Date", t(locale, "chartDailyDau")],
+                ...report.dailyActiveUsers.map((d) => [
                   d.date,
                   String(d.count),
                 ]),
@@ -232,59 +370,100 @@ export default function AdminAnalyticsPage() {
         ) : null}
       </form>
 
-      {error ? <p className="mt-4 text-sm text-amber-700">{error}</p> : null}
+      {error ? (
+        <p className="mt-4 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      {!report && !error ? (
-        <div className="mt-8 rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
-          <p className="font-semibold">{t(locale, "analyticsEmptyTitle")}</p>
-          <p className="mt-1 text-sm text-muted">
-            {t(locale, "analyticsEmptyHint")}
-          </p>
+      {showSkeleton ? (
+        <div className="mt-8 space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <KpiSkeleton key={i} />
+            ))}
+          </div>
+          <div className="grid gap-6 xl:grid-cols-2">
+            <div className="h-56 animate-pulse rounded-[var(--radius-card)] bg-card ring-1 ring-outline" />
+            <div className="h-56 animate-pulse rounded-[var(--radius-card)] bg-card ring-1 ring-outline" />
+          </div>
         </div>
       ) : null}
 
       {report ? (
         <>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-            {(
-              [
-                [t(locale, "metricNewAds"), report.totalNewAds ?? 0],
-                [t(locale, "metricTotalRevenue"), report.totalRevenue ?? 0, true],
-                [t(locale, "metricCardRevenue"), report.revenueCard ?? 0, true],
-                [
-                  t(locale, "metricEwalletRevenue"),
-                  report.revenueEWallet ?? 0,
-                  true,
-                ],
-                [t(locale, "metricTodaysDau"), report.todaysActiveUsers],
-                [t(locale, "metricAppDownloads"), report.totalAppDownloads],
-                [t(locale, "metricCities"), cities.length],
-                [
-                  t(locale, "metricGaStatus"),
-                  report.gaAvailable
-                    ? t(locale, "gaConnected")
-                    : t(locale, "gaOffline"),
-                  false,
-                  true,
-                ],
-              ] as const
-            ).map(([label, value, money, text]) => (
-              <div
-                key={label}
-                className="rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline"
-              >
-                <p className="text-xs uppercase tracking-wide text-muted">
-                  {label}
-                </p>
-                <p className="mt-2 text-2xl font-bold">
-                  {text
-                    ? String(value)
-                    : money
-                      ? formatIqd(Number(value))
-                      : Number(value).toLocaleString()}
-                </p>
-              </div>
-            ))}
+          <h2 className="mt-8 text-lg font-semibold">
+            {t(locale, "analyticsMarketplace")}
+          </h2>
+          <div className="mt-3 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+            <Kpi
+              label={t(locale, "metricNewAds")}
+              value={(report.totalNewAds ?? 0).toLocaleString()}
+            />
+            <Kpi
+              label={t(locale, "metricEstimatedFees")}
+              value={formatIqd(estimated)}
+            />
+            <Kpi
+              label={t(locale, "metricPaidRevenue")}
+              value={formatIqd(paid)}
+            />
+            <Kpi
+              label={t(locale, "metricPaidCount")}
+              value={(report.paidCount ?? 0).toLocaleString()}
+            />
+            <Kpi
+              label={t(locale, "metricCardRevenue")}
+              value={formatIqd(
+                report.estimatedFeesCard ?? report.revenueCard ?? 0,
+              )}
+            />
+            <Kpi
+              label={t(locale, "metricEwalletRevenue")}
+              value={formatIqd(
+                report.estimatedFeesEWallet ?? report.revenueEWallet ?? 0,
+              )}
+            />
+            <Kpi
+              label={t(locale, "metricUnknownPayment")}
+              value={formatIqd(
+                report.estimatedFeesUnknown ?? report.revenueUnknown ?? 0,
+              )}
+            />
+            <Kpi
+              label={t(locale, "metricCities")}
+              value={cities.length.toLocaleString()}
+            />
+          </div>
+
+          <h2 className="mt-10 text-lg font-semibold">
+            {t(locale, "analyticsAudience")}
+          </h2>
+          <p className="mt-1 text-xs text-muted">
+            {t(locale, "analyticsGaOptional")}
+          </p>
+          {!gaOk ? (
+            <p className="mt-2 text-sm text-muted">
+              {report.gaError
+                ? t(locale, "gaWarning", { error: report.gaError })
+                : t(locale, "gaUnavailableHint")}
+            </p>
+          ) : null}
+          <div className="mt-3 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <Kpi
+              label={t(locale, "metricTodaysDau")}
+              value={gaOk ? report.todaysActiveUsers.toLocaleString() : "—"}
+            />
+            <Kpi
+              label={t(locale, "metricAppDownloads")}
+              value={gaOk ? report.totalAppDownloads.toLocaleString() : "—"}
+            />
+            <Kpi
+              label={t(locale, "metricGaStatus")}
+              value={
+                gaOk ? t(locale, "gaConnected") : t(locale, "gaOffline")
+              }
+            />
           </div>
 
           <div className="mt-10 grid gap-6 xl:grid-cols-2">
@@ -292,11 +471,13 @@ export default function AdminAnalyticsPage() {
               <h2 className="text-lg font-semibold">
                 {t(locale, "chartDailyNewAds")}
               </h2>
+              <p className="mt-1 text-[11px] text-muted">
+                {t(locale, "analyticsUtcHint")}
+              </p>
               <div className="mt-4">
-                <MiniBars
+                <DailyArea
                   data={report.dailyNewAds ?? []}
-                  max={maxAds}
-                  colorClass="bg-emerald-500/80 group-hover:bg-emerald-500"
+                  emptyLabel={t(locale, "noData")}
                 />
               </div>
             </section>
@@ -304,8 +485,16 @@ export default function AdminAnalyticsPage() {
               <h2 className="text-lg font-semibold">
                 {t(locale, "chartDailyDau")}
               </h2>
+              <p className="mt-1 text-[11px] text-muted">
+                {gaOk
+                  ? t(locale, "analyticsUtcHint")
+                  : t(locale, "gaUnavailableHint")}
+              </p>
               <div className="mt-4">
-                <MiniBars data={report.dailyActiveUsers} max={maxDau} />
+                <DailyArea
+                  data={report.dailyActiveUsers}
+                  emptyLabel={t(locale, "noData")}
+                />
               </div>
             </section>
           </div>
@@ -335,7 +524,7 @@ export default function AdminAnalyticsPage() {
                     <tr key={row.city} className="border-t border-outline">
                       <td className="px-4 py-3">{row.city}</td>
                       <td className="px-4 py-3">
-                        {(row.visitorCount ?? 0).toLocaleString()}
+                        {gaOk ? (row.visitorCount ?? 0).toLocaleString() : "—"}
                       </td>
                       <td className="px-4 py-3">
                         {row.totalAds.toLocaleString()}
@@ -352,5 +541,27 @@ export default function AdminAnalyticsPage() {
         </>
       ) : null}
     </div>
+  );
+}
+
+export default function AdminAnalyticsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-3">
+          <div className="h-8 w-48 animate-pulse rounded bg-input" />
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-24 animate-pulse rounded-[var(--radius-card)] bg-card ring-1 ring-outline"
+              />
+            ))}
+          </div>
+        </div>
+      }
+    >
+      <AnalyticsInner />
+    </Suspense>
   );
 }

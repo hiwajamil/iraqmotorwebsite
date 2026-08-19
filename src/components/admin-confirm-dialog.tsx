@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { t } from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
 
@@ -12,6 +12,8 @@ export function AdminConfirmDialog({
   cancelLabel,
   danger = false,
   busy = false,
+  confirmDisabled = false,
+  children,
   onConfirm,
   onCancel,
 }: {
@@ -22,6 +24,8 @@ export function AdminConfirmDialog({
   cancelLabel?: string;
   danger?: boolean;
   busy?: boolean;
+  confirmDisabled?: boolean;
+  children?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -59,6 +63,7 @@ export function AdminConfirmDialog({
           {title}
         </h2>
         <p className="mt-2 text-sm text-muted">{description}</p>
+        {children}
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
@@ -70,7 +75,7 @@ export function AdminConfirmDialog({
           </button>
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || confirmDisabled}
             onClick={onConfirm}
             className={`rounded-[var(--radius-control)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 ${
               danger ? "bg-red-600" : "bg-primary text-on-primary"

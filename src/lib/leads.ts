@@ -19,8 +19,24 @@ export type LeadRequest = {
   whatsappNumber: string;
   intent: string;
   status: LeadStatus;
+  notes?: string;
+  sourceUrl?: string;
+  message?: string;
   createdAt: string;
   updatedAt: string;
+};
+
+export type LeadCounts = {
+  new: number;
+  contacted: number;
+  resolved: number;
+};
+
+export type LeadListResponse = {
+  items: LeadRequest[];
+  total: number;
+  filteredTotal?: number;
+  counts: LeadCounts;
 };
 
 export const COUNTRY_CODES = [

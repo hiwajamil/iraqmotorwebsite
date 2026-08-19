@@ -1,17 +1,102 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { api, type InboxMessage } from "@/lib/api";
+import {
+  type SupportTicket,
+  type TicketMessage,
+  formatAdminWhen,
+} from "@/lib/admin";
 import { formatDashboardWhen } from "@/lib/dashboard";
 import { formatMoney } from "@/lib/car-pricing-trust";
 import { useAppSelector } from "@/store/hooks";
 import { t } from "@/lib/i18n";
 
-export default function DashboardMessagesPage() {
-  const { user } = useAuth();
+type Tab = "offers" | "support";
+
+function DashboardMessagesInner() {
   const locale = useAppSelector((s) => s.preferences.locale);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tab: Tab = searchParams.get("tab") === "support" ? "support" : "offers";
+  const ticketId = searchParams.get("ticket") || "";
+
+  function writeNav(next: { tab?: Tab; ticket?: string | null }) {
+    const params = new URLSearchParams();
+    const nextTab = next.tab ?? tab;
+    const nextTicket =
+      next.ticket !== undefined ? next.ticket || "" : ticketId;
+    if (nextTab === "support") params.set("tab", "support");
+    if (nextTab === "support" && nextTicket) params.set("ticket", nextTicket);
+    const qs = params.toString();
+    router.replace(qs ? `/dashboard/messages?${qs}` : "/dashboard/messages", {
+      scroll: false,
+    });
+  }
+
+  return (
+    <div>
+      <h1 className="text-3xl font-bold tracking-tight">
+        {t(locale, "dashMessages")}
+      </h1>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => writeNav({ tab: "offers", ticket: null })}
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            tab === "offers"
+              ? "bg-primary text-on-primary"
+              : "bg-input text-muted"
+          }`}
+        >
+          {t(locale, "dashOffersTab")}
+        </button>
+        <button
+          type="button"
+          onClick={() => writeNav({ tab: "support" })}
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            tab === "support"
+              ? "bg-primary text-on-primary"
+              : "bg-input text-muted"
+          }`}
+        >
+          {t(locale, "dashSupportTab")}
+        </button>
+      </div>
+
+      {tab === "offers" ? (
+        <OffersInbox />
+      ) : (
+        <SupportInbox
+          ticketId={ticketId}
+          onSelectTicket={(id) => writeNav({ tab: "support", ticket: id })}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function DashboardMessagesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-3">
+          <div className="h-8 w-48 animate-pulse rounded bg-input" />
+          <div className="h-20 animate-pulse rounded-[16px] bg-input" />
+        </div>
+      }
+    >
+      <DashboardMessagesInner />
+    </Suspense>
+  );
+}
+
+function OffersInbox() {
+  const locale = useAppSelector((s) => s.preferences.locale);
+  const { user } = useAuth();
   const [items, setItems] = useState<InboxMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,19 +135,14 @@ export default function DashboardMessagesPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold tracking-tight">
-        {t(locale, "dashMessages")}
-      </h1>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-3 text-sm text-muted">
         {t(locale, "dashEmptyMessagesHint")}
       </p>
-
       {error ? (
         <p className="mt-6 text-red-600" role="alert">
           {error}
         </p>
       ) : null}
-
       {loading ? (
         <div className="mt-8 space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -115,6 +195,360 @@ export default function DashboardMessagesPage() {
           })}
         </ul>
       )}
+    </div>
+  );
+}
+
+function SupportInbox({
+  ticketId,
+  onSelectTicket,
+}: {
+  ticketId: string;
+  onSelectTicket: (id: string | null) => void;
+}) {
+  const locale = useAppSelector((s) => s.preferences.locale);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [selected, setSelected] = useState<SupportTicket | null>(null);
+  const [messages, setMessages] = useState<TicketMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [threadLoading, setThreadLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [compose, setCompose] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [text, setText] = useState("");
+  const [reply, setReply] = useState("");
+  const [busy, setBusy] = useState(false);
+  const threadRef = useRef<HTMLDivElement | null>(null);
+  const threadGen = useRef(0);
+
+  const loadTickets = useCallback(async () => {
+    setLoading(true);
+    try {
+      const d = await api.get<{ items: SupportTicket[] }>("/tickets/mine");
+      setTickets(d.items ?? []);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t(locale, "dashFailed"));
+    } finally {
+      setLoading(false);
+    }
+  }, [locale]);
+
+  useEffect(() => {
+    void loadTickets();
+  }, [loadTickets]);
+
+  const openTicket = useCallback(
+    async (ticket: SupportTicket, opts?: { silent?: boolean }) => {
+      const gen = ++threadGen.current;
+      if (!opts?.silent) {
+        setSelected((cur) =>
+          cur?.id === ticket.id ? { ...cur, ...ticket } : ticket,
+        );
+        setCompose(false);
+        setThreadLoading(true);
+      }
+      try {
+        const d = await api.get<{ items: TicketMessage[] }>(
+          `/tickets/${ticket.id}/messages`,
+        );
+        if (gen !== threadGen.current) return;
+        setMessages(d.items ?? []);
+      } catch (e) {
+        if (gen !== threadGen.current) return;
+        setError(
+          e instanceof Error ? e.message : t(locale, "failedToLoadThread"),
+        );
+      } finally {
+        if (gen === threadGen.current) setThreadLoading(false);
+      }
+    },
+    [locale],
+  );
+
+  useEffect(() => {
+    setReply("");
+  }, [ticketId]);
+
+  useEffect(() => {
+    if (!ticketId || compose) {
+      if (!ticketId) {
+        setSelected(null);
+        setMessages([]);
+      }
+      return;
+    }
+    const fromList = tickets.find((row) => row.id === ticketId);
+    void openTicket(fromList ?? { id: ticketId, status: "open" });
+  }, [ticketId, compose, openTicket]);
+
+  useEffect(() => {
+    if (!ticketId) return;
+    setSelected((cur) => {
+      const fromList = tickets.find((row) => row.id === ticketId);
+      return fromList ?? cur;
+    });
+  }, [tickets, ticketId]);
+
+  useEffect(() => {
+    const el = threadRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
+  useEffect(() => {
+    if (!ticketId || compose) return;
+    const tick = () => {
+      if (document.visibilityState !== "visible") return;
+      void openTicket({ id: ticketId }, { silent: true });
+    };
+    const id = window.setInterval(tick, 10_000);
+    return () => window.clearInterval(id);
+  }, [ticketId, compose, openTicket]);
+
+  async function createTicket() {
+    const subj = subject.trim();
+    const body = text.trim();
+    if (!body) return;
+    setBusy(true);
+    try {
+      const created = await api.post<{ id: string }>("/tickets", {
+        subject: subj || undefined,
+        text: body,
+      });
+      setSubject("");
+      setText("");
+      setCompose(false);
+      await loadTickets();
+      if (created.id) onSelectTicket(created.id);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t(locale, "replyFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function sendReply() {
+    if (!selected || !reply.trim()) return;
+    setBusy(true);
+    try {
+      await api.post(`/tickets/${selected.id}/messages`, {
+        text: reply.trim(),
+      });
+      setReply("");
+      await openTicket(selected, { silent: true });
+      await loadTickets();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t(locale, "replyFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <p className="text-sm text-muted">{t(locale, "dashSupportSubtitle")}</p>
+        <button
+          type="button"
+          onClick={() => {
+            setCompose(true);
+            onSelectTicket(null);
+          }}
+          className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary"
+        >
+          {t(locale, "dashNewTicket")}
+        </button>
+      </div>
+
+      {error ? (
+        <p className="mt-4 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      {compose ? (
+        <form
+          className="mt-6 space-y-3 rounded-[16px] bg-card p-4 ring-1 ring-outline"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void createTicket();
+          }}
+        >
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold">
+              {t(locale, "dashTicketSubject")}
+            </span>
+            <input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder={t(locale, "dashTicketSubjectPlaceholder")}
+              className="w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold">
+              {t(locale, "dashTicketMessage")}
+            </span>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value.slice(0, 4000))}
+              placeholder={t(locale, "dashTicketMessagePlaceholder")}
+              rows={5}
+              required
+              className="w-full resize-none rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+            />
+          </label>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={busy || !text.trim()}
+              className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
+            >
+              {t(locale, "send")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCompose(false);
+                onSelectTicket(null);
+              }}
+              className="rounded-[var(--radius-control)] bg-input px-4 py-2 text-xs font-semibold"
+            >
+              {t(locale, "dashCancel")}
+            </button>
+          </div>
+        </form>
+      ) : null}
+
+      {selected && !compose ? (
+        <div className="mt-6 rounded-[16px] bg-card p-4 ring-1 ring-outline">
+          <button
+            type="button"
+            className="text-xs font-semibold text-primary"
+            onClick={() => onSelectTicket(null)}
+          >
+            {t(locale, "dashBackToTickets")}
+          </button>
+          <p className="mt-2 font-semibold">
+            {selected.subject || t(locale, "supportTicketFallback")}
+          </p>
+          <p className="text-xs text-muted">
+            {selected.status === "resolved"
+              ? t(locale, "ticketStatusResolved")
+              : t(locale, "ticketStatusOpen")}
+          </p>
+          <div
+            ref={threadRef}
+            className="mt-4 max-h-[420px] space-y-3 overflow-y-auto"
+          >
+            {threadLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-12 w-2/3 animate-pulse rounded-2xl bg-input"
+                />
+              ))
+            ) : (
+              messages.map((m) => {
+                const fromUser = !m.isAdmin;
+                return (
+                  <div
+                    key={m.id}
+                    className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
+                      fromUser
+                        ? "ml-auto bg-primary text-on-primary"
+                        : "bg-input"
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap">{m.text}</p>
+                    <p
+                      className={`mt-1 text-[10px] ${
+                        fromUser ? "text-on-primary/80" : "text-muted"
+                      }`}
+                    >
+                      {formatAdminWhen(m.timestamp)}
+                    </p>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          <form
+            className="mt-4 flex gap-2 border-t border-outline pt-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void sendReply();
+            }}
+          >
+            <textarea
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void sendReply();
+                }
+              }}
+              placeholder={t(locale, "replyPlaceholder")}
+              rows={2}
+              className="min-w-0 flex-1 resize-none rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={busy || !reply.trim()}
+              className="self-end rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
+            >
+              {t(locale, "send")}
+            </button>
+          </form>
+        </div>
+      ) : !compose ? (
+        loading ? (
+          <div className="mt-8 space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-20 animate-pulse rounded-[16px] bg-input"
+              />
+            ))}
+          </div>
+        ) : tickets.length === 0 ? (
+          <div className="mt-10 rounded-[16px] bg-card p-10 text-center ring-1 ring-outline">
+            <p className="font-semibold">{t(locale, "dashSupportEmpty")}</p>
+            <p className="mt-1 text-sm text-muted">
+              {t(locale, "dashSupportEmptyHint")}
+            </p>
+          </div>
+        ) : (
+          <ul className="mt-6 space-y-3">
+            {tickets.map((ticket) => (
+              <li key={ticket.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelectTicket(ticket.id)}
+                  className="block w-full rounded-[16px] bg-card p-4 text-start ring-1 ring-outline hover:ring-primary/40"
+                >
+                  <p className="font-semibold">
+                    {ticket.subject || t(locale, "supportTicketFallback")}
+                  </p>
+                  <p className="mt-1 truncate text-sm text-muted">
+                    {ticket.lastMessage || "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    {formatAdminWhen(ticket.lastMessageAt || ticket.updatedAt) ||
+                      "—"}
+                    {" · "}
+                    {ticket.status === "resolved"
+                      ? t(locale, "ticketStatusResolved")
+                      : t(locale, "ticketStatusOpen")}
+                  </p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
     </div>
   );
 }

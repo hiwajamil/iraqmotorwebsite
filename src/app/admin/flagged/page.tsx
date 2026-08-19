@@ -1,12 +1,72 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import { MoreHorizontal } from "lucide-react";
 import { api, type Car } from "@/lib/api";
-import { type FlaggedAd, carImage, carTitle } from "@/lib/admin";
+import {
+  type FlaggedAd,
+  type FlaggedListResponse,
+  carImage,
+  carTitle,
+  formatAdminWhen,
+  setCarStatuses,
+  statusBadgeClass,
+} from "@/lib/admin";
+import { AdminConfirmDialog } from "@/components/admin-confirm-dialog";
+import { AdminToast } from "@/components/admin-toast";
 import { AdReviewModal } from "@/components/admin-ad-review";
-import { t } from "@/lib/i18n";
+import {
+  listingStatusLabel,
+  t,
+  type DictKey,
+  type Locale,
+} from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
+
+const PAGE_SIZE = "50";
+const SEARCH_DEBOUNCE_MS = 300;
+const MENU_ITEM =
+  "flex w-full rounded-[var(--radius-control)] px-3 py-2 text-left text-xs font-semibold data-focus:bg-input disabled:opacity-50";
+
+type FlagFilter = "open" | "resolved" | "dismissed" | "all";
+type ListingAction = "reject" | "expire" | "delete";
+type PendingAction =
+  | { type: "flag"; item: FlaggedAd; status: "resolved" | "dismissed" }
+  | { type: "listing"; item: FlaggedAd; listingAction: ListingAction };
+
+const TABS: { value: FlagFilter; labelKey: DictKey }[] = [
+  { value: "open", labelKey: "flagStatusOpen" },
+  { value: "resolved", labelKey: "flagStatusResolved" },
+  { value: "dismissed", labelKey: "flagStatusDismissed" },
+  { value: "all", labelKey: "all" },
+];
+
+const REASON_KEYS: Record<string, DictKey> = {
+  sold_already: "flagReasonSoldAlready",
+  wrong_price: "flagReasonWrongPrice",
+  misleading: "flagReasonMisleading",
+  spam: "flagReasonSpam",
+  other: "flagReasonOther",
+};
+
+function parseStatus(raw: string | null): FlagFilter {
+  const value = (raw || "open").toLowerCase();
+  if (value === "pending") return "open";
+  if (value === "resolved" || value === "dismissed" || value === "all") {
+    return value;
+  }
+  return "open";
+}
+
+function flagStatus(item: FlaggedAd): FlagFilter {
+  const raw = (item.status || "open").toLowerCase();
+  if (raw === "pending") return "open";
+  if (raw === "resolved" || raw === "dismissed") return raw;
+  return "open";
+}
 
 function flagToCar(item: FlaggedAd): Car | null {
   if (item.adData && typeof item.adData === "object") {
@@ -18,93 +78,258 @@ function flagToCar(item: FlaggedAd): Car | null {
   return null;
 }
 
-export default function AdminFlaggedPage() {
-  const locale = useAppSelector((s) => s.preferences.locale);
-  const [items, setItems] = useState<FlaggedAd[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "open" | "resolved" | "dismissed">(
-    "open",
-  );
-  const [query, setQuery] = useState("");
-  const [review, setReview] = useState<Car | null>(null);
-  const [reviewFlagId, setReviewFlagId] = useState<string | null>(null);
+function reporterId(item: FlaggedAd): string {
+  const id = String(item.reporterId || item.reportedBy || "").trim();
+  return id;
+}
 
-  async function load() {
-    try {
-      const d = await api.get<{ items: FlaggedAd[] }>("/admin/flagged");
-      setItems(d.items ?? []);
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t(locale, "failedGeneric"));
-    }
+function shortId(value: string): string {
+  if (!value) return "—";
+  return value.length > 10 ? `${value.slice(0, 8)}…` : value;
+}
+
+function reasonLabel(locale: Locale, reason?: string): string {
+  if (!reason) return t(locale, "flagReportFallback");
+  const key = REASON_KEYS[reason.trim().toLowerCase().replace(/\s+/g, "_")];
+  return key ? t(locale, key) : reason;
+}
+
+function flagBadgeClass(status: FlagFilter): string {
+  if (status === "resolved") return "bg-emerald-500/15 text-emerald-700";
+  if (status === "dismissed") return "bg-slate-500/15 text-slate-600";
+  return "bg-amber-500/15 text-amber-700";
+}
+
+function FlagThumb({ car, locale }: { car: Car | null; locale: Locale }) {
+  const img = car ? carImage(car) : null;
+  if (img) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={img}
+        alt=""
+        className="h-12 w-16 shrink-0 rounded-md object-cover"
+      />
+    );
   }
+  return (
+    <div className="flex h-12 w-16 shrink-0 items-center justify-center rounded-md bg-input text-[10px] text-muted">
+      {t(locale, "noPhoto")}
+    </div>
+  );
+}
+
+function SkeletonRows({ rows = 8 }: { rows?: number }) {
+  return (
+    <>
+      {Array.from({ length: rows }, (_, i) => (
+        <tr key={i} className="border-t border-outline">
+          <td className="px-3 py-2" colSpan={8}>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-16 animate-pulse rounded-md bg-input" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-3 w-48 max-w-full animate-pulse rounded bg-input" />
+                <div className="h-2.5 w-32 max-w-[60%] animate-pulse rounded bg-input" />
+              </div>
+            </div>
+          </td>
+        </tr>
+      ))}
+    </>
+  );
+}
+
+function SkeletonCards({ count = 6 }: { count?: number }) {
+  return (
+    <div className="space-y-2 md:hidden">
+      {Array.from({ length: count }, (_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 rounded-[var(--radius-card)] bg-card p-3 ring-1 ring-outline"
+        >
+          <div className="h-12 w-16 animate-pulse rounded-md bg-input" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-3 w-40 max-w-full animate-pulse rounded bg-input" />
+            <div className="h-2.5 w-24 animate-pulse rounded bg-input" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AdminFlaggedInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const locale = useAppSelector((s) => s.preferences.locale);
+  const status = parseStatus(searchParams.get("status"));
+
+  const [qDraft, setQDraft] = useState("");
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<FlaggedAd[]>([]);
+  const [counts, setCounts] = useState({
+    open: 0,
+    resolved: 0,
+    dismissed: 0,
+  });
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [review, setReview] = useState<Car | null>(null);
+  const [reviewFlag, setReviewFlag] = useState<FlaggedAd | null>(null);
+  const [pending, setPending] = useState<PendingAction | null>(null);
+
+  const writeStatus = useCallback(
+    (next: FlagFilter) => {
+      const params = new URLSearchParams();
+      params.set("status", next);
+      router.replace(`/admin/flagged?${params.toString()}`, { scroll: false });
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (searchParams.get("status")) return;
+    writeStatus("open");
+  }, [searchParams, writeStatus]);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      setQuery(qDraft.trim().toLowerCase());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [qDraft]);
+
+  const load = useCallback(
+    async (opts?: { append?: boolean; cursor?: string | null }) => {
+      setLoading(true);
+      if (!opts?.append) {
+        setItems([]);
+        setNextCursor(null);
+      }
+      try {
+        const d = await api.get<FlaggedListResponse>("/admin/flagged", {
+          status,
+          limit: PAGE_SIZE,
+          ...(opts?.cursor ? { cursor: opts.cursor } : {}),
+        });
+        const list = d.items ?? [];
+        setItems((prev) => (opts?.append ? [...prev, ...list] : list));
+        setCounts(d.counts ?? { open: 0, resolved: 0, dismissed: 0 });
+        setNextCursor(d.nextCursor ?? null);
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : t(locale, "failedGeneric"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [status, locale],
+  );
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
-  async function updateStatus(
-    id: string,
-    status: "resolved" | "dismissed" | "open",
-    resolution?: string,
-  ) {
-    setBusyId(id);
-    try {
-      await api.patch(`/admin/flagged/${id}`, {
-        status,
-        ...(resolution ? { resolution } : {}),
-      });
-      setItems((list) =>
-        list.map((item) =>
-          item.id === id
-            ? { ...item, status, resolution: resolution ?? item.resolution }
-            : item,
-        ),
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
-    } finally {
-      setBusyId(null);
+  const tabCount = useCallback(
+    (value: FlagFilter) => {
+      if (value === "all") {
+        return counts.open + counts.resolved + counts.dismissed;
+      }
+      return counts[value];
+    },
+    [counts],
+  );
+
+  const reportsByAd = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of items) {
+      if (!item.adId) continue;
+      map.set(item.adId, (map.get(item.adId) ?? 0) + 1);
+    }
+    return map;
+  }, [items]);
+
+  const visible = useMemo(() => {
+    if (!query) return items;
+    return items.filter((item) => {
+      const preview = flagToCar(item);
+      return [
+        item.reason,
+        reasonLabel(locale, item.reason),
+        item.details,
+        item.adId,
+        item.resolution,
+        reporterId(item),
+        preview ? carTitle(preview) : "",
+        preview?.brandId,
+        preview?.modelKey,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [items, query, locale]);
+
+  function closeReviewIf(flagId: string) {
+    if (reviewFlag?.id === flagId) {
+      setReview(null);
+      setReviewFlag(null);
     }
   }
 
-  async function deleteAd(item: FlaggedAd) {
-    if (!item.adId) return;
-    if (!window.confirm(t(locale, "confirmDeleteFlagged"))) {
-      return;
-    }
-    setBusyId(item.id);
+  async function patchFlag(
+    item: FlaggedAd,
+    body: {
+      status?: "open" | "resolved" | "dismissed";
+      resolution?: string;
+      listingAction?: ListingAction;
+    },
+  ) {
+    setBusy(true);
     try {
-      await api.delete(`/cars/${item.adId}`);
-      await api.patch(`/admin/flagged/${item.id}`, {
-        status: "resolved",
-        resolution: t(locale, "listingDeletedByAdmin"),
-      });
-      setItems((list) =>
-        list.map((row) =>
-          row.id === item.id
-            ? {
-                ...row,
-                status: "resolved",
-                resolution: t(locale, "listingDeletedByAdmin"),
-              }
-            : row,
-        ),
+      await api.patch(`/admin/flagged/${item.id}`, body);
+      setToast(
+        body.listingAction === "delete"
+          ? t(locale, "listingDeletedByAdmin")
+          : body.status === "dismissed"
+            ? t(locale, "flagDismissedByAdmin")
+            : t(locale, "flagResolvedByAdmin"),
       );
-      if (reviewFlagId === item.id) {
-        setReview(null);
-        setReviewFlagId(null);
-      }
+      setError(null);
+      closeReviewIf(item.id);
+      await load();
+      return true;
     } catch (e) {
-      setError(e instanceof Error ? e.message : t(locale, "deleteFailed"));
+      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
+      return false;
     } finally {
-      setBusyId(null);
+      setBusy(false);
     }
+  }
+
+  async function confirmPending() {
+    if (!pending) return;
+    const ok =
+      pending.type === "listing"
+        ? await patchFlag(pending.item, {
+            listingAction: pending.listingAction,
+          })
+        : await patchFlag(pending.item, {
+            status: pending.status,
+            resolution:
+              pending.status === "dismissed"
+                ? t(locale, "flagDismissedByAdmin")
+                : t(locale, "flagResolvedByAdmin"),
+          });
+    if (ok) setPending(null);
   }
 
   async function openReview(item: FlaggedAd) {
-    setReviewFlagId(item.id);
+    setReviewFlag(item);
     const embedded = flagToCar(item);
     if (embedded?.id) {
       setReview(embedded);
@@ -115,37 +340,183 @@ export default function AdminFlaggedPage() {
       const car = await api.get<Car>(`/cars/${item.adId}`);
       setReview(car);
     } catch (e) {
-      setError(e instanceof Error ? e.message : t(locale, "couldNotLoadListing"));
+      setError(
+        e instanceof Error ? e.message : t(locale, "couldNotLoadListing"),
+      );
+      setReviewFlag(null);
     }
   }
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return items.filter((item) => {
-      const status =
-        item.status === "pending" ? "open" : item.status || "open";
-      if (filter !== "all" && status !== filter) return false;
-      if (!q) return true;
-      const preview = flagToCar(item);
-      return [item.reason, item.details, item.adId, item.resolution, preview?.brandId, preview?.modelKey]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
-  }, [items, filter, query]);
-
-  function flagStatusLabel(status: string) {
-    if (status === "resolved") return t(locale, "flagStatusResolved");
-    if (status === "dismissed") return t(locale, "flagStatusDismissed");
-    return t(locale, "flagStatusOpen");
+  async function approveAfterReview() {
+    if (!review || !reviewFlag) return;
+    setBusy(true);
+    try {
+      await api.patch(`/admin/cars/${review.id}/status`, { status: "active" });
+      await api.patch(`/admin/flagged/${reviewFlag.id}`, {
+        status: "resolved",
+        resolution: t(locale, "flagApprovedAfterReview"),
+      });
+      setToast(t(locale, "flagApprovedAfterReview"));
+      setError(null);
+      setReview(null);
+      setReviewFlag(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
+    } finally {
+      setBusy(false);
+    }
   }
+
+  async function soldAfterReview() {
+    if (!review || !reviewFlag) return;
+    setBusy(true);
+    try {
+      const res = await setCarStatuses([review.id], "sold");
+      if (res.failed?.length) {
+        setError(t(locale, "updateFailed"));
+        return;
+      }
+      await api.patch(`/admin/flagged/${reviewFlag.id}`, {
+        status: "resolved",
+        resolution: t(locale, "flagResolvedByAdmin"),
+      });
+      setToast(t(locale, "flagResolvedByAdmin"));
+      setError(null);
+      setReview(null);
+      setReviewFlag(null);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const confirmTitle = pending
+    ? pending.type === "listing"
+      ? pending.listingAction === "delete"
+        ? t(locale, "flaggedConfirmDeleteTitle")
+        : pending.listingAction === "expire"
+          ? t(locale, "flaggedConfirmExpireTitle")
+          : t(locale, "flaggedConfirmRejectTitle")
+      : pending.status === "dismissed"
+        ? t(locale, "flaggedConfirmDismissTitle")
+        : t(locale, "flaggedConfirmResolveTitle")
+    : "";
+
+  const confirmDescription = pending
+    ? pending.type === "listing" && pending.listingAction === "delete"
+      ? t(locale, "confirmDeleteFlagged")
+      : pending.type === "listing"
+        ? t(locale, "confirmSetStatus", {
+            count: 1,
+            status: listingStatusLabel(
+              locale,
+              pending.listingAction === "expire" ? "expired" : "rejected",
+            ),
+          })
+        : pending.status === "dismissed"
+          ? t(locale, "flagDismissedByAdmin")
+          : t(locale, "flagResolvedByAdmin")
+    : "";
+
+  function rowMenu(item: FlaggedAd) {
+    const st = flagStatus(item);
+    return (
+      <Menu>
+        <MenuButton
+          disabled={busy}
+          aria-label={t(locale, "openMenu")}
+          className="rounded-[var(--radius-control)] p-1.5 text-muted hover:bg-input hover:text-foreground disabled:opacity-50"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </MenuButton>
+        <MenuItems
+          anchor="bottom end"
+          className="z-30 w-44 origin-top-end rounded-[var(--radius-card)] bg-card p-1 shadow-lg ring-1 ring-outline [--anchor-gap:4px]"
+        >
+          <MenuItem>
+            <button
+              type="button"
+              className={MENU_ITEM}
+              onClick={() => void openReview(item)}
+            >
+              {t(locale, "review")}
+            </button>
+          </MenuItem>
+          {st !== "resolved" ? (
+            <MenuItem>
+              <button
+                type="button"
+                disabled={busy}
+                className={MENU_ITEM}
+                onClick={() =>
+                  setPending({ type: "flag", item, status: "resolved" })
+                }
+              >
+                {t(locale, "resolve")}
+              </button>
+            </MenuItem>
+          ) : null}
+          {st !== "dismissed" ? (
+            <MenuItem>
+              <button
+                type="button"
+                disabled={busy}
+                className={MENU_ITEM}
+                onClick={() =>
+                  setPending({ type: "flag", item, status: "dismissed" })
+                }
+              >
+                {t(locale, "dismiss")}
+              </button>
+            </MenuItem>
+          ) : null}
+          {item.adId ? (
+            <MenuItem>
+              <button
+                type="button"
+                disabled={busy}
+                className={`${MENU_ITEM} text-red-600`}
+                onClick={() =>
+                  setPending({
+                    type: "listing",
+                    item,
+                    listingAction: "delete",
+                  })
+                }
+              >
+                {t(locale, "deleteAd")}
+              </button>
+            </MenuItem>
+          ) : null}
+        </MenuItems>
+      </Menu>
+    );
+  }
+
+  function reportHint(item: FlaggedAd) {
+    if (!item.adId) return null;
+    const n = reportsByAd.get(item.adId) ?? 0;
+    if (n < 2) return null;
+    return (
+      <p className="text-[11px] font-semibold text-amber-700">
+        {t(locale, "flaggedReportsCount", { count: n })}
+      </p>
+    );
+  }
+
+  const showSkeleton = loading && items.length === 0;
+  const empty = !loading && visible.length === 0;
 
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">{t(locale, "adminFlaggedTitle")}</h1>
+          <h1 className="text-3xl font-bold">
+            {t(locale, "adminFlaggedTitle")}
+          </h1>
           <p className="mt-1 text-sm text-muted">
             {t(locale, "adminFlaggedSubtitle")}
           </p>
@@ -160,184 +531,318 @@ export default function AdminFlaggedPage() {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {(["open", "resolved", "dismissed", "all"] as const).map((key) => (
+        {TABS.map((tab) => (
           <button
-            key={key}
+            key={tab.value}
             type="button"
-            onClick={() => setFilter(key)}
+            onClick={() => writeStatus(tab.value)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              filter === key
+              status === tab.value
                 ? "bg-primary text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
-            {key === "all" ? t(locale, "all") : flagStatusLabel(key)}
+            {t(locale, tab.labelKey)}
+            <span className="ms-1 tabular-nums opacity-80">
+              {tabCount(tab.value)}
+            </span>
           </button>
         ))}
       </div>
 
       <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        value={qDraft}
+        onChange={(e) => setQDraft(e.target.value)}
         placeholder={t(locale, "flaggedSearchPlaceholder")}
         className="mt-4 w-full max-w-md rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
       />
 
-      {error ? <p className="mt-4 text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="mt-4 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      <div className="mt-6 space-y-3">
-        {visible.length === 0 ? (
-          <div className="rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
-            <p className="font-semibold">{t(locale, "flaggedEmptyTitle")}</p>
-            <p className="mt-1 text-sm text-muted">
-              {t(locale, "flaggedEmptyHint")}
-            </p>
-          </div>
-        ) : (
-          visible.map((item) => {
-            const status =
-              item.status === "pending" ? "open" : item.status || "open";
-            const preview = flagToCar(item);
-            const img = preview ? carImage(preview) : null;
-            return (
-              <div
-                key={item.id}
-                className="flex flex-wrap items-start justify-between gap-3 rounded-[var(--radius-card)] bg-card p-4 ring-1 ring-outline"
-              >
-                <div className="flex min-w-0 flex-1 gap-3">
-                  {img ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={img}
-                      alt=""
-                      className="h-16 w-24 rounded-lg object-cover"
-                    />
-                  ) : null}
-                  <div className="min-w-0">
-                    <p className="font-semibold">
-                      {item.reason || t(locale, "flagReportFallback")}
-                    </p>
-                    {preview ? (
-                      <p className="text-sm capitalize text-muted">
-                        {carTitle(preview)}
-                      </p>
-                    ) : null}
-                    {item.details ? (
-                      <p className="mt-1 text-sm text-muted">{item.details}</p>
-                    ) : null}
-                    <p className="mt-2 text-xs text-muted">
-                      {t(locale, "flagAdMeta", {
-                        id: item.adId || "—",
-                        status: flagStatusLabel(status),
-                      })}
-                      {item.resolution ? ` · ${item.resolution}` : ""}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
-                    onClick={() => void openReview(item)}
+      {empty ? (
+        <div className="mt-6 rounded-[var(--radius-card)] bg-card p-8 text-center ring-1 ring-outline">
+          <p className="font-semibold">
+            {status === "open"
+              ? t(locale, "flaggedEmptyOpenTitle")
+              : t(locale, "flaggedEmptyTitle")}
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            {status === "open"
+              ? t(locale, "flaggedEmptyOpenHint")
+              : t(locale, "flaggedEmptyHint")}
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="mt-6 space-y-2 md:hidden">
+            {showSkeleton ? (
+              <SkeletonCards />
+            ) : (
+              visible.map((item) => {
+                const preview = flagToCar(item);
+                const st = flagStatus(item);
+                const listing = preview?.status;
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-start gap-3 rounded-[var(--radius-card)] bg-card p-3 ring-1 ring-outline"
                   >
-                    {t(locale, "review")}
-                  </button>
-                  {item.adId ? (
-                    <Link
-                      href={`/cars/${item.adId}`}
-                      className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold"
-                    >
-                      {t(locale, "open")}
-                    </Link>
-                  ) : null}
-                  {status !== "resolved" ? (
-                    <button
-                      type="button"
-                      disabled={busyId === item.id}
-                      className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
-                      onClick={() =>
-                        void updateStatus(
-                          item.id,
-                          "resolved",
-                          t(locale, "flagResolvedByAdmin"),
-                        )
-                      }
-                    >
-                      {t(locale, "resolve")}
-                    </button>
-                  ) : null}
-                  {status !== "dismissed" ? (
-                    <button
-                      type="button"
-                      disabled={busyId === item.id}
-                      className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-50"
-                      onClick={() =>
-                        void updateStatus(
-                          item.id,
-                          "dismissed",
-                          t(locale, "flagDismissedByAdmin"),
-                        )
-                      }
-                    >
-                      {t(locale, "dismiss")}
-                    </button>
-                  ) : null}
-                  {item.adId ? (
-                    <button
-                      type="button"
-                      disabled={busyId === item.id}
-                      className="rounded-[var(--radius-control)] px-3 py-2 text-xs font-semibold text-red-600 hover:bg-input disabled:opacity-50"
-                      onClick={() => void deleteAd(item)}
-                    >
-                      {t(locale, "deleteAd")}
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+                    <FlagThumb car={preview} locale={locale} />
+                    <div className="min-w-0 flex-1">
+                      <button
+                        type="button"
+                        className="text-left font-semibold capitalize hover:text-primary"
+                        onClick={() => void openReview(item)}
+                      >
+                        {preview
+                          ? carTitle(preview)
+                          : t(locale, "flagReportFallback")}
+                      </button>
+                      <p className="text-xs text-muted">
+                        {reasonLabel(locale, item.reason)}
+                        {item.adId ? (
+                          <>
+                            {" · "}
+                            <Link
+                              href={`/cars/${item.adId}`}
+                              className="hover:text-primary"
+                            >
+                              {shortId(item.adId)}
+                            </Link>
+                          </>
+                        ) : null}
+                      </p>
+                      {item.details ? (
+                        <p className="mt-1 line-clamp-2 text-xs text-muted">
+                          {item.details}
+                        </p>
+                      ) : null}
+                      <p className="mt-1 text-[11px] text-muted">
+                        {shortId(reporterId(item))}
+                        {" · "}
+                        {formatAdminWhen(item.createdAt || item.timestamp) ||
+                          "—"}
+                      </p>
+                      {reportHint(item)}
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {listing ? (
+                          <span
+                            className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClass(listing)}`}
+                          >
+                            {listingStatusLabel(locale, listing)}
+                          </span>
+                        ) : null}
+                        <span
+                          className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${flagBadgeClass(st)}`}
+                        >
+                          {t(
+                            locale,
+                            st === "resolved"
+                              ? "flagStatusResolved"
+                              : st === "dismissed"
+                                ? "flagStatusDismissed"
+                                : "flagStatusOpen",
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                    {rowMenu(item)}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div className="mt-4 hidden overflow-x-auto rounded-[var(--radius-card)] ring-1 ring-outline md:block">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-input text-xs uppercase text-muted">
+                <tr>
+                  <th className="w-20 px-2 py-2">{t(locale, "colThumbnail")}</th>
+                  <th className="px-3 py-2">{t(locale, "colTitle")}</th>
+                  <th className="px-3 py-2">{t(locale, "flagReportFallback")}</th>
+                  <th className="px-3 py-2">{t(locale, "flaggedColReporter")}</th>
+                  <th className="px-3 py-2">{t(locale, "flaggedColWhen")}</th>
+                  <th className="px-3 py-2">{t(locale, "colStatus")}</th>
+                  <th className="w-12 px-2 py-2">
+                    <span className="sr-only">{t(locale, "colActions")}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {showSkeleton ? (
+                  <SkeletonRows />
+                ) : (
+                  visible.map((item) => {
+                    const preview = flagToCar(item);
+                    const st = flagStatus(item);
+                    const listing = preview?.status;
+                    return (
+                      <tr
+                        key={item.id}
+                        className="border-t border-outline align-middle"
+                      >
+                        <td className="px-2 py-2">
+                          <FlagThumb car={preview} locale={locale} />
+                        </td>
+                        <td className="px-3 py-2">
+                          <button
+                            type="button"
+                            className="text-left font-semibold capitalize hover:text-primary"
+                            onClick={() => void openReview(item)}
+                          >
+                            {preview
+                              ? carTitle(preview)
+                              : t(locale, "flagReportFallback")}
+                          </button>
+                          {item.adId ? (
+                            <p className="text-[11px] text-muted">
+                              <Link
+                                href={`/cars/${item.adId}`}
+                                className="hover:text-primary"
+                              >
+                                {item.adId}
+                              </Link>
+                            </p>
+                          ) : null}
+                          {reportHint(item)}
+                        </td>
+                        <td className="px-3 py-2">
+                          <p>{reasonLabel(locale, item.reason)}</p>
+                          {item.details ? (
+                            <p className="line-clamp-2 text-[11px] text-muted">
+                              {item.details}
+                            </p>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs text-muted">
+                          {shortId(reporterId(item))}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 text-xs text-muted">
+                          {formatAdminWhen(item.createdAt || item.timestamp) ||
+                            "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex flex-col items-start gap-1">
+                            {listing ? (
+                              <span
+                                className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${statusBadgeClass(listing)}`}
+                              >
+                                {listingStatusLabel(locale, listing)}
+                              </span>
+                            ) : null}
+                            <span
+                              className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${flagBadgeClass(st)}`}
+                            >
+                              {t(
+                                locale,
+                                st === "resolved"
+                                  ? "flagStatusResolved"
+                                  : st === "dismissed"
+                                    ? "flagStatusDismissed"
+                                    : "flagStatusOpen",
+                              )}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 text-right">
+                          {rowMenu(item)}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {nextCursor && !query ? (
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            disabled={loading}
+            className="rounded-[var(--radius-control)] bg-input px-4 py-2 text-sm font-semibold disabled:opacity-50"
+            onClick={() => void load({ append: true, cursor: nextCursor })}
+          >
+            {t(locale, "loadMore")}
+          </button>
+        </div>
+      ) : null}
 
       {review ? (
         <AdReviewModal
           car={review}
           open
-          busy={busyId != null}
+          busy={busy}
           onClose={() => {
             setReview(null);
-            setReviewFlagId(null);
+            setReviewFlag(null);
           }}
-          onApprove={() => {
-            if (!reviewFlagId) return;
-            void (async () => {
-              await api.patch(`/admin/cars/${review.id}/status`, {
-                status: "active",
-              });
-              await updateStatus(
-                reviewFlagId,
-                "resolved",
-                t(locale, "flagApprovedAfterReview"),
-              );
-              setReview(null);
-            })();
-          }}
+          onApprove={() => void approveAfterReview()}
           onReject={() => {
-            if (!reviewFlagId) return;
-            void (async () => {
-              await api.patch(`/admin/cars/${review.id}/status`, {
-                status: "rejected",
-              });
-              await updateStatus(
-                reviewFlagId,
-                "resolved",
-                t(locale, "flagRejectedAfterReview"),
-              );
-              setReview(null);
-            })();
+            if (!reviewFlag) return;
+            setPending({
+              type: "listing",
+              item: reviewFlag,
+              listingAction: "reject",
+            });
+          }}
+          onExpire={() => {
+            if (!reviewFlag) return;
+            setPending({
+              type: "listing",
+              item: reviewFlag,
+              listingAction: "expire",
+            });
+          }}
+          onSold={() => void soldAfterReview()}
+          onDelete={() => {
+            if (!reviewFlag) return;
+            setPending({
+              type: "listing",
+              item: reviewFlag,
+              listingAction: "delete",
+            });
           }}
         />
       ) : null}
+
+      <AdminConfirmDialog
+        open={Boolean(pending)}
+        title={confirmTitle}
+        description={confirmDescription}
+        danger={
+          pending?.type === "listing" && pending.listingAction === "delete"
+        }
+        busy={busy}
+        onConfirm={() => void confirmPending()}
+        onCancel={() => {
+          if (!busy) setPending(null);
+        }}
+      />
+
+      <AdminToast message={toast} onDismiss={() => setToast(null)} />
     </div>
+  );
+}
+
+export default function AdminFlaggedPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-3">
+          <div className="h-8 w-48 animate-pulse rounded bg-input" />
+          <div className="h-4 w-72 animate-pulse rounded bg-input" />
+          <div className="mt-6 h-40 animate-pulse rounded-[var(--radius-card)] bg-card ring-1 ring-outline" />
+        </div>
+      }
+    >
+      <AdminFlaggedInner />
+    </Suspense>
   );
 }

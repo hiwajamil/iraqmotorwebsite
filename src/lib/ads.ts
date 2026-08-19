@@ -304,6 +304,27 @@ export const AD_SLOTS = [
   { key: "grid_tile", labelKey: "adSlotGridTile" as const },
 ] as const;
 
+export type AdSlotKey = (typeof AD_SLOTS)[number]["key"];
+
+/** Per-slot creative target (one image_url is still copied to all sizes). */
+export const AD_CREATIVE_SIZES: Record<
+  AdSlotKey,
+  { size: string; aspect: string }
+> = {
+  home_banner: { size: "1440×180", aspect: "8 / 1" },
+  grid_tile: { size: "750×750", aspect: "1 / 1" },
+};
+
+export type AdDeliveryState = "live" | "scheduled" | "expired" | "disabled";
+
+export function normalizeAdSlot(raw?: string | null): string {
+  const value = (raw || "home_banner").trim();
+  if (!value) return "home_banner";
+  if (value === "homeBanner" || value === "home-banner") return "home_banner";
+  if (value === "gridTile" || value === "grid-tile") return "grid_tile";
+  return value.replace(/\s+/g, "_");
+}
+
 export function adImageUrl(ad: AdvertiseAdmin): string | null {
   return (
     ad.imageUrl ||
@@ -315,13 +336,118 @@ export function adImageUrl(ad: AdvertiseAdmin): string | null {
   );
 }
 
-export function adIsActive(ad: AdvertiseAdmin): boolean {
+export function adHasCreative(ad: AdvertiseAdmin): boolean {
+  return Boolean(adImageUrl(ad));
+}
+
+/** `is_active` flag only — not the public date window. */
+export function adIsEnabled(ad: AdvertiseAdmin): boolean {
   return ad.isActive ?? ad.active !== false;
 }
 
+/** @deprecated Use adIsEnabled for the flag, adDeliveryState for serving. */
+export function adIsActive(ad: AdvertiseAdmin): boolean {
+  return adIsEnabled(ad);
+}
+
+function parseAdTime(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/**
+ * Same window as backend listActiveAds:
+ * start IS NULL OR start <= now(UTC), end IS NULL OR end >= now(UTC).
+ */
+export function adInServeWindow(
+  ad: Pick<AdvertiseAdmin, "startDate" | "endDate">,
+  now = new Date(),
+): "open" | "scheduled" | "expired" {
+  const t = now.getTime();
+  const start = parseAdTime(ad.startDate);
+  const end = parseAdTime(ad.endDate);
+  if (start != null && start > t) return "scheduled";
+  if (end != null && end < t) return "expired";
+  return "open";
+}
+
+export function adDeliveryState(
+  ad: AdvertiseAdmin,
+  now = new Date(),
+): AdDeliveryState {
+  if (!adIsEnabled(ad)) return "disabled";
+  const window = adInServeWindow(ad, now);
+  if (window === "scheduled") return "scheduled";
+  if (window === "expired") return "expired";
+  return "live";
+}
+
+export function adDeliveryBadgeClass(state: AdDeliveryState): string {
+  switch (state) {
+    case "live":
+      return "bg-emerald-500/15 text-emerald-700";
+    case "scheduled":
+      return "bg-amber-500/15 text-amber-700";
+    case "expired":
+      return "bg-slate-500/15 text-slate-600";
+    default:
+      return "bg-input text-muted";
+  }
+}
+
+/** Winner for a slot: live ads, newest updated_at first (matches listActiveAds). */
+export function pickLiveAdForSlot(
+  ads: AdvertiseAdmin[],
+  slot: AdSlotKey,
+): AdvertiseAdmin | null {
+  const live = ads
+    .filter(
+      (ad) =>
+        normalizeAdSlot(ad.slotPosition) === slot &&
+        adDeliveryState(ad) === "live",
+    )
+    .sort((a, b) => {
+      const au = parseAdTime(a.updatedAt) ?? 0;
+      const bu = parseAdTime(b.updatedAt) ?? 0;
+      return bu - au;
+    });
+  return live[0] ?? null;
+}
+
+export function liveAdsInSlot(
+  ads: AdvertiseAdmin[],
+  slot: string,
+  excludeId?: string,
+): AdvertiseAdmin[] {
+  const key = normalizeAdSlot(slot);
+  return ads.filter((ad) => {
+    if (excludeId && ad.id === excludeId) return false;
+    return (
+      normalizeAdSlot(ad.slotPosition) === key &&
+      adDeliveryState(ad) === "live"
+    );
+  });
+}
+
 export function adSlotLabel(locale: Locale, slot?: string | null): string {
-  const found = AD_SLOTS.find((s) => s.key === slot);
+  const key = normalizeAdSlot(slot);
+  const found = AD_SLOTS.find((s) => s.key === key);
   return found ? t(locale, found.labelKey) : slot || t(locale, "adSlotBanner");
+}
+
+function formatInZone(
+  iso: string | null | undefined,
+  timeZone: string,
+): string {
+  if (!iso) return "—";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone,
+  });
 }
 
 export function formatAdDate(iso: string | null | undefined): string {
@@ -332,6 +458,15 @@ export function formatAdDate(iso: string | null | undefined): string {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+export function formatAdDateUtc(iso: string | null | undefined): string {
+  const formatted = formatInZone(iso, "UTC");
+  return formatted === "—" ? "—" : `${formatted} UTC`;
+}
+
+export function formatAdDateIraq(iso: string | null | undefined): string {
+  return formatInZone(iso, "Asia/Baghdad");
 }
 
 export type AdvertiseAdmin = {
