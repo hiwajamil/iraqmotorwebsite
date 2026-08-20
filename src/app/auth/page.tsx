@@ -7,7 +7,6 @@ import {
   getFirebaseAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendEmailVerification,
   sendPasswordResetEmail,
 } from "@/lib/firebase";
 import { api, ApiError } from "@/lib/api";
@@ -22,9 +21,7 @@ import { t, type Locale } from "@/lib/i18n";
 import { IRAQ_PROVINCE_ORDER, localizeProvince } from "@/lib/iraq-locations";
 import { useAppSelector } from "@/store/hooks";
 
-/** Keep in sync with Flutter `kSuperAdminEmail` / backend `SUPER_ADMIN_EMAILS`. */
-const SUPER_ADMIN_EMAIL = "hiwa.constructions@gmail.com";
-const SUPER_ADMIN_PHONE_LOCAL = "07500000000";
+const MIN_PASSWORD_LENGTH = 6;
 
 function cleanPhoneInput(raw: string): string {
   return raw.trim().replace(/[\s-]/g, "");
@@ -46,33 +43,13 @@ function normalizeIraqPhone(raw: string): string {
   return digits;
 }
 
+/** Firebase Auth identity for phone+password accounts (matches Flutter). */
 function phoneToAuthEmail(phone: string): string {
   return `${normalizeIraqPhone(phone)}@iqmotors.app`;
 }
 
 function isValidIraqMobile(phone: string): boolean {
   return /^9647\d{9}$/.test(normalizeIraqPhone(phone));
-}
-
-function isSuperAdminEmail(email?: string | null): boolean {
-  if (!email?.trim()) return false;
-  return email.trim().toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
-}
-
-function isSuperAdminPhone(phone?: string | null): boolean {
-  if (!phone?.trim()) return false;
-  return (
-    normalizeIraqPhone(phone) === normalizeIraqPhone(SUPER_ADMIN_PHONE_LOCAL)
-  );
-}
-
-function isSuperAdminUser(email?: string | null, phone?: string | null): boolean {
-  if (isSuperAdminEmail(email) || isSuperAdminPhone(phone)) return true;
-  if (!email?.trim()) return false;
-  return (
-    email.trim().toLowerCase() ===
-    phoneToAuthEmail(SUPER_ADMIN_PHONE_LOCAL).toLowerCase()
-  );
 }
 
 function isCredentialError(err: unknown): boolean {
@@ -102,6 +79,7 @@ function firebaseErrorCode(err: unknown): string | null {
 function mapAuthError(err: unknown, locale: Locale): string {
   if (err instanceof ApiError) {
     if (err.status === 403) return t(locale, "botCheckFailed");
+    if (err.status === 409) return t(locale, "authPhoneInUse");
     return err.message || t(locale, "authRequestFailed", { status: err.status });
   }
 
@@ -112,7 +90,7 @@ function mapAuthError(err: unknown, locale: Locale): string {
     case "auth/user-not-found":
       return t(locale, "authInvalidCredentials");
     case "auth/email-already-in-use":
-      return t(locale, "authEmailInUse");
+      return t(locale, "authPhoneInUse");
     case "auth/weak-password":
       return t(locale, "authWeakPassword");
     case "auth/too-many-requests":
@@ -136,46 +114,6 @@ async function signInWithPhonePassword(
   await signInWithEmailAndPassword(auth, phoneToAuthEmail(phone), password);
 }
 
-/** Mirrors Flutter `AuthService.signInAsSuperAdmin`. */
-async function signInAsSuperAdmin(
-  auth: NonNullable<ReturnType<typeof getFirebaseAuth>>,
-  email: string,
-  phone: string,
-  password: string,
-  locale: Locale,
-) {
-  let lastFailure: unknown;
-
-  // The Auth user is the Gmail account. There is no 07500000000@iqmotors.app user.
-  if (isSuperAdminEmail(email) || isSuperAdminPhone(phone)) {
-    try {
-      await signInWithEmailAndPassword(auth, SUPER_ADMIN_EMAIL, password);
-      return;
-    } catch (err) {
-      if (!isCredentialError(err)) throw err;
-      lastFailure = err;
-    }
-  }
-
-  const cleanedPhone = cleanPhoneInput(phone);
-  if (cleanedPhone) {
-    if (!isSuperAdminPhone(phone)) {
-      if (lastFailure) throw lastFailure;
-      throw new Error(t(locale, "authInvalidIraqPhone"));
-    }
-    try {
-      await signInWithPhonePassword(auth, phone, password);
-      return;
-    } catch (err) {
-      if (!isCredentialError(err)) throw err;
-      lastFailure = err;
-    }
-  }
-
-  if (lastFailure) throw lastFailure;
-  await signInWithEmailAndPassword(auth, email.trim(), password);
-}
-
 const fieldClass =
   "w-full rounded-[12px] bg-input px-4 py-3.5 text-sm outline-none ring-1 ring-transparent transition focus:ring-primary";
 
@@ -188,9 +126,12 @@ function AuthForm() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [showroomName, setShowroomName] = useState("");
+  const [ownerName, setOwnerName] = useState("");
   const [accountType, setAccountType] = useState<"individual" | "showroom">(
     "individual",
   );
@@ -251,35 +192,49 @@ function AuthForm() {
         if (!isValidIraqMobile(trimmedPhone)) {
           throw new Error(t(locale, "authInvalidIraqPhone"));
         }
-        if (!trimmedEmail) {
-          throw new Error(t(locale, "authEmailRequired"));
+        if (password.length < MIN_PASSWORD_LENGTH) {
+          throw new Error(t(locale, "authWeakPassword"));
+        }
+        if (password !== confirmPassword) {
+          throw new Error(t(locale, "authPasswordMismatch"));
         }
         const trimmedCity = city.trim();
         if (!trimmedCity) {
           throw new Error(t(locale, "authCityRequired"));
         }
-        const normalizedPhone = normalizeIraqPhone(trimmedPhone);
-        const cred = await createUserWithEmailAndPassword(
-          auth,
-          trimmedEmail,
-          password,
-        );
-        if (cred.user) {
-          try {
-            await sendEmailVerification(cred.user);
-          } catch {
-            // Non-fatal — user can resend from admin gate.
+        if (accountType === "showroom") {
+          if (!showroomName.trim()) {
+            throw new Error(t(locale, "authShowroomNameRequired"));
+          }
+          if (!ownerName.trim()) {
+            throw new Error(t(locale, "authOwnerNameRequired"));
           }
         }
+
+        const normalizedPhone = normalizeIraqPhone(trimmedPhone);
+        const authEmail = phoneToAuthEmail(normalizedPhone);
+        const cred = await createUserWithEmailAndPassword(
+          auth,
+          authEmail,
+          password,
+        );
         try {
           await api.post("/users/register", {
             accountType,
             phone: normalizedPhone,
-            displayName: displayName.trim() || trimmedEmail.split("@")[0],
+            displayName:
+              displayName.trim() ||
+              (accountType === "showroom"
+                ? ownerName.trim()
+                : normalizedPhone),
             city: trimmedCity,
             registrationPlatform: "web",
+            ...(trimmedEmail.includes("@") ? { email: trimmedEmail } : {}),
             ...(accountType === "showroom"
-              ? { showroomName: displayName.trim() || t(locale, "showroomDefaultName") }
+              ? {
+                  showroomName: showroomName.trim(),
+                  ownerName: ownerName.trim(),
+                }
               : {}),
           });
         } catch (registerErr) {
@@ -291,8 +246,7 @@ function AuthForm() {
           }
           throw registerErr;
         }
-      } else if (isSuperAdminUser(trimmedEmail, trimmedPhone)) {
-        await signInAsSuperAdmin(auth, trimmedEmail, trimmedPhone, password, locale);
+        trackEvent("sign_up", { method: accountType });
       } else if (trimmedEmail.includes("@")) {
         try {
           await signInWithEmailAndPassword(auth, trimmedEmail, password);
@@ -329,7 +283,7 @@ function AuthForm() {
     setError(null);
     setInfo(null);
     const trimmed = email.trim();
-    if (!trimmed) {
+    if (!trimmed.includes("@")) {
       setError(t(locale, "authForgotPasswordHint"));
       return;
     }
@@ -391,6 +345,26 @@ function AuthForm() {
                 <option value="individual">{t(locale, "accountTypeIndividual")}</option>
                 <option value="showroom">{t(locale, "accountTypeShowroom")}</option>
               </select>
+              {accountType === "showroom" ? (
+                <>
+                  <input
+                    value={showroomName}
+                    onChange={(e) => setShowroomName(e.target.value)}
+                    placeholder={t(locale, "dashShowroomName")}
+                    required
+                    className={fieldClass}
+                    autoComplete="organization"
+                  />
+                  <input
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    placeholder={t(locale, "dashOwnerName")}
+                    required
+                    className={fieldClass}
+                    autoComplete="name"
+                  />
+                </>
+              ) : null}
               <select
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
@@ -410,20 +384,6 @@ function AuthForm() {
             </>
           ) : null}
 
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={
-              mode === "login"
-                ? t(locale, "authEmailLoginPlaceholder")
-                : t(locale, "helpEmail")
-            }
-            required={mode === "register"}
-            className={fieldClass}
-            autoComplete="email"
-          />
-
           <div className="relative">
             <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-sm text-muted">
               +964
@@ -433,7 +393,7 @@ function AuthForm() {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="750 000 0000"
-              required={mode === "register" || !email.trim()}
+              required={mode === "register" || !email.trim().includes("@")}
               className={`${fieldClass} ps-16`}
               autoComplete="tel"
               inputMode="tel"
@@ -441,11 +401,25 @@ function AuthForm() {
             />
           </div>
 
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={
+              mode === "login"
+                ? t(locale, "authEmailLoginPlaceholder")
+                : t(locale, "authEmailOptionalPlaceholder")
+            }
+            required={false}
+            className={fieldClass}
+            autoComplete="email"
+          />
+
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
               required
-              minLength={6}
+              minLength={MIN_PASSWORD_LENGTH}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t(locale, "authPassword")}
@@ -462,7 +436,21 @@ function AuthForm() {
               {showPassword ? t(locale, "hide") : t(locale, "show")}
             </button>
           </div>
-          {mode === "login" ? (
+          {mode === "register" ? (
+            <>
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={MIN_PASSWORD_LENGTH}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder={t(locale, "authConfirmPassword")}
+                className={fieldClass}
+                autoComplete="new-password"
+              />
+              <p className="text-xs text-muted">{t(locale, "authPasswordHint")}</p>
+            </>
+          ) : (
             <div className="flex justify-end">
               <button
                 type="button"
@@ -473,7 +461,7 @@ function AuthForm() {
                 {t(locale, "authForgotPassword")}
               </button>
             </div>
-          ) : null}
+          )}
           {error ? (
             <p
               role="alert"
@@ -514,6 +502,7 @@ function AuthForm() {
             setMode(mode === "login" ? "register" : "login");
             setError(null);
             setInfo(null);
+            setConfirmPassword("");
             setTurnstileToken(null);
             setTurnstileKey((k) => k + 1);
           }}
