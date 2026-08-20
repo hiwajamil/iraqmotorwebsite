@@ -391,6 +391,8 @@ const en = {
   authResetNeedPhoneOrEmail:
     "Enter a valid email or Iraqi phone number to reset your password.",
   authResetSessionExpired: "Reset session expired. Request a new code.",
+  authPhoneSmsFailed:
+    "Could not send the SMS code. Complete the security check below and try again.",
   authSwitchToRegister: "Need an account? Register",
   authSwitchToSignIn: "Already have an account? Sign in",
   authRegisterButton: "Register",
@@ -1445,6 +1447,8 @@ const ar: Record<DictKey, string> = {
   authResetNeedPhoneOrEmail:
     "أدخل بريداً صالحاً أو رقماً عراقياً لإعادة تعيين كلمة المرور.",
   authResetSessionExpired: "انتهت جلسة إعادة التعيين. اطلب رمزاً جديداً.",
+  authPhoneSmsFailed:
+    "تعذر إرسال رمز SMS. أكمل التحقق الأمني أدناه ثم حاول مرة أخرى.",
   authSwitchToRegister: "ليس لديك حساب؟ سجّل",
   authSwitchToSignIn: "لديك حساب؟ سجّل الدخول",
   authRegisterButton: "تسجيل",
@@ -2496,6 +2500,8 @@ const ku: Record<DictKey, string> = {
   authResetNeedPhoneOrEmail:
     "ئیمەیڵێکی دروست یان ژمارەیەکی عێراقی بنووسە بۆ نوێکردنەوەی وشەی نهێنی.",
   authResetSessionExpired: "دانیشتنی نوێکردنەوە بەسەرچوو. کۆدێکی نوێ داوا بکە.",
+  authPhoneSmsFailed:
+    "نەتوانرا کۆدی SMS بنێردرێت. پشکنینی ئاسایش لە خوارەوە تەواو بکە و دووبارە هەوڵبدەرەوە.",
   authSwitchToRegister: "هەژمارت نییە؟ تۆمار بکە",
   authSwitchToSignIn: "هەژمارت هەیە؟ بچۆ ژوورەوە",
   authRegisterButton: "تۆمارکردن",

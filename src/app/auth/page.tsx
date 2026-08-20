@@ -11,6 +11,8 @@ import {
   signInWithPhoneNumber,
   RecaptchaVerifier,
   signOut,
+  ensurePhoneAuthRecaptcha,
+  RECAPTCHA_CONTAINER_ID,
   type ConfirmationResult,
 } from "@/lib/firebase";
 import { api, ApiError } from "@/lib/api";
@@ -114,6 +116,11 @@ function mapAuthError(err: unknown, locale: Locale): string {
     case "auth/code-expired":
     case "auth/invalid-verification-id":
       return t(locale, "authInvalidOtp");
+    case "auth/internal-error":
+    case "auth/captcha-check-failed":
+    case "auth/missing-recaptcha-token":
+    case "auth/argument-error":
+      return t(locale, "authPhoneSmsFailed");
     case "auth/network-request-failed":
       return t(locale, "authNetworkError");
     default:
@@ -167,7 +174,6 @@ function AuthForm() {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const confirmationRef = useRef<ConfirmationResult | null>(null);
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
-  const recaptchaHostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (loading || !user || !me) return;
@@ -179,6 +185,15 @@ function AuthForm() {
     }
     router.replace(nextPath);
   }, [loading, user, me, nextPath, router, resetPhase]);
+
+  useEffect(() => {
+    // Warm reCAPTCHA Enterprise so Forgot password → SMS is ready.
+    const auth = getFirebaseAuth();
+    if (!auth) return;
+    void ensurePhoneAuthRecaptcha(auth).catch(() => {
+      // surfaced when user actually starts SMS reset
+    });
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -235,17 +250,26 @@ function AuthForm() {
   async function ensureRecaptcha(
     auth: NonNullable<ReturnType<typeof getFirebaseAuth>>,
   ): Promise<RecaptchaVerifier> {
-    if (recaptchaVerifierRef.current) return recaptchaVerifierRef.current;
-    const host = recaptchaHostRef.current;
+    await ensurePhoneAuthRecaptcha(auth);
+
+    // Always recreate — stale widgets cause auth/internal-error after failed sends.
+    clearRecaptcha();
+
+    const host = document.getElementById(RECAPTCHA_CONTAINER_ID);
     if (!host) {
       throw new Error(t(locale, "authFirebaseInitFailed"));
     }
     host.replaceChildren();
-    const verifier = new RecaptchaVerifier(auth, host, {
-      size: "invisible",
+
+    // Compact widget (same as Flutter web). Do not use invisible + display:none —
+    // that produced Firebase auth/internal-error with reCAPTCHA Enterprise.
+    const verifier = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
+      size: "compact",
+      "expired-callback": () => {
+        clearRecaptcha();
+      },
     });
     recaptchaVerifierRef.current = verifier;
-    await verifier.render();
     return verifier;
   }
 
@@ -765,7 +789,11 @@ function AuthForm() {
             />
           ) : null}
 
-          <div ref={recaptchaHostRef} className="hidden" aria-hidden />
+          {/* Firebase Phone Auth reCAPTCHA (Enterprise) — must not be display:none */}
+          <div
+            id={RECAPTCHA_CONTAINER_ID}
+            className="flex min-h-[1px] justify-center py-1"
+          />
 
           <button
             type="submit"
