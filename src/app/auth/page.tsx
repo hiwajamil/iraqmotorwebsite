@@ -8,11 +8,10 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  signInWithPhoneNumber,
-  RecaptchaVerifier,
+  sendPhoneSmsCode,
   signOut,
   ensurePhoneAuthRecaptcha,
-  RECAPTCHA_CONTAINER_ID,
+  PHONE_RESET_RECAPTCHA_BUTTON_ID,
   type ConfirmationResult,
 } from "@/lib/firebase";
 import { api, ApiError } from "@/lib/api";
@@ -120,6 +119,9 @@ function mapAuthError(err: unknown, locale: Locale): string {
     case "auth/captcha-check-failed":
     case "auth/missing-recaptcha-token":
     case "auth/argument-error":
+    case "auth/missing-client-identifier":
+      return t(locale, "authPhoneSmsFailed");
+    case "auth/operation-not-allowed":
       return t(locale, "authPhoneSmsFailed");
     case "auth/network-request-failed":
       return t(locale, "authNetworkError");
@@ -173,7 +175,6 @@ function AuthForm() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const confirmationRef = useRef<ConfirmationResult | null>(null);
-  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
     if (loading || !user || !me) return;
@@ -193,17 +194,6 @@ function AuthForm() {
     void ensurePhoneAuthRecaptcha(auth).catch(() => {
       // surfaced when user actually starts SMS reset
     });
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      try {
-        recaptchaVerifierRef.current?.clear();
-      } catch {
-        // ignore
-      }
-      recaptchaVerifierRef.current = null;
-    };
   }, []);
 
   async function redirectAfterAuth() {
@@ -227,15 +217,6 @@ function AuthForm() {
     });
   }
 
-  function clearRecaptcha() {
-    try {
-      recaptchaVerifierRef.current?.clear();
-    } catch {
-      // ignore
-    }
-    recaptchaVerifierRef.current = null;
-  }
-
   function resetForgotState() {
     setResetPhase("idle");
     setResetSessionId(null);
@@ -244,33 +225,6 @@ function AuthForm() {
     setNewPassword("");
     setConfirmNewPassword("");
     confirmationRef.current = null;
-    clearRecaptcha();
-  }
-
-  async function ensureRecaptcha(
-    auth: NonNullable<ReturnType<typeof getFirebaseAuth>>,
-  ): Promise<RecaptchaVerifier> {
-    await ensurePhoneAuthRecaptcha(auth);
-
-    // Always recreate — stale widgets cause auth/internal-error after failed sends.
-    clearRecaptcha();
-
-    const host = document.getElementById(RECAPTCHA_CONTAINER_ID);
-    if (!host) {
-      throw new Error(t(locale, "authFirebaseInitFailed"));
-    }
-    host.replaceChildren();
-
-    // Compact widget (same as Flutter web). Do not use invisible + display:none —
-    // that produced Firebase auth/internal-error with reCAPTCHA Enterprise.
-    const verifier = new RecaptchaVerifier(auth, RECAPTCHA_CONTAINER_ID, {
-      size: "compact",
-      "expired-callback": () => {
-        clearRecaptcha();
-      },
-    });
-    recaptchaVerifierRef.current = verifier;
-    return verifier;
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -436,12 +390,10 @@ function AuthForm() {
         },
       );
 
-      clearRecaptcha();
-      const verifier = await ensureRecaptcha(auth);
-      const confirmation = await signInWithPhoneNumber(
+      const confirmation = await sendPhoneSmsCode(
         auth,
         `+${normalizedPhone}`,
-        verifier,
+        PHONE_RESET_RECAPTCHA_BUTTON_ID,
       );
       confirmationRef.current = confirmation;
       setResetSessionId(start.sessionId);
@@ -455,7 +407,6 @@ function AuthForm() {
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
     } catch (err) {
-      clearRecaptcha();
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
       setError(mapAuthError(err, locale));
@@ -789,10 +740,13 @@ function AuthForm() {
             />
           ) : null}
 
-          {/* Firebase Phone Auth reCAPTCHA (Enterprise) — must not be display:none */}
-          <div
-            id={RECAPTCHA_CONTAINER_ID}
-            className="flex min-h-[1px] justify-center py-1"
+          {/* Invisible reCAPTCHA anchor (Firebase requires a button element). */}
+          <button
+            id={PHONE_RESET_RECAPTCHA_BUTTON_ID}
+            type="button"
+            tabIndex={-1}
+            aria-hidden
+            className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0"
           />
 
           <button

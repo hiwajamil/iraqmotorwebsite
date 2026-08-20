@@ -55,6 +55,8 @@ export const RECAPTCHA_ENTERPRISE_SITE_KEY =
   "6Lci2CstAAAAAP4dOUHfxeVt2ai057KzVKnJYsQg";
 
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
+/** Button id for invisible RecaptchaVerifier fallback (Firebase requires a button). */
+export const PHONE_RESET_RECAPTCHA_BUTTON_ID = "phone-reset-recaptcha-btn";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
@@ -86,7 +88,7 @@ declare global {
   }
 }
 
-/** Preload reCAPTCHA Enterprise (matches Flutter web). */
+/** Preload reCAPTCHA Enterprise (matches Flutter web). Soft-fail on CSP/network. */
 export function loadRecaptchaEnterpriseScript(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (enterpriseScriptPromise) return enterpriseScriptPromise;
@@ -143,9 +145,6 @@ export function loadRecaptchaEnterpriseScript(): Promise<void> {
 /**
  * Fetch Auth reCAPTCHA Enterprise config (required when the project uses
  * Firebase Auth fraud prevention / Enterprise keys).
- *
- * Script preload is best-effort: Firebase JS can still initialize config if
- * CSP allows gstatic/google endpoints. We only soft-warn on script failure.
  */
 export async function ensurePhoneAuthRecaptcha(
   authInstance: Auth,
@@ -164,6 +163,67 @@ export async function ensurePhoneAuthRecaptcha(
     );
   }
   await recaptchaConfigPromise;
+}
+
+function firebaseErrCode(err: unknown): string {
+  if (err && typeof err === "object" && "code" in err) {
+    return String((err as { code: unknown }).code || "");
+  }
+  return "";
+}
+
+/**
+ * Send phone SMS for OTP flows.
+ *
+ * With Firebase Auth reCAPTCHA Enterprise in Enforce mode, the JS SDK allows
+ * omitting RecaptchaVerifier. Passing a classic v2 verifier often yields
+ * auth/internal-error on this project — try without first, then fall back to
+ * an invisible verifier bound to `fallbackButtonId`.
+ */
+export async function sendPhoneSmsCode(
+  authInstance: Auth,
+  e164Phone: string,
+  fallbackButtonId: string = PHONE_RESET_RECAPTCHA_BUTTON_ID,
+): Promise<ConfirmationResult> {
+  await ensurePhoneAuthRecaptcha(authInstance);
+
+  try {
+    // Prefer Enterprise Enforce path (no classic v2 RecaptchaVerifier).
+    return await signInWithPhoneNumber(authInstance, e164Phone);
+  } catch (err) {
+    const code = firebaseErrCode(err);
+    const fatal =
+      code === "auth/invalid-phone-number" ||
+      code === "auth/missing-phone-number" ||
+      code === "auth/quota-exceeded" ||
+      code === "auth/too-many-requests" ||
+      code === "auth/operation-not-allowed" ||
+      code === "auth/user-disabled";
+    if (fatal) throw err;
+    console.warn(
+      "[firebase] phone SMS without verifier failed; trying invisible RecaptchaVerifier",
+      code || err,
+    );
+  }
+
+  const host = document.getElementById(fallbackButtonId);
+  if (!host) {
+    throw new Error("reCAPTCHA button missing");
+  }
+
+  const verifier = new RecaptchaVerifier(authInstance, fallbackButtonId, {
+    size: "invisible",
+  });
+  try {
+    return await signInWithPhoneNumber(authInstance, e164Phone, verifier);
+  } catch (err) {
+    try {
+      verifier.clear();
+    } catch {
+      // ignore
+    }
+    throw err;
+  }
 }
 
 export {
