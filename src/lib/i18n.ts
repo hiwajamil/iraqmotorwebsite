@@ -366,7 +366,7 @@ const en = {
   authSignInSubtitle:
     "Sign in with your Iraqi phone and password. Email login is optional if your account uses email.",
   authRegisterSubtitle:
-    "Create an account with phone and password. Optional email is saved on your profile.",
+    "Verify your Iraqi phone by SMS, then set a password. Optional email is saved on your profile.",
   authEmailLoginPlaceholder: "Email (optional)",
   authEmailOptionalPlaceholder: "Email (optional)",
   authPhoneLabel: "Phone number",
@@ -393,6 +393,13 @@ const en = {
   authResetSessionExpired: "Reset session expired. Request a new code.",
   authPhoneSmsFailed:
     "Could not send the SMS code. Please try again in a moment.",
+  authSendOtp: "Send verification code",
+  authVerifyOtp: "Verify code",
+  authOtpSent: "We sent a verification code by SMS. Enter it to continue.",
+  authRegisterDetailsSubtitle:
+    "Phone verified. Finish your profile and choose a password.",
+  authChangePhone: "Use a different phone",
+  authAlreadyRegistered: "This phone already has an account. Sign in instead.",
   authSwitchToRegister: "Need an account? Register",
   authSwitchToSignIn: "Already have an account? Sign in",
   authRegisterButton: "Register",
@@ -613,6 +620,14 @@ const en = {
   pendingLabel: "pending",
   adminUsersTitle: "Users",
   adminUsersSubtitle: "Ban, change account type, or update city ({count})",
+  adminDeleteUserTitle: "Delete user?",
+  adminDeleteUserDescription:
+    "Soft-delete {name}: ban the account, disable Firebase Auth, and mark deleted. Active/pending listings must be expired first.",
+  adminDeleteUserConfirmHint:
+    'Type the name "{name}" or DELETE to confirm.',
+  adminDeleteUserHasListings:
+    "This user still has active or pending listings. Expire or ban them first.",
+  adminDeleteUserFailed: "Could not delete user",
   usersEmptyTitle: "No users found",
   usersEmptyHint: "Try clearing the city filter.",
   usersCountLabel: "users",
@@ -1422,7 +1437,7 @@ const ar: Record<DictKey, string> = {
   authSignInSubtitle:
     "سجّل الدخول برقم هاتفك العراقي وكلمة المرور. تسجيل الدخول بالبريد اختياري إن كان حسابك يستخدم بريداً.",
   authRegisterSubtitle:
-    "أنشئ حساباً بالهاتف وكلمة المرور. البريد اختياري ويُحفظ في ملفك.",
+    "تحقّق من رقمك العراقي عبر SMS ثم عيّن كلمة المرور. البريد اختياري ويُحفظ في ملفك.",
   authEmailLoginPlaceholder: "البريد (اختياري)",
   authEmailOptionalPlaceholder: "البريد (اختياري)",
   authPhoneLabel: "رقم الهاتف",
@@ -1449,6 +1464,13 @@ const ar: Record<DictKey, string> = {
   authResetSessionExpired: "انتهت جلسة إعادة التعيين. اطلب رمزاً جديداً.",
   authPhoneSmsFailed:
     "تعذر إرسال رمز SMS. حاول مرة أخرى بعد لحظات.",
+  authSendOtp: "إرسال رمز التحقق",
+  authVerifyOtp: "تحقق من الرمز",
+  authOtpSent: "أرسلنا رمز تحقق عبر SMS. أدخله للمتابعة.",
+  authRegisterDetailsSubtitle:
+    "تم التحقق من الهاتف. أكمل ملفك واختر كلمة مرور.",
+  authChangePhone: "استخدم رقماً آخر",
+  authAlreadyRegistered: "هذا الرقم لديه حساب مسبقاً. سجّل الدخول بدلاً من ذلك.",
   authSwitchToRegister: "ليس لديك حساب؟ سجّل",
   authSwitchToSignIn: "لديك حساب؟ سجّل الدخول",
   authRegisterButton: "تسجيل",
@@ -1670,6 +1692,14 @@ const ar: Record<DictKey, string> = {
   pendingLabel: "معلق",
   adminUsersTitle: "المستخدمون",
   adminUsersSubtitle: "حظر أو تغيير نوع الحساب أو تحديث المدينة ({count})",
+  adminDeleteUserTitle: "حذف المستخدم؟",
+  adminDeleteUserDescription:
+    "حذف ناعم لـ {name}: حظر الحساب وتعطيل Firebase Auth ووضع علامة محذوف. يجب إنهاء الإعلانات النشطة/المعلّقة أولاً.",
+  adminDeleteUserConfirmHint:
+    'اكتب الاسم "{name}" أو DELETE للتأكيد.',
+  adminDeleteUserHasListings:
+    "هذا المستخدم لديه إعلانات نشطة أو معلّقة. أنهِها أو احظرها أولاً.",
+  adminDeleteUserFailed: "تعذر حذف المستخدم",
   usersEmptyTitle: "لا يوجد مستخدمون",
   usersEmptyHint: "جرّب مسح فلتر المدينة.",
   usersCountLabel: "مستخدمون",
@@ -2475,7 +2505,7 @@ const ku: Record<DictKey, string> = {
   authSignInSubtitle:
     "بە ژمارەی مۆبایلی عێراقی و وشەی نهێنی بچۆ ژوورەوە. چوونەژوورەوە بە ئیمەیڵ ئەگەر هەژمارەکەت ئیمەیڵ بەکاردەهێنێت.",
   authRegisterSubtitle:
-    "هەژمارێک بە مۆبایل و وشەی نهێنی دروست بکە. ئیمەیڵ هەڵبژاردەیە و لە پرۆفایلدا پاشەکەوت دەکرێت.",
+    "ژمارەی مۆبایلی عێراقی بە SMS پشتڕاست بکە، پاشان وشەی نهێنی دابنێ. ئیمەیڵ هەڵبژاردەیە و لە پرۆفایلدا پاشەکەوت دەکرێت.",
   authEmailLoginPlaceholder: "ئیمەیڵ (هەڵبژاردە)",
   authEmailOptionalPlaceholder: "ئیمەیڵ (هەڵبژاردە)",
   authPhoneLabel: "ژمارەی مۆبایل",
@@ -2502,6 +2532,13 @@ const ku: Record<DictKey, string> = {
   authResetSessionExpired: "دانیشتنی نوێکردنەوە بەسەرچوو. کۆدێکی نوێ داوا بکە.",
   authPhoneSmsFailed:
     "نەتوانرا کۆدی SMS بنێردرێت. دوای چەند چرکەیەک دووبارە هەوڵبدەرەوە.",
+  authSendOtp: "ناردنی کۆدی پشتڕاستکردنەوە",
+  authVerifyOtp: "پشتڕاستکردنەوەی کۆد",
+  authOtpSent: "کۆدی پشتڕاستکردنەوە بە SMS نێردرا. بینووسە بۆ بەردەوامبوون.",
+  authRegisterDetailsSubtitle:
+    "مۆبایل پشتڕاستکرا. پرۆفایل تەواو بکە و وشەی نهێنی هەڵبژێرە.",
+  authChangePhone: "ژمارەیەکی تر بەکاربهێنە",
+  authAlreadyRegistered: "ئەم ژمارەیە پێشتر هەژماری هەیە. لەجیاتی ئەوە بچۆ ژوورەوە.",
   authSwitchToRegister: "هەژمارت نییە؟ تۆمار بکە",
   authSwitchToSignIn: "هەژمارت هەیە؟ بچۆ ژوورەوە",
   authRegisterButton: "تۆمارکردن",
@@ -2723,6 +2760,14 @@ const ku: Record<DictKey, string> = {
   pendingLabel: "چاوەڕوان",
   adminUsersTitle: "بەکارهێنەران",
   adminUsersSubtitle: "قەدەغە، گۆڕینی جۆری هەژمار، یان نوێکردنەوەی شار ({count})",
+  adminDeleteUserTitle: "بەکارهێنەر بسڕیتەوە؟",
+  adminDeleteUserDescription:
+    "سڕینەوەی نەرم بۆ {name}: قەدەغەکردنی هەژمار، ناکاراکردنی Firebase Auth، و نیشانەی سڕاوە. پێویستە ڕیکلامە چالاک/چاوەڕوانەکان یەکەم جار بەسەربچن.",
+  adminDeleteUserConfirmHint:
+    'ناوی "{name}" یان DELETE بنووسە بۆ پشتڕاستکردنەوە.',
+  adminDeleteUserHasListings:
+    "ئەم بەکارهێنەرە هێشتا ڕیکلامی چالاک یان چاوەڕوانی هەیە. یەکەم جار بەسەریان ببە یان قەدەغەیان بکە.",
+  adminDeleteUserFailed: "نەتوانرا بەکارهێنەر بسڕدرێتەوە",
   usersEmptyTitle: "هیچ بەکارهێنەرێک نەدۆزرایەوە",
   usersEmptyHint: "فلتەری شار پاک بکەرەوە.",
   usersCountLabel: "بەکارهێنەر",

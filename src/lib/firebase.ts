@@ -17,6 +17,7 @@ import {
   sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
+  linkWithCredential,
   type Auth,
   type ConfirmationResult,
   type User,
@@ -236,6 +237,7 @@ export {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
+  linkWithCredential,
   signOut,
   onAuthStateChanged,
 };

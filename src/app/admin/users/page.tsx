@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { groupByCity, type AdminUser } from "@/lib/admin";
 import { t, accountTypeLabel } from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
 import { UserStatsWidget } from "@/components/user-stats-widget";
+import { AdminConfirmDialog } from "@/components/admin-confirm-dialog";
 
 export default function AdminUsersPage() {
   const locale = useAppSelector((s) => s.preferences.locale);
@@ -21,6 +22,8 @@ export default function AdminUsersPage() {
   );
   const [view, setView] = useState<"list" | "cities">("list");
   const [cityFilter, setCityFilter] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
   async function load(nextCity = city) {
     try {
@@ -97,6 +100,49 @@ export default function AdminUsersPage() {
       setEditing(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : t(locale, "updateFailed"));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const deleteLabel = useMemo(() => {
+    if (!deleteTarget) return "";
+    return (
+      deleteTarget.displayName ||
+      deleteTarget.showroomName ||
+      deleteTarget.phone ||
+      deleteTarget.uid
+    );
+  }, [deleteTarget]);
+
+  const deleteConfirmOk = useMemo(() => {
+    const typed = deleteConfirmText.trim();
+    if (!typed || !deleteTarget) return false;
+    if (typed.toUpperCase() === "DELETE") return true;
+    return typed === deleteLabel;
+  }, [deleteConfirmText, deleteTarget, deleteLabel]);
+
+  async function confirmDelete() {
+    if (!deleteTarget || !deleteConfirmOk) return;
+    setBusyId(deleteTarget.uid);
+    setError(null);
+    try {
+      await api.delete(`/admin/users/${deleteTarget.uid}`);
+      setItems((list) =>
+        list.map((row) =>
+          row.uid === deleteTarget.uid ? { ...row, banned: true } : row,
+        ),
+      );
+      setDeleteTarget(null);
+      setDeleteConfirmText("");
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        setError(t(locale, "adminDeleteUserHasListings"));
+      } else {
+        setError(
+          e instanceof Error ? e.message : t(locale, "adminDeleteUserFailed"),
+        );
+      }
     } finally {
       setBusyId(null);
     }
@@ -317,6 +363,18 @@ export default function AdminUsersPage() {
                         >
                           {u.banned ? t(locale, "unban") : t(locale, "ban")}
                         </button>
+                        <button
+                          type="button"
+                          disabled={busyId === u.uid}
+                          className="text-xs font-semibold text-red-600 disabled:opacity-50"
+                          onClick={() => {
+                            setDeleteTarget(u);
+                            setDeleteConfirmText("");
+                            setError(null);
+                          }}
+                        >
+                          {t(locale, "dashDelete")}
+                        </button>
                         <Link
                           href={`/admin/listings?sellerId=${encodeURIComponent(u.uid)}`}
                           className="text-xs font-semibold text-muted hover:text-foreground"
@@ -332,6 +390,36 @@ export default function AdminUsersPage() {
           </table>
         </div>
       )}
+
+      <AdminConfirmDialog
+        open={Boolean(deleteTarget)}
+        title={t(locale, "adminDeleteUserTitle")}
+        description={t(locale, "adminDeleteUserDescription", {
+          name: deleteLabel || "—",
+        })}
+        danger
+        busy={Boolean(deleteTarget && busyId === deleteTarget.uid)}
+        confirmLabel={t(locale, "dashDelete")}
+        confirmDisabled={!deleteConfirmOk}
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => {
+          if (!busyId) {
+            setDeleteTarget(null);
+            setDeleteConfirmText("");
+          }
+        }}
+      >
+        <label className="mt-4 block text-xs font-semibold text-muted">
+          {t(locale, "adminDeleteUserConfirmHint", { name: deleteLabel || "DELETE" })}
+          <input
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            autoComplete="off"
+            className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm text-foreground"
+            placeholder="DELETE"
+          />
+        </label>
+      </AdminConfirmDialog>
     </div>
   );
 }
