@@ -393,6 +393,12 @@ const en = {
   authResetSessionExpired: "Reset session expired. Request a new code.",
   authPhoneSmsFailed:
     "Could not send the SMS code. Please try again in a moment.",
+  authPhoneSmsQuotaExceeded:
+    "SMS quota exceeded. Try again later or use a test phone in Firebase Console.",
+  authPhoneSmsNotAllowed:
+    "Phone sign-in is disabled for this project. Enable Phone in Firebase Authentication.",
+  authPhoneSmsCaptchaFailed:
+    "Security check failed. Refresh the page, complete the checks, and try again.",
   authSendOtp: "Send verification code",
   authVerifyOtp: "Verify code",
   authOtpSent: "We sent a verification code by SMS. Enter it to continue.",
@@ -1464,6 +1470,12 @@ const ar: Record<DictKey, string> = {
   authResetSessionExpired: "انتهت جلسة إعادة التعيين. اطلب رمزاً جديداً.",
   authPhoneSmsFailed:
     "تعذر إرسال رمز SMS. حاول مرة أخرى بعد لحظات.",
+  authPhoneSmsQuotaExceeded:
+    "تم تجاوز حصة رسائل SMS. حاول لاحقاً أو استخدم رقم اختبار في Firebase.",
+  authPhoneSmsNotAllowed:
+    "تسجيل الدخول بالهاتف غير مفعّل. فعّل Phone في Firebase Authentication.",
+  authPhoneSmsCaptchaFailed:
+    "فشل التحقق الأمني. حدّث الصفحة وأكمل الفحوصات ثم حاول مجدداً.",
   authSendOtp: "إرسال رمز التحقق",
   authVerifyOtp: "تحقق من الرمز",
   authOtpSent: "أرسلنا رمز تحقق عبر SMS. أدخله للمتابعة.",
@@ -2532,6 +2544,12 @@ const ku: Record<DictKey, string> = {
   authResetSessionExpired: "دانیشتنی نوێکردنەوە بەسەرچوو. کۆدێکی نوێ داوا بکە.",
   authPhoneSmsFailed:
     "نەتوانرا کۆدی SMS بنێردرێت. دوای چەند چرکەیەک دووبارە هەوڵبدەرەوە.",
+  authPhoneSmsQuotaExceeded:
+    "سنووری SMS تێپەڕی. دواتر هەوڵبدەرەوە یان ژمارەی تاقیکاری لە Firebase بەکاربهێنە.",
+  authPhoneSmsNotAllowed:
+    "چوونەژوورەوە بە مۆبایل ناکارا کراوە. Phone لە Firebase Authentication چالاک بکە.",
+  authPhoneSmsCaptchaFailed:
+    "پشکنینی ئاسایش سەرکەوتوو نەبوو. پەڕەکە نوێ بکەرەوە و دووبارە هەوڵبدەرەوە.",
   authSendOtp: "ناردنی کۆدی پشتڕاستکردنەوە",
   authVerifyOtp: "پشتڕاستکردنەوەی کۆد",
   authOtpSent: "کۆدی پشتڕاستکردنەوە بە SMS نێردرا. بینووسە بۆ بەردەوامبوون.",

@@ -44,6 +44,18 @@ Browser calls go through a same-origin rewrite to avoid CORS:
 
 Configured in `next.config.ts`. Client helper: `src/lib/api.ts`. Auth: Firebase web SDK, then `Authorization: Bearer <idToken>` on API requests.
 
+### Phone SMS (register + password reset)
+
+SMS OTP is sent by the **Firebase client** (`signInWithPhoneNumber` in `src/lib/firebase.ts`), not Express. If SMS fails, check Firebase Console:
+
+1. **Authentication → Sign-in method → Phone** enabled  
+2. Project on **Blaze** (required for production SMS)  
+3. **Authentication → Settings → Authorized domains** must include **`iraqmotors.net`** and **`www.iraqmotors.net`** (plus `localhost` for local)  
+4. **SMS region policy** allows Iraq (`IQ`)  
+5. reCAPTCHA Enterprise / fraud prevention configured for the web app (same key as Flutter)
+
+Note: Phone reCAPTCHA on this project is **AUDIT** (a `RecaptchaVerifier` is required). Do not rely on omitting the verifier unless enforcement is switched to **ENFORCE**.
+
 ## Routes
 
 ### Public / user

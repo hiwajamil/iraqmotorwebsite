@@ -23,6 +23,18 @@ import {
   type User,
 } from "firebase/auth";
 
+/**
+ * Phone SMS (register + password reset) uses client Firebase Phone Auth
+ * (`signInWithPhoneNumber`), not Express.
+ *
+ * Firebase Console checklist if SMS still fails:
+ * - Authentication → Sign-in method → Phone enabled
+ * - Blaze billing (required for real SMS)
+ * - Settings → Authorized domains includes localhost + production host
+ * - Settings → SMS region policy allows Iraq (IQ)
+ * - reCAPTCHA Enterprise / fraud prevention configured for the web app
+ */
+
 /** Public web config (same as Flutter `DefaultFirebaseOptions.web`). Env vars override. */
 const firebaseConfig = {
   apiKey:
@@ -55,14 +67,14 @@ export const RECAPTCHA_ENTERPRISE_SITE_KEY =
   process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY ||
   "6Lci2CstAAAAAP4dOUHfxeVt2ai057KzVKnJYsQg";
 
+/** DOM host for RecaptchaVerifier — matches Flutter `#recaptcha-container`. */
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
-/** Button id for invisible RecaptchaVerifier fallback (Firebase requires a button). */
-export const PHONE_RESET_RECAPTCHA_BUTTON_ID = "phone-reset-recaptcha-btn";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let enterpriseScriptPromise: Promise<void> | null = null;
 let recaptchaConfigPromise: Promise<void> | null = null;
+let activePhoneVerifier: RecaptchaVerifier | null = null;
 
 export function getFirebaseApp() {
   if (typeof window === "undefined") return null;
@@ -173,25 +185,99 @@ function firebaseErrCode(err: unknown): string {
   return "";
 }
 
+function firebaseErrMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
+function logPhoneSmsError(stage: string, err: unknown): void {
+  console.error(`[firebase] phone SMS ${stage}`, {
+    code: firebaseErrCode(err) || undefined,
+    message: firebaseErrMessage(err),
+    err,
+  });
+}
+
+/** Clear a previous RecaptchaVerifier before a new SMS attempt. */
+export function clearPhoneRecaptchaVerifier(): void {
+  if (!activePhoneVerifier) return;
+  try {
+    activePhoneVerifier.clear();
+  } catch {
+    // widget may already be gone
+  }
+  activePhoneVerifier = null;
+  const host = document.getElementById(RECAPTCHA_CONTAINER_ID);
+  if (host) host.replaceChildren();
+}
+
 /**
- * Send phone SMS for OTP flows.
+ * Canonical E.164 for Iraqi mobiles: `+9647xxxxxxxxx`.
+ * Pass digits already normalized via `normalizeIraqPhone` (no leading +).
+ */
+export function toIraqE164(normalizedDigits: string): string {
+  const digits = normalizedDigits.trim().replace(/\D/g, "");
+  if (digits.startsWith("964")) return `+${digits}`;
+  if (digits.startsWith("0")) return `+964${digits.slice(1)}`;
+  if (digits.length === 10 && digits.startsWith("7")) return `+964${digits}`;
+  return digits.startsWith("+") ? digits : `+${digits}`;
+}
+
+function createCompactVerifier(authInstance: Auth): RecaptchaVerifier {
+  clearPhoneRecaptchaVerifier();
+  const host = document.getElementById(RECAPTCHA_CONTAINER_ID);
+  if (!host) {
+    throw new Error(
+      `Missing #${RECAPTCHA_CONTAINER_ID} — required for Firebase Phone Auth`,
+    );
+  }
+  host.replaceChildren();
+
+  // Compact widget (Flutter web pattern). Do not use pointer-events-none /
+  // display:none hosts — that breaks RecaptchaVerifier.
+  const verifier = new RecaptchaVerifier(authInstance, RECAPTCHA_CONTAINER_ID, {
+    size: "compact",
+    "expired-callback": () => {
+      clearPhoneRecaptchaVerifier();
+    },
+  });
+  activePhoneVerifier = verifier;
+  return verifier;
+}
+
+/**
+ * Send phone SMS for register / password-reset OTP.
  *
- * With Firebase Auth reCAPTCHA Enterprise in Enforce mode, the JS SDK allows
- * omitting RecaptchaVerifier. Passing a classic v2 verifier often yields
- * auth/internal-error on this project — try without first, then fall back to
- * an invisible verifier bound to `fallbackButtonId`.
+ * Project phone reCAPTCHA is AUDIT (verifier required). Prefer compact
+ * RecaptchaVerifier on `#recaptcha-container` (Flutter pattern). Optionally
+ * try without verifier if Enterprise Enforce is enabled later.
  */
 export async function sendPhoneSmsCode(
   authInstance: Auth,
   e164Phone: string,
-  fallbackButtonId: string = PHONE_RESET_RECAPTCHA_BUTTON_ID,
 ): Promise<ConfirmationResult> {
+  const e164 = e164Phone.trim().startsWith("+")
+    ? e164Phone.trim()
+    : toIraqE164(e164Phone);
+  if (!/^\+9647\d{9}$/.test(e164)) {
+    const err = Object.assign(new Error(`Invalid E.164 phone: ${e164}`), {
+      code: "auth/invalid-phone-number",
+    });
+    logPhoneSmsError("validate", err);
+    throw err;
+  }
+
   await ensurePhoneAuthRecaptcha(authInstance);
 
+  // AUDIT mode (current project): classic verifier required.
+  // Enforce mode: omit verifier. Try compact first, then without.
+  const verifier = createCompactVerifier(authInstance);
   try {
-    // Prefer Enterprise Enforce path (no classic v2 RecaptchaVerifier).
-    return await signInWithPhoneNumber(authInstance, e164Phone);
+    return await signInWithPhoneNumber(authInstance, e164, verifier);
   } catch (err) {
+    logPhoneSmsError("with-compact-verifier", err);
+    clearPhoneRecaptchaVerifier();
+
     const code = firebaseErrCode(err);
     const fatal =
       code === "auth/invalid-phone-number" ||
@@ -199,31 +285,16 @@ export async function sendPhoneSmsCode(
       code === "auth/quota-exceeded" ||
       code === "auth/too-many-requests" ||
       code === "auth/operation-not-allowed" ||
-      code === "auth/user-disabled";
+      code === "auth/user-disabled" ||
+      code === "auth/captcha-check-failed";
     if (fatal) throw err;
-    console.warn(
-      "[firebase] phone SMS without verifier failed; trying invisible RecaptchaVerifier",
-      code || err,
-    );
-  }
 
-  const host = document.getElementById(fallbackButtonId);
-  if (!host) {
-    throw new Error("reCAPTCHA button missing");
-  }
-
-  const verifier = new RecaptchaVerifier(authInstance, fallbackButtonId, {
-    size: "invisible",
-  });
-  try {
-    return await signInWithPhoneNumber(authInstance, e164Phone, verifier);
-  } catch (err) {
     try {
-      verifier.clear();
-    } catch {
-      // ignore
+      return await signInWithPhoneNumber(authInstance, e164);
+    } catch (err2) {
+      logPhoneSmsError("without-verifier-fallback", err2);
+      throw err2;
     }
-    throw err;
   }
 }
 

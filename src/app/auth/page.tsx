@@ -8,11 +8,13 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   sendPhoneSmsCode,
+  toIraqE164,
   signOut,
   ensurePhoneAuthRecaptcha,
+  clearPhoneRecaptchaVerifier,
   EmailAuthProvider,
   linkWithCredential,
-  PHONE_RESET_RECAPTCHA_BUTTON_ID,
+  RECAPTCHA_CONTAINER_ID,
   type ConfirmationResult,
   type User,
 } from "@/lib/firebase";
@@ -101,40 +103,68 @@ function mapAuthError(err: unknown, locale: Locale): string {
   }
 
   const code = firebaseErrorCode(err);
+  let message: string | null = null;
   switch (code) {
     case "auth/invalid-credential":
     case "auth/wrong-password":
     case "auth/user-not-found":
-      return t(locale, "authInvalidCredentials");
+      message = t(locale, "authInvalidCredentials");
+      break;
     case "auth/email-already-in-use":
     case "auth/credential-already-in-use":
     case "auth/provider-already-linked":
-      return t(locale, "authPhoneInUse");
+      message = t(locale, "authPhoneInUse");
+      break;
     case "auth/weak-password":
-      return t(locale, "authWeakPassword");
+      message = t(locale, "authWeakPassword");
+      break;
     case "auth/too-many-requests":
-      return t(locale, "authTooManyRequests");
+      message = t(locale, "authTooManyRequests");
+      break;
+    case "auth/quota-exceeded":
+      message = t(locale, "authPhoneSmsQuotaExceeded");
+      break;
+    case "auth/operation-not-allowed":
+      message = t(locale, "authPhoneSmsNotAllowed");
+      break;
+    case "auth/invalid-phone-number":
+    case "auth/missing-phone-number":
+      message = t(locale, "authInvalidIraqPhone");
+      break;
+    case "auth/captcha-check-failed":
+    case "auth/missing-recaptcha-token":
+      message = t(locale, "authPhoneSmsCaptchaFailed");
+      break;
     case "auth/invalid-email":
-      return t(locale, "helpInvalidEmail");
+      message = t(locale, "helpInvalidEmail");
+      break;
     case "auth/invalid-verification-code":
     case "auth/code-expired":
     case "auth/invalid-verification-id":
-      return t(locale, "authInvalidOtp");
+      message = t(locale, "authInvalidOtp");
+      break;
     case "auth/internal-error":
-    case "auth/captcha-check-failed":
-    case "auth/missing-recaptcha-token":
     case "auth/argument-error":
     case "auth/missing-client-identifier":
-      return t(locale, "authPhoneSmsFailed");
-    case "auth/operation-not-allowed":
-      return t(locale, "authPhoneSmsFailed");
+      message = t(locale, "authPhoneSmsFailed");
+      break;
     case "auth/network-request-failed":
-      return t(locale, "authNetworkError");
+      message = t(locale, "authNetworkError");
+      break;
     default:
+      message = err instanceof Error ? err.message : t(locale, "authFailed");
       break;
   }
 
-  return err instanceof Error ? err.message : t(locale, "authFailed");
+  if (
+    process.env.NODE_ENV === "development" &&
+    code &&
+    message &&
+    !message.includes(code)
+  ) {
+    return `${message} (${code})`;
+  }
+  return message;
 }
 
 async function signInWithPhonePassword(
@@ -278,10 +308,10 @@ function AuthForm() {
       await assertHuman("register");
 
       const normalizedPhone = normalizeIraqPhone(phone);
+      // E.164: +9647xxxxxxxxx (normalizeIraqPhone returns digits only).
       const confirmation = await sendPhoneSmsCode(
         auth,
-        `+${normalizedPhone}`,
-        PHONE_RESET_RECAPTCHA_BUTTON_ID,
+        toIraqE164(normalizedPhone),
       );
       confirmationRef.current = confirmation;
       verifiedRegisterPhoneRef.current = null;
@@ -291,6 +321,7 @@ function AuthForm() {
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
     } catch (err) {
+      clearPhoneRecaptchaVerifier();
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
       setError(mapAuthError(err, locale));
@@ -556,8 +587,7 @@ function AuthForm() {
 
       const confirmation = await sendPhoneSmsCode(
         auth,
-        `+${normalizedPhone}`,
-        PHONE_RESET_RECAPTCHA_BUTTON_ID,
+        toIraqE164(normalizedPhone),
       );
       confirmationRef.current = confirmation;
       setResetSessionId(start.sessionId);
@@ -571,6 +601,7 @@ function AuthForm() {
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
     } catch (err) {
+      clearPhoneRecaptchaVerifier();
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
       setError(mapAuthError(err, locale));
@@ -989,12 +1020,11 @@ function AuthForm() {
             />
           ) : null}
 
-          <button
-            id={PHONE_RESET_RECAPTCHA_BUTTON_ID}
-            type="button"
-            tabIndex={-1}
-            aria-hidden
-            className="pointer-events-none absolute h-px w-px overflow-hidden opacity-0"
+          {/* Firebase Phone Auth reCAPTCHA host (Flutter `#recaptcha-container`).
+              Must remain interactive — not pointer-events-none / display:none. */}
+          <div
+            id={RECAPTCHA_CONTAINER_ID}
+            className="fixed bottom-4 end-4 z-[9999] min-h-px"
           />
 
           <button
