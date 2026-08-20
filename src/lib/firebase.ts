@@ -77,26 +77,64 @@ export function getFirebaseAuth() {
   return auth;
 }
 
+declare global {
+  interface Window {
+    grecaptcha?: {
+      enterprise?: { ready: (cb: () => void) => void };
+      ready?: (cb: () => void) => void;
+    };
+  }
+}
+
 /** Preload reCAPTCHA Enterprise (matches Flutter web). */
 export function loadRecaptchaEnterpriseScript(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (enterpriseScriptPromise) return enterpriseScriptPromise;
 
   const src = `https://www.google.com/recaptcha/enterprise.js?render=${RECAPTCHA_ENTERPRISE_SITE_KEY}`;
-  const existing = document.querySelector(`script[src^="https://www.google.com/recaptcha/enterprise.js"]`);
-  if (existing) {
-    enterpriseScriptPromise = Promise.resolve();
-    return enterpriseScriptPromise;
-  }
 
   enterpriseScriptPromise = new Promise((resolve, reject) => {
+    const finishOk = () => resolve();
+
+    const waitReady = () => {
+      const g = window.grecaptcha;
+      if (g?.enterprise?.ready) {
+        g.enterprise.ready(finishOk);
+        return;
+      }
+      if (g?.ready) {
+        g.ready(finishOk);
+        return;
+      }
+      finishOk();
+    };
+
+    const existing = document.querySelector(
+      `script[src^="https://www.google.com/recaptcha/enterprise.js"]`,
+    ) as HTMLScriptElement | null;
+    if (existing) {
+      if (window.grecaptcha) {
+        waitReady();
+        return;
+      }
+      existing.addEventListener("load", waitReady, { once: true });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error("Failed to load reCAPTCHA Enterprise")),
+        { once: true },
+      );
+      return;
+    }
+
     const script = document.createElement("script");
     script.src = src;
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () =>
+    script.onload = () => waitReady();
+    script.onerror = () => {
+      enterpriseScriptPromise = null;
       reject(new Error("Failed to load reCAPTCHA Enterprise"));
+    };
     document.head.appendChild(script);
   });
   return enterpriseScriptPromise;
@@ -105,11 +143,18 @@ export function loadRecaptchaEnterpriseScript(): Promise<void> {
 /**
  * Fetch Auth reCAPTCHA Enterprise config (required when the project uses
  * Firebase Auth fraud prevention / Enterprise keys).
+ *
+ * Script preload is best-effort: Firebase JS can still initialize config if
+ * CSP allows gstatic/google endpoints. We only soft-warn on script failure.
  */
 export async function ensurePhoneAuthRecaptcha(
   authInstance: Auth,
 ): Promise<void> {
-  await loadRecaptchaEnterpriseScript();
+  try {
+    await loadRecaptchaEnterpriseScript();
+  } catch (err) {
+    console.warn("[firebase] reCAPTCHA Enterprise script preload failed", err);
+  }
   if (!recaptchaConfigPromise) {
     recaptchaConfigPromise = initializeRecaptchaConfig(authInstance).catch(
       (err) => {
