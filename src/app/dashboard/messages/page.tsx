@@ -12,10 +12,47 @@ import {
 } from "@/lib/admin";
 import { formatDashboardWhen } from "@/lib/dashboard";
 import { formatMoney } from "@/lib/car-pricing-trust";
+import { formatCarTitle } from "@/lib/listing-display";
 import { useAppSelector } from "@/store/hooks";
-import { t } from "@/lib/i18n";
+import { t, type Locale } from "@/lib/i18n";
 
 type Tab = "offers" | "support";
+
+function isBidOffer(message: InboxMessage): boolean {
+  if (String(message.type ?? "").toLowerCase() === "bid") return true;
+  const amount = Number(message.bidAmount ?? message.amount ?? 0);
+  return Boolean(message.carId) || amount > 0;
+}
+
+function offerCarTitle(message: InboxMessage, locale: Locale): string {
+  const fromFields = formatCarTitle(
+    {
+      brandId:
+        typeof message.brandId === "string" ? message.brandId : undefined,
+      modelKey:
+        typeof message.modelKey === "string" ? message.modelKey : undefined,
+      year: message.year as string | number | undefined,
+    },
+    locale,
+  );
+  if (fromFields) return fromFields;
+  if (typeof message.carName === "string" && message.carName.trim()) {
+    return message.carName.trim();
+  }
+  return t(locale, "carListing");
+}
+
+function telHref(raw: string): string {
+  const digits = raw.replace(/[^\d+]/g, "");
+  return `tel:${digits.startsWith("+") ? digits : `+${digits}`}`;
+}
+
+function whatsappHref(raw: string): string {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.startsWith("0")) digits = `964${digits.slice(1)}`;
+  if (digits.length === 10) digits = `964${digits}`;
+  return `https://wa.me/${digits}`;
+}
 
 function DashboardMessagesInner() {
   const locale = useAppSelector((s) => s.preferences.locale);
@@ -100,6 +137,10 @@ function OffersInbox() {
   const [items, setItems] = useState<InboxMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bidderPhoneByMessage, setBidderPhoneByMessage] = useState<
+    Record<string, string>
+  >({});
+  const [contactLoadingId, setContactLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -117,27 +158,60 @@ function OffersInbox() {
     })();
   }, [user, locale]);
 
-  async function openMessage(message: InboxMessage) {
+  async function markRead(message: InboxMessage) {
     const unread = message.isRead !== true && message.read !== true;
-    if (unread) {
-      try {
-        await api.patch(`/messages/${message.id}/read`);
-        setItems((list) =>
-          list.map((item) =>
-            item.id === message.id ? { ...item, isRead: true, read: true } : item,
-          ),
-        );
-      } catch {
-        // Mark-read is best-effort.
+    if (!unread) return;
+    try {
+      await api.patch(`/messages/${message.id}/read`);
+      setItems((list) =>
+        list.map((item) =>
+          item.id === message.id ? { ...item, isRead: true, read: true } : item,
+        ),
+      );
+    } catch {
+      // Mark-read is best-effort.
+    }
+  }
+
+  async function loadBidderPhone(message: InboxMessage) {
+    if (!message.carId || bidderPhoneByMessage[message.id]) return;
+    setContactLoadingId(message.id);
+    try {
+      const data = await api.get<{
+        items: Array<{
+          id?: string;
+          amount?: number;
+          bidderId?: string;
+          bidderPhone?: string;
+        }>;
+      }>(`/cars/${encodeURIComponent(message.carId)}/bids`);
+      const amount = Number(message.bidAmount ?? message.amount ?? 0);
+      const bidId = typeof message.bidId === "string" ? message.bidId : "";
+      const fromUserId =
+        typeof message.fromUserId === "string" ? message.fromUserId : "";
+      const match =
+        (bidId
+          ? data.items?.find((bid) => String(bid.id ?? "") === bidId)
+          : undefined) ??
+        data.items?.find((bid) => {
+          const sameBidder =
+            fromUserId && String(bid.bidderId ?? "") === fromUserId;
+          const sameAmount = amount > 0 && Number(bid.amount ?? 0) === amount;
+          return Boolean(sameBidder && sameAmount);
+        });
+      const phone = String(match?.bidderPhone ?? "").trim();
+      if (phone) {
+        setBidderPhoneByMessage((prev) => ({ ...prev, [message.id]: phone }));
       }
+    } catch {
+      // Owner-only phone lookup is best-effort.
+    } finally {
+      setContactLoadingId((cur) => (cur === message.id ? null : cur));
     }
   }
 
   return (
     <div>
-      <p className="mt-3 text-sm text-muted">
-        {t(locale, "dashEmptyMessagesHint")}
-      </p>
       {error ? (
         <p className="mt-6 text-red-600" role="alert">
           {error}
@@ -161,37 +235,74 @@ function OffersInbox() {
           {items.map((message) => {
             const unread = message.isRead !== true && message.read !== true;
             const amount = Number(message.bidAmount ?? message.amount ?? 0);
-            const carName = message.carName || t(locale, "carListing");
-            const body = message.carId ? (
-              <Link
-                href={`/cars/${message.carId}`}
-                onClick={() => void openMessage(message)}
-                className="block rounded-[16px] bg-card p-4 ring-1 ring-outline transition hover:ring-primary/40"
-              >
-                <MessageBody
-                  message={message}
-                  unread={unread}
-                  amount={amount}
-                  carName={carName}
-                  locale={locale}
-                />
-              </Link>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void openMessage(message)}
-                className="block w-full rounded-[16px] bg-card p-4 text-start ring-1 ring-outline"
-              >
-                <MessageBody
-                  message={message}
-                  unread={unread}
-                  amount={amount}
-                  carName={carName}
-                  locale={locale}
-                />
-              </button>
+            const phone = bidderPhoneByMessage[message.id];
+            const showSellerActions = Boolean(message.carId) && isBidOffer(message);
+            return (
+              <li key={message.id}>
+                <div className="rounded-[16px] bg-card p-4 ring-1 ring-outline transition hover:ring-primary/40">
+                  {message.carId ? (
+                    <Link
+                      href={`/cars/${message.carId}`}
+                      onClick={() => void markRead(message)}
+                      className="block"
+                    >
+                      <MessageBody
+                        message={message}
+                        unread={unread}
+                        amount={amount}
+                        locale={locale}
+                      />
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => void markRead(message)}
+                      className="block w-full text-start"
+                    >
+                      <MessageBody
+                        message={message}
+                        unread={unread}
+                        amount={amount}
+                        locale={locale}
+                      />
+                    </button>
+                  )}
+                  {showSellerActions ? (
+                    <div className="mt-3 flex flex-wrap gap-2 border-t border-outline pt-3">
+                      {phone ? (
+                        <>
+                          <a
+                            href={telHref(phone)}
+                            className="rounded-[12px] bg-input px-3 py-2 text-xs font-semibold"
+                          >
+                            {t(locale, "phoneCall")}
+                          </a>
+                          <a
+                            href={whatsappHref(phone)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-[12px] bg-input px-3 py-2 text-xs font-semibold"
+                          >
+                            {t(locale, "whatsapp")}
+                          </a>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={contactLoadingId === message.id}
+                          onClick={() => void loadBidderPhone(message)}
+                          className="rounded-[12px] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-60"
+                        >
+                          {contactLoadingId === message.id
+                            ? t(locale, "loading")
+                            : t(locale, "dashOfferContact")}
+                        </button>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              </li>
             );
-            return <li key={message.id}>{body}</li>;
           })}
         </ul>
       )}
@@ -529,9 +640,16 @@ function SupportInbox({
                   onClick={() => onSelectTicket(ticket.id)}
                   className="block w-full rounded-[16px] bg-card p-4 text-start ring-1 ring-outline hover:ring-primary/40"
                 >
-                  <p className="font-semibold">
-                    {ticket.subject || t(locale, "supportTicketFallback")}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold">
+                      {ticket.subject || t(locale, "supportTicketFallback")}
+                    </p>
+                    {ticket.lastMessageIsAdmin && ticket.status !== "resolved" ? (
+                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                        {t(locale, "dashUnread")}
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="mt-1 truncate text-sm text-muted">
                     {ticket.lastMessage || "—"}
                   </p>
@@ -557,15 +675,21 @@ function MessageBody({
   message,
   unread,
   amount,
-  carName,
   locale,
 }: {
   message: InboxMessage;
   unread: boolean;
   amount: number;
-  carName: string;
-  locale: "en" | "ar" | "ku";
+  locale: Locale;
 }) {
+  const bid = isBidOffer(message);
+  const sender =
+    (typeof message.senderName === "string" && message.senderName.trim()) ||
+    t(locale, "dashBidder");
+  const carTitle = offerCarTitle(message, locale);
+  const money =
+    amount > 0 ? formatMoney(amount, message.currencyKey) : "";
+
   return (
     <div className="flex items-start gap-3">
       {unread ? (
@@ -575,24 +699,24 @@ function MessageBody({
       )}
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-semibold">
-            {message.senderName || t(locale, "sellerDefault")}
-          </p>
+          <p className="font-semibold">{sender}</p>
           {unread ? (
             <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
               {t(locale, "dashUnread")}
             </span>
           ) : null}
         </div>
-        <p className="mt-0.5 text-sm text-muted">
-          {t(locale, "dashOfferOn", { car: carName })}
-          {amount > 0 ? ` · ${formatMoney(amount, message.currencyKey)}` : ""}
+        <p className="mt-0.5 text-sm text-muted" dir="auto">
+          {t(locale, "dashOfferOn", { car: carTitle })}
+          {money ? ` · ${money}` : ""}
         </p>
-        {message.messageBody ? (
-          <p className="mt-1 line-clamp-2 text-sm">{String(message.messageBody)}</p>
+        {!bid && message.messageBody ? (
+          <p className="mt-1 line-clamp-2 text-sm">
+            {String(message.messageBody)}
+          </p>
         ) : null}
         <p className="mt-1 text-xs text-muted">
-          {formatDashboardWhen(message.timestamp ?? message.createdAt)}
+          {formatDashboardWhen(message.timestamp ?? message.createdAt, locale)}
         </p>
       </div>
     </div>

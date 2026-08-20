@@ -61,10 +61,12 @@ export function ListingSellerCard({
   sellerId,
   locale,
   listingSeller,
+  onMessageSeller,
 }: {
   sellerId?: string | null;
   locale: Locale;
   listingSeller?: PublicSeller | null;
+  onMessageSeller?: () => void;
 }) {
   const [fetched, setFetched] = useState<PublicSeller | null>(null);
   const [fetchedFor, setFetchedFor] = useState<string | null>(null);
@@ -95,35 +97,32 @@ export function ListingSellerCard({
   const ready = !sellerId || fetchedFor === sellerId;
   const liveFetched = ready ? fetched : null;
 
-  const profile = useMemo<PublicSeller | null>(() => {
+  const profile = useMemo<PublicSeller>(() => {
     const pick = (value: unknown): string | undefined => {
       if (value == null) return undefined;
       const text = String(value).trim();
       return text || undefined;
     };
-    const merged: PublicSeller = {
+    return {
       uid: sellerId ?? undefined,
-      displayName: pick(liveFetched?.displayName) ?? pick(listingSeller?.displayName),
+      displayName:
+        pick(listingSeller?.displayName) ?? pick(liveFetched?.displayName),
       showroomName:
-        pick(liveFetched?.showroomName) ?? pick(listingSeller?.showroomName),
-      ownerName: pick(liveFetched?.ownerName) ?? pick(listingSeller?.ownerName),
-      phone: pick(liveFetched?.phone) ?? pick(listingSeller?.phone),
-      city: pick(liveFetched?.city) ?? pick(listingSeller?.city),
+        pick(listingSeller?.showroomName) ?? pick(liveFetched?.showroomName),
+      ownerName: pick(listingSeller?.ownerName) ?? pick(liveFetched?.ownerName),
+      phone: pick(listingSeller?.phone) ?? pick(liveFetched?.phone),
+      city: pick(listingSeller?.city) ?? pick(liveFetched?.city),
       accountType:
-        pick(liveFetched?.accountType) ?? pick(listingSeller?.accountType),
+        pick(listingSeller?.accountType) ?? pick(liveFetched?.accountType),
       photoUrl:
-        pick(liveFetched?.photoUrl) ??
-        pick(liveFetched?.photoURL) ??
-        pick(liveFetched?.avatarUrl) ??
         pick(listingSeller?.photoUrl) ??
         pick(listingSeller?.photoURL) ??
-        pick(listingSeller?.avatarUrl),
+        pick(listingSeller?.avatarUrl) ??
+        pick(liveFetched?.photoUrl) ??
+        pick(liveFetched?.photoURL) ??
+        pick(liveFetched?.avatarUrl),
     };
-    if (!sellerName(merged) && !sellerPhone(merged)) return null;
-    return merged;
   }, [liveFetched, listingSeller, sellerId]);
-
-  if (!profile) return null;
 
   const name = sellerName(profile) || t(locale, "sellerDefault");
   const phone = sellerPhone(profile);
@@ -163,7 +162,7 @@ export function ListingSellerCard({
               href={telHref(phone)}
               className="inline-flex items-center justify-center rounded-[12px] bg-primary px-3.5 py-2 text-sm font-semibold text-on-primary"
             >
-              {t(locale, "contactSeller")}
+              {t(locale, "phoneCall")}
             </a>
             <a
               href={whatsappHref(phone)}
@@ -174,7 +173,22 @@ export function ListingSellerCard({
               {t(locale, "whatsapp")}
             </a>
           </>
-        ) : null}
+        ) : (
+          <>
+            <p className="w-full text-xs text-muted">
+              {t(locale, "contactUnavailable")}
+            </p>
+            {onMessageSeller ? (
+              <button
+                type="button"
+                onClick={onMessageSeller}
+                className="inline-flex items-center justify-center rounded-[12px] bg-primary px-3.5 py-2 text-sm font-semibold text-on-primary"
+              >
+                {t(locale, "messageSeller")}
+              </button>
+            ) : null}
+          </>
+        )}
         {sellerId ? (
           <Link
             href={`/cars?sellerId=${encodeURIComponent(sellerId)}`}

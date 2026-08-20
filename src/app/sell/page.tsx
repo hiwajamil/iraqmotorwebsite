@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { SellListingForm } from "@/components/sell-listing-form";
@@ -27,5 +28,15 @@ export default function SellPage() {
     );
   }
 
-  return <SellListingForm />;
+  return (
+    <Suspense
+      fallback={
+        <p className="mx-auto max-w-3xl px-[4%] pt-28 text-center text-muted">
+          {t(locale, "loading")}
+        </p>
+      }
+    >
+      <SellListingForm />
+    </Suspense>
+  );
 }

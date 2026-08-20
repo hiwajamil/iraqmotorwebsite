@@ -273,31 +273,41 @@ export type UserPreferences = {
   newMatchAlerts: boolean;
 };
 
+export type ListingCounts = {
+  total: number;
+  draft: number;
+  pending: number;
+  active: number;
+  rejected: number;
+  sold: number;
+  expired: number;
+};
+
 export type DashboardSummary = {
   uid: string;
   email?: string;
   isSuperAdmin?: boolean;
   profile?: Record<string, unknown> | null;
   preferences?: UserPreferences;
-  listings: {
-    total: number;
-    draft: number;
-    pending: number;
-    active: number;
-    rejected: number;
-    sold: number;
-    expired: number;
-  };
+  listings: ListingCounts;
   favoritesCount: number;
   unreadMessages: number;
+  listingsPreview?: Car[];
+  favoritesPreview?: Car[];
 };
 
 export type InboxMessage = {
   id: string;
-  senderName?: string;
+  type?: string;
+  senderName?: string | null;
   senderPhone?: string;
+  fromUserId?: string;
   carId?: string;
+  bidId?: string;
   carName?: string;
+  brandId?: string;
+  modelKey?: string;
+  year?: number | string;
   bidAmount?: number;
   amount?: number;
   currencyKey?: string;

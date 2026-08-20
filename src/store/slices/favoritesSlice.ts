@@ -5,6 +5,7 @@ import type { RootState } from "../index";
 type FavoritesState = {
   ids: string[];
   items: Car[];
+  total: number;
   loading: boolean;
   error: string | null;
 };
@@ -12,6 +13,7 @@ type FavoritesState = {
 const initialState: FavoritesState = {
   ids: [],
   items: [],
+  total: 0,
   loading: false,
   error: null,
 };
@@ -19,8 +21,12 @@ const initialState: FavoritesState = {
 export const fetchFavorites = createAsyncThunk(
   "favorites/fetch",
   async () => {
-    const data = await api.get<{ items: Car[] }>("/cars/favorites");
-    return data.items ?? [];
+    const data = await api.get<{ items: Car[]; total?: number }>("/cars/favorites");
+    const items = data.items ?? [];
+    return {
+      items,
+      total: data.total ?? items.length,
+    };
   },
 );
 
@@ -64,8 +70,9 @@ const favoritesSlice = createSlice({
       })
       .addCase(fetchFavorites.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
-        state.ids = action.payload.map((c) => c.id);
+        state.items = action.payload.items;
+        state.ids = action.payload.items.map((c) => c.id);
+        state.total = action.payload.total;
       })
       .addCase(fetchFavorites.rejected, (state, action) => {
         state.loading = false;
@@ -78,13 +85,19 @@ const favoritesSlice = createSlice({
           car?: Car | null;
         };
         if (favorite) {
-          if (!state.ids.includes(carId)) state.ids.push(carId);
+          const wasNew = !state.ids.includes(carId);
+          if (wasNew) {
+            state.ids.push(carId);
+            state.total += 1;
+          }
           if (car && !state.items.some((c) => c.id === carId)) {
             state.items.unshift(car);
           }
         } else {
+          const wasSaved = state.ids.includes(carId);
           state.ids = state.ids.filter((x) => x !== carId);
           state.items = state.items.filter((c) => c.id !== carId);
+          if (wasSaved) state.total = Math.max(0, state.total - 1);
         }
       });
   },

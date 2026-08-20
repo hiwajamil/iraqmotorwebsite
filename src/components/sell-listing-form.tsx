@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/auth-provider";
 import { useAppSelector } from "@/store/hooks";
@@ -34,6 +34,7 @@ import {
 } from "@/lib/listing-form-options";
 import {
   emptyListingDraft,
+  listingDraftFromCar,
   listingDraftToPayload,
   validateListingDraft,
   type ListingDraft,
@@ -122,9 +123,13 @@ function ChipRow({
 export function SellListingForm() {
   const { user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = (searchParams.get("id") || "").trim();
   const locale = useAppSelector((s) => s.preferences.locale);
   const [draft, setDraft] = useState<ListingDraft>(emptyListingDraft);
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [listingStatus, setListingStatus] = useState<string>("draft");
+  const [loadingEdit, setLoadingEdit] = useState(Boolean(editId));
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -148,6 +153,42 @@ export function SellListingForm() {
       .then((d) => setBrands(d.items ?? []))
       .catch(() => setBrands([]));
   }, []);
+
+  useEffect(() => {
+    if (!editId || !user) {
+      setLoadingEdit(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingEdit(true);
+    void (async () => {
+      try {
+        const car = await api.get<Record<string, unknown>>(
+          `/cars/${encodeURIComponent(editId)}`,
+        );
+        if (cancelled) return;
+        const sellerId = String(car.sellerId ?? "");
+        if (sellerId && sellerId !== user.uid) {
+          setError(label("sellLoadForbidden"));
+          setLoadingEdit(false);
+          return;
+        }
+        setDraft(listingDraftFromCar(car));
+        setDraftId(String(car.id ?? editId));
+        setListingStatus(String(car.status ?? "draft").toLowerCase());
+        setError(null);
+      } catch (e) {
+        if (cancelled) return;
+        setError(e instanceof Error ? e.message : label("sellLoadFailed"));
+      } finally {
+        if (!cancelled) setLoadingEdit(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId, user]);
 
   useEffect(() => {
     if (!draft.brandId) {
@@ -250,6 +291,24 @@ export function SellListingForm() {
     }
   }
 
+  async function saveDraftPayload(): Promise<string> {
+    const payload = listingDraftToPayload(draft);
+    let id = draftId;
+    if (id) {
+      if (listingStatus === "draft") {
+        await api.put(`/cars/drafts/${id}`, payload);
+      }
+      await api.patch(`/cars/${id}`, payload);
+    } else {
+      const created = await api.post<{ id: string }>("/cars/drafts", payload);
+      id = created.id;
+      setDraftId(id);
+      setListingStatus("draft");
+      await api.patch(`/cars/${id}`, payload);
+    }
+    return id;
+  }
+
   async function submit() {
     const validation = validateListingDraft(draft);
     if (validation.length) {
@@ -274,18 +333,36 @@ export function SellListingForm() {
         router.push("/auth?next=/sell");
         return;
       }
-      const payload = listingDraftToPayload(draft);
-      let id = draftId;
-      if (id) {
-        await api.put(`/cars/drafts/${id}`, payload);
-      } else {
-        const created = await api.post<{ id: string }>("/cars/drafts", payload);
-        id = created.id;
-        setDraftId(id);
+      const id = await saveDraftPayload();
+      if (listingStatus === "draft" || listingStatus === "rejected") {
+        await api.post(`/cars/${id}/publish`);
+        setListingStatus("pending");
       }
-      await api.patch(`/cars/${id}`, payload);
-      await api.post(`/cars/${id}/publish`);
-      router.push("/dashboard");
+      router.push("/dashboard/listings");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : label("sellSubmit"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function publishOnly() {
+    if (!draftId || listingStatus !== "draft") return;
+    const validation = validateListingDraft(draft);
+    if (validation.length) {
+      const next: Partial<Record<ListingField, DictKey>> = {};
+      for (const item of validation) next[item.field] = item.messageKey;
+      setFieldErrors(next);
+      setError(label("sellFixErrors"));
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await saveDraftPayload();
+      await api.post(`/cars/${draftId}/publish`);
+      setListingStatus("pending");
+      router.push("/dashboard/listings");
     } catch (e) {
       setError(e instanceof Error ? e.message : label("sellSubmit"));
     } finally {
@@ -294,6 +371,16 @@ export function SellListingForm() {
   }
 
   const photoSlots = Array.from({ length: PHOTO_SLOT_COUNT }, (_, i) => draft.imageUrls[i] ?? null);
+  const isEditingActive = listingStatus === "active";
+  const canPublishDraft = listingStatus === "draft" && Boolean(draftId);
+
+  if (loadingEdit) {
+    return (
+      <p className="mx-auto max-w-3xl px-[4%] pt-28 text-center text-muted">
+        {label("loading")}
+      </p>
+    );
+  }
 
   return (
     <form
@@ -815,13 +902,29 @@ export function SellListingForm() {
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={busy || uploading}
-        className="w-full rounded-[12px] bg-primary px-5 py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
-      >
-        {busy ? label("sellSubmitting") : label("sellSubmit")}
-      </button>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <button
+          type="submit"
+          disabled={busy || uploading}
+          className="w-full rounded-[12px] bg-primary px-5 py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
+        >
+          {busy
+            ? label("sellSubmitting")
+            : isEditingActive
+              ? label("sellSaveChanges")
+              : label("sellSubmit")}
+        </button>
+        {canPublishDraft ? (
+          <button
+            type="button"
+            disabled={busy || uploading}
+            onClick={() => void publishOnly()}
+            className="w-full rounded-[12px] bg-input px-5 py-3.5 text-sm font-semibold disabled:opacity-60 sm:max-w-[220px]"
+          >
+            {label("dashPublish")}
+          </button>
+        ) : null}
+      </div>
     </form>
   );
 }

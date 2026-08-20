@@ -190,3 +190,97 @@ export function listingDraftToPayload(draft: ListingDraft) {
     currencyKey: draft.currencyKey,
   };
 }
+
+function asString(value: unknown): string {
+  if (value == null) return "";
+  return String(value).trim();
+}
+
+function asStringList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => asString(item)).filter(Boolean);
+  }
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (Array.isArray(parsed)) return asStringList(parsed);
+    } catch {
+      return value
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+    }
+  }
+  return [];
+}
+
+/** Hydrate the sell form from an owner listing (GET /cars/:id). */
+export function listingDraftFromCar(
+  car: Record<string, unknown>,
+): ListingDraft {
+  const imageUrls = asStringList(car.imageUrls);
+  const single = asString(car.imageUrl);
+  const photos = (imageUrls.length ? imageUrls : single ? [single] : []).slice(
+    0,
+    PHOTO_SLOT_COUNT,
+  );
+  const currencyRaw = asString(car.currencyKey).toLowerCase();
+  const currencyKey =
+    currencyRaw.includes("usd") || currencyRaw === "usd"
+      ? ("currency_usd" as const)
+      : ("currency_iqd" as const);
+  const mileageUnit =
+    asString(car.mileageUnit).toLowerCase() === "mi"
+      ? ("mi" as const)
+      : ("km" as const);
+  const damage =
+    asString(car.damagePhotoUrl) ||
+    asString(car.damage_photo_url) ||
+    asStringList(car.damageImageUrls)[0] ||
+    "";
+  const painted =
+    asString(car.paintedPartsKey) ||
+    asString(car.painted_parts) ||
+    asString(car.conditionKey) ||
+    "";
+  const features = asStringList(
+    car.extraFeatures ?? car.extra_features ?? car.features,
+  );
+
+  return {
+    province: asString(car.province),
+    city: asString(car.city),
+    imageUrls: photos,
+    brandId: asString(car.brandId),
+    modelKey: asString(car.modelKey),
+    trim: asString(car.trim),
+    colorKey: asString(car.colorKey),
+    year: car.year != null && car.year !== "" ? String(car.year) : "",
+    plateTypeKey: asString(car.plateTypeKey) || asString(car.plate_type),
+    plateCityKey: asString(car.plateCityKey) || asString(car.plate_city),
+    mileageValue:
+      car.mileageValue != null && car.mileageValue !== ""
+        ? String(car.mileageValue)
+        : "",
+    mileageUnit,
+    fuelKey: asString(car.fuelKey),
+    importCountryKey:
+      asString(car.importCountryKey) || asString(car.import_origin),
+    transmissionKey: asString(car.transmissionKey),
+    drivetrainKey: asString(car.drivetrainKey) || asString(car.drivetrain),
+    cylindersKey: asString(car.cylindersKey),
+    engineSizeKey: asString(car.engineSizeKey),
+    seatMaterialKey:
+      asString(car.seatMaterialKey) || asString(car.seat_material),
+    seatCountKey: asString(car.seatCountKey),
+    paintedPartsKey: painted,
+    damagePhotoUrl: damage,
+    extraFeatures: features,
+    description: asString(car.description),
+    priceValue:
+      car.priceValue != null && car.priceValue !== ""
+        ? String(car.priceValue)
+        : "",
+    currencyKey,
+  };
+}

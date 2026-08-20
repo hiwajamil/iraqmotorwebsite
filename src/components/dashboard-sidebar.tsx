@@ -63,24 +63,47 @@ function NavIcon({ name, className }: { name: DashboardIcon; className?: string 
   }
 }
 
-export function DashboardSidebar({ unreadCount = 0 }: { unreadCount?: number }) {
+export function DashboardSidebar({
+  unreadCount,
+  profile: profileOverride,
+}: {
+  unreadCount?: number;
+  profile?: Record<string, unknown> | null;
+}) {
   const pathname = usePathname();
   const { me, signOut } = useAuth();
   const locale = useAppSelector((s) => s.preferences.locale);
-  const profile = (me?.profile ?? {}) as Record<string, unknown>;
+  const profile = {
+    ...((me?.profile ?? {}) as Record<string, unknown>),
+    ...((profileOverride ?? {}) as Record<string, unknown>),
+  };
   const displayName =
     (typeof profile.displayName === "string" && profile.displayName) ||
     me?.email ||
     t(locale, "dashboard");
   const isShowroom = profile.accountType === "showroom";
+  const photoUrl =
+    (typeof profile.photoUrl === "string" && profile.photoUrl) ||
+    (typeof profile.photoURL === "string" && profile.photoURL) ||
+    (typeof profile.avatarUrl === "string" && profile.avatarUrl) ||
+    "";
 
   return (
     <aside className="lg:sticky lg:top-24 lg:self-start">
       <div className="rounded-[16px] bg-card p-5 ring-1 ring-outline lg:min-h-[calc(100vh-8rem)] lg:flex lg:flex-col">
         <div className="mb-6 hidden border-b border-outline pb-6 text-center lg:block">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-input text-lg font-bold text-muted">
-            {displayName.slice(0, 1).toUpperCase()}
-          </div>
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photoUrl}
+              alt=""
+              className="mx-auto h-16 w-16 rounded-full object-cover ring-1 ring-outline"
+            />
+          ) : (
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-input text-lg font-bold text-muted">
+              {displayName.slice(0, 1).toUpperCase()}
+            </div>
+          )}
           <p className="mt-3 text-sm font-bold text-foreground">{displayName}</p>
           <p className="mt-0.5 text-xs text-muted">
             {isShowroom
@@ -93,7 +116,11 @@ export function DashboardSidebar({ unreadCount = 0 }: { unreadCount?: number }) 
           {DASHBOARD_NAV.map((item) => {
             const active = isDashboardActive(pathname, item.href);
             const badge =
-              item.icon === "mail" && unreadCount > 0 ? unreadCount : null;
+              item.icon === "mail" &&
+              typeof unreadCount === "number" &&
+              unreadCount > 0
+                ? unreadCount
+                : null;
             return (
               <Link
                 key={item.href}
