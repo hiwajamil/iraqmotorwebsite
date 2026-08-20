@@ -92,21 +92,13 @@ function SoldBadge({ locale }: { locale: "en" | "ar" | "ku" }) {
   );
 }
 
-function AddCarSlot({
-  locale,
-  compact = false,
-}: {
-  locale: "en" | "ar" | "ku";
-  compact?: boolean;
-}) {
+function AddCarSlot({ locale }: { locale: "en" | "ar" | "ku" }) {
   return (
     <Link
       href="/cars"
-      className={`flex min-w-0 flex-col items-center justify-center rounded-lg border border-dashed border-outline text-muted transition hover:border-primary hover:text-primary ${
-        compact ? "min-h-[4.5rem] px-3 py-2" : "aspect-[16/9] px-4"
-      }`}
+      className="flex h-full min-h-[12rem] flex-col items-center justify-center rounded-lg border border-dashed border-outline px-4 text-muted transition hover:border-primary hover:text-primary"
     >
-      <Plus size={compact ? 18 : 22} strokeWidth={2.2} />
+      <Plus size={22} strokeWidth={2.2} />
       <span className="mt-1 text-sm font-semibold">{t(locale, "compareAddCar")}</span>
     </Link>
   );
@@ -130,9 +122,10 @@ export default function CompareClient() {
   const [error, setError] = useState<string | null>(null);
   const [hideCommon, setHideCommon] = useState(true);
   const [highlightDiffs, setHighlightDiffs] = useState(true);
+  const [compactPinned, setCompactPinned] = useState(false);
 
   const idsKey = ids.join(",");
-  const heroScroll = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
   const stickyScroll = useRef<HTMLDivElement>(null);
   const bodyScroll = useRef<HTMLDivElement>(null);
   const syncing = useRef(false);
@@ -141,11 +134,22 @@ export default function CompareClient() {
     if (syncing.current) return;
     syncing.current = true;
     const left = from.scrollLeft;
-    for (const el of [heroScroll.current, stickyScroll.current, bodyScroll.current]) {
+    for (const el of [stickyScroll.current, bodyScroll.current]) {
       if (el && el !== from && el.scrollLeft !== left) el.scrollLeft = left;
     }
     syncing.current = false;
   }
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setCompactPinned(!entry.isIntersecting),
+      { root: null, rootMargin: "-80px 0px 0px 0px", threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [idsKey, loading]);
 
   useEffect(() => {
     if (!idsKey) {
@@ -185,10 +189,14 @@ export default function CompareClient() {
   );
 
   const showAdd = cars.length < MAX_COMPARE;
-  const colCount = cars.length + (showAdd ? 1 : 0);
-  const gridStyle = {
-    gridTemplateColumns: `${LABEL_COL}px repeat(${colCount}, minmax(${CAR_COL}px, 1fr))`,
-    minWidth: LABEL_COL + colCount * CAR_COL,
+  const heroSlots = cars.length + (showAdd ? 1 : 0);
+  const heroGridStyle = {
+    gridTemplateColumns: `repeat(${heroSlots}, minmax(${CAR_COL}px, 1fr))`,
+    minWidth: heroSlots * CAR_COL,
+  } as const;
+  const tableGridStyle = {
+    gridTemplateColumns: `${LABEL_COL}px repeat(${cars.length}, minmax(${CAR_COL}px, 1fr))`,
+    minWidth: LABEL_COL + cars.length * CAR_COL,
   } as const;
 
   function removeCar(id: string) {
@@ -282,14 +290,9 @@ export default function CompareClient() {
           </p>
         ) : null}
 
-        {/* Full 16:9 photos — not sticky; own overflow so extra columns can scroll. */}
-        <div
-          ref={heroScroll}
-          onScroll={(e) => syncScroll(e.currentTarget)}
-          className="overflow-x-auto scrollbar-none"
-        >
-          <div className="grid" style={gridStyle}>
-            <div />
+        {/* Full 16:9 photos — not sticky. Add-car lives here only, not in the spec grid. */}
+        <div ref={heroRef} className="overflow-x-auto">
+          <div className="grid items-stretch gap-4" style={heroGridStyle}>
             {cars.map((car) => {
               const title = compareTitle(car, locale);
               const meta = [
@@ -301,7 +304,7 @@ export default function CompareClient() {
                 .join(" · ");
               const sold = car.status === "sold";
               return (
-                <div key={car.id} className="min-w-0 px-3 pb-5">
+                <div key={car.id} className="min-w-0 pb-2">
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -346,76 +349,76 @@ export default function CompareClient() {
                 </div>
               );
             })}
-            {showAdd ? (
-              <div className="min-w-0 px-3 pb-5">
-                <AddCarSlot locale={locale} />
-              </div>
-            ) : null}
+            {showAdd ? <AddCarSlot locale={locale} /> : null}
           </div>
         </div>
 
-        {/* Compact headers stick on a parent that does not use overflow-x. */}
-        <div className="sticky top-16 z-20 border-b border-outline bg-surface/95 shadow-sm backdrop-blur-md">
-          <div
-            ref={stickyScroll}
-            onScroll={(e) => syncScroll(e.currentTarget)}
-            className="overflow-x-auto scrollbar-none"
-          >
-            <div className="grid" style={gridStyle}>
-              <div className="bg-surface/95" />
-              {cars.map((car) => {
-                const title = compareTitle(car, locale);
-                const sold = car.status === "sold";
-                return (
-                  <div key={car.id} className="relative min-w-0 px-3 py-2.5">
-                    <div className="flex min-w-0 items-center gap-2.5 pe-7">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={carCoverImage(car)}
-                        alt=""
-                        className="h-10 w-14 shrink-0 rounded-md object-cover"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <h2
-                            className="truncate text-xs font-bold text-foreground"
-                            dir="auto"
+        {/* Compact headers: only while photos are off-screen, overlay so they don't duplicate at rest. */}
+        {compactPinned ? (
+          <div className="pointer-events-none fixed inset-x-0 top-16 z-20">
+            <div className="mx-auto max-w-[1400px] px-[4%]">
+              <div className="pointer-events-auto border-b border-outline bg-surface/95 shadow-sm backdrop-blur-md">
+                <div
+                  ref={stickyScroll}
+                  onScroll={(e) => syncScroll(e.currentTarget)}
+                  className="overflow-x-auto scrollbar-none"
+                >
+                  <div className="grid" style={tableGridStyle}>
+                    <div className="bg-surface/95" />
+                    {cars.map((car) => {
+                      const title = compareTitle(car, locale);
+                      const sold = car.status === "sold";
+                      return (
+                        <div key={car.id} className="relative min-w-0 px-3 py-2.5">
+                          <div className="flex min-w-0 items-center gap-2.5 pe-7">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={carCoverImage(car)}
+                              alt=""
+                              className="h-10 w-14 shrink-0 rounded-md object-cover"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <h2
+                                  className="truncate text-xs font-bold text-foreground"
+                                  dir="auto"
+                                >
+                                  {title}
+                                </h2>
+                                {sold ? <SoldBadge locale={locale} /> : null}
+                              </div>
+                              <p
+                                className="truncate text-sm font-bold text-primary"
+                                dir="ltr"
+                              >
+                                {comparePrice(car)}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeCar(car.id)}
+                            className="absolute top-2 end-2 flex h-6 w-6 items-center justify-center rounded-full bg-card text-muted shadow-sm ring-1 ring-outline transition hover:text-red-500"
+                            aria-label={t(locale, "removeFromCompare")}
                           >
-                            {title}
-                          </h2>
-                          {sold ? <SoldBadge locale={locale} /> : null}
+                            <X size={12} strokeWidth={2.4} />
+                          </button>
                         </div>
-                        <p className="truncate text-sm font-bold text-primary" dir="ltr">
-                          {comparePrice(car)}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeCar(car.id)}
-                      className="absolute top-2 end-2 flex h-6 w-6 items-center justify-center rounded-full bg-card text-muted shadow-sm ring-1 ring-outline transition hover:text-red-500"
-                      aria-label={t(locale, "removeFromCompare")}
-                    >
-                      <X size={12} strokeWidth={2.4} />
-                    </button>
+                      );
+                    })}
                   </div>
-                );
-              })}
-              {showAdd ? (
-                <div className="min-w-0 px-3 py-2">
-                  <AddCarSlot locale={locale} compact />
                 </div>
-              ) : null}
+              </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         <div
           ref={bodyScroll}
           onScroll={(e) => syncScroll(e.currentTarget)}
           className="overflow-x-auto"
         >
-          <div className="grid" style={gridStyle}>
+          <div className="mt-6 grid" style={tableGridStyle}>
             {sections.map((section) => {
               const rows = filterCompareRows(section.rows, { hideCommon });
               const featuresAllMatch =
@@ -426,11 +429,11 @@ export default function CompareClient() {
               if (!rows.length && !featuresAllMatch) return null;
               return (
                 <div key={section.id} className="contents">
-                  <div className="col-span-full bg-input px-4 py-2 text-xs font-bold tracking-wider text-foreground uppercase">
+                  <div className="col-span-full border-b border-outline px-4 py-2 text-xs font-bold tracking-wider text-muted uppercase">
                     {section.title}
                   </div>
                   {featuresAllMatch ? (
-                    <div className="col-span-full bg-card px-4 py-4 text-sm text-muted">
+                    <div className="col-span-full px-4 py-4 text-sm text-muted">
                       {t(locale, "compareFeaturesMatch")}
                     </div>
                   ) : null}
@@ -439,18 +442,18 @@ export default function CompareClient() {
                     const common = rowIsCommon(row);
                     return (
                       <div key={row.id} className="contents">
-                        <div className="flex items-center border-b border-outline bg-input/50 px-4 py-4 text-sm font-medium text-muted">
+                        <div className="flex items-center border-b border-outline px-4 py-4 text-sm font-medium text-muted">
                           {row.label}
                         </div>
                         {row.cells.map((cell, i) => (
                           <div
                             key={`${row.id}-${cars[i]?.id ?? i}`}
-                            className={`flex items-center justify-center border-b border-outline px-3 py-4 text-center text-sm font-semibold text-foreground ${
-                              highlightDiffs && differs
-                                ? "bg-primary/[0.04]"
-                                : "bg-card"
-                            } ${
+                            className={`flex items-center justify-center border-b border-outline bg-surface px-3 py-4 text-center text-sm font-semibold text-foreground ${
                               highlightDiffs && common ? "font-medium text-muted" : ""
+                            } ${
+                              highlightDiffs && differs && !hideCommon
+                                ? "font-bold"
+                                : ""
                             }`}
                           >
                             {cell.kind === "bool" ? (
@@ -472,9 +475,6 @@ export default function CompareClient() {
                             )}
                           </div>
                         ))}
-                        {showAdd ? (
-                          <div className="border-b border-outline bg-card" />
-                        ) : null}
                       </div>
                     );
                   })}
