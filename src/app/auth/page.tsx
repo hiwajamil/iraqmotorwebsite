@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IraqMotorsWordmark } from "@/components/iraq-motors-wordmark";
 import {
@@ -8,6 +8,10 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  signInWithPhoneNumber,
+  RecaptchaVerifier,
+  signOut,
+  type ConfirmationResult,
 } from "@/lib/firebase";
 import { api, ApiError } from "@/lib/api";
 import {
@@ -22,6 +26,8 @@ import { IRAQ_PROVINCE_ORDER, localizeProvince } from "@/lib/iraq-locations";
 import { useAppSelector } from "@/store/hooks";
 
 const MIN_PASSWORD_LENGTH = 6;
+
+type ResetPhase = "idle" | "otp";
 
 function cleanPhoneInput(raw: string): string {
   return raw.trim().replace(/[\s-]/g, "");
@@ -80,6 +86,13 @@ function mapAuthError(err: unknown, locale: Locale): string {
   if (err instanceof ApiError) {
     if (err.status === 403) return t(locale, "botCheckFailed");
     if (err.status === 409) return t(locale, "authPhoneInUse");
+    if (err.status === 429) return t(locale, "authTooManyRequests");
+    if (
+      err.status === 400 &&
+      /session expired|new code/i.test(err.message)
+    ) {
+      return t(locale, "authResetSessionExpired");
+    }
     return err.message || t(locale, "authRequestFailed", { status: err.status });
   }
 
@@ -97,6 +110,10 @@ function mapAuthError(err: unknown, locale: Locale): string {
       return t(locale, "authTooManyRequests");
     case "auth/invalid-email":
       return t(locale, "helpInvalidEmail");
+    case "auth/invalid-verification-code":
+    case "auth/code-expired":
+    case "auth/invalid-verification-id":
+      return t(locale, "authInvalidOtp");
     case "auth/network-request-failed":
       return t(locale, "authNetworkError");
     default:
@@ -142,14 +159,37 @@ function AuthForm() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileKey, setTurnstileKey] = useState(0);
 
+  const [resetPhase, setResetPhase] = useState<ResetPhase>("idle");
+  const [resetSessionId, setResetSessionId] = useState<string | null>(null);
+  const [resetPhone, setResetPhone] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const confirmationRef = useRef<ConfirmationResult | null>(null);
+  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
+  const recaptchaHostRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (loading || !user || !me) return;
+    // During phone OTP reset we briefly sign in as a phone credential — stay on page.
+    if (resetPhase !== "idle") return;
     if (me.isSuperAdmin) {
       router.replace(nextPath.startsWith("/admin") ? nextPath : "/admin");
       return;
     }
     router.replace(nextPath);
-  }, [loading, user, me, nextPath, router]);
+  }, [loading, user, me, nextPath, router, resetPhase]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        recaptchaVerifierRef.current?.clear();
+      } catch {
+        // ignore
+      }
+      recaptchaVerifierRef.current = null;
+    };
+  }, []);
 
   async function redirectAfterAuth() {
     await refreshMe();
@@ -172,8 +212,49 @@ function AuthForm() {
     });
   }
 
+  function clearRecaptcha() {
+    try {
+      recaptchaVerifierRef.current?.clear();
+    } catch {
+      // ignore
+    }
+    recaptchaVerifierRef.current = null;
+  }
+
+  function resetForgotState() {
+    setResetPhase("idle");
+    setResetSessionId(null);
+    setResetPhone("");
+    setOtpCode("");
+    setNewPassword("");
+    setConfirmNewPassword("");
+    confirmationRef.current = null;
+    clearRecaptcha();
+  }
+
+  async function ensureRecaptcha(
+    auth: NonNullable<ReturnType<typeof getFirebaseAuth>>,
+  ): Promise<RecaptchaVerifier> {
+    if (recaptchaVerifierRef.current) return recaptchaVerifierRef.current;
+    const host = recaptchaHostRef.current;
+    if (!host) {
+      throw new Error(t(locale, "authFirebaseInitFailed"));
+    }
+    host.replaceChildren();
+    const verifier = new RecaptchaVerifier(auth, host, {
+      size: "invisible",
+    });
+    recaptchaVerifierRef.current = verifier;
+    await verifier.render();
+    return verifier;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (resetPhase === "otp") {
+      await onConfirmPhoneReset();
+      return;
+    }
     setBusy(true);
     setError(null);
     setInfo(null);
@@ -282,21 +363,75 @@ function AuthForm() {
   async function onForgotPassword() {
     setError(null);
     setInfo(null);
-    const trimmed = email.trim();
-    if (!trimmed.includes("@")) {
-      setError(t(locale, "authForgotPasswordHint"));
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+
+    if (trimmedEmail.includes("@")) {
+      setBusy(true);
+      try {
+        const auth = getFirebaseAuth();
+        if (!auth) {
+          throw new Error(t(locale, "authFirebaseInitFailed"));
+        }
+        await assertHuman("login");
+        await sendPasswordResetEmail(auth, trimmedEmail);
+        setInfo(t(locale, "authResetEmailSent"));
+      } catch (err) {
+        setTurnstileToken(null);
+        setTurnstileKey((k) => k + 1);
+        setError(mapAuthError(err, locale));
+      } finally {
+        setBusy(false);
+      }
       return;
     }
+
+    if (!isValidIraqMobile(trimmedPhone)) {
+      setError(t(locale, "authResetNeedPhoneOrEmail"));
+      return;
+    }
+
     setBusy(true);
     try {
       const auth = getFirebaseAuth();
       if (!auth) {
         throw new Error(t(locale, "authFirebaseInitFailed"));
       }
-      await assertHuman("login");
-      await sendPasswordResetEmail(auth, trimmed);
-      setInfo(t(locale, "authResetEmailSent"));
+
+      // Bot check runs once on /password-reset/phone/start (Turnstile is single-use).
+      if (isTurnstileEnabled() && !turnstileToken) {
+        throw new Error(t(locale, "botCheckFailed"));
+      }
+
+      const normalizedPhone = normalizeIraqPhone(trimmedPhone);
+      const start = await api.post<{ ok: boolean; sessionId: string }>(
+        "/auth/password-reset/phone/start",
+        {
+          phone: normalizedPhone,
+          ...(turnstileToken ? { turnstileToken } : {}),
+        },
+      );
+
+      clearRecaptcha();
+      const verifier = await ensureRecaptcha(auth);
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        `+${normalizedPhone}`,
+        verifier,
+      );
+      confirmationRef.current = confirmation;
+      setResetSessionId(start.sessionId);
+      setResetPhone(normalizedPhone);
+      setResetPhase("otp");
+      setOtpCode("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setPassword("");
+      setInfo(t(locale, "authResetSmsSent"));
+      setTurnstileToken(null);
+      setTurnstileKey((k) => k + 1);
     } catch (err) {
+      clearRecaptcha();
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
       setError(mapAuthError(err, locale));
@@ -304,6 +439,73 @@ function AuthForm() {
       setBusy(false);
     }
   }
+
+  async function onConfirmPhoneReset() {
+    setError(null);
+    setInfo(null);
+
+    if (!resetSessionId || !resetPhone || !confirmationRef.current) {
+      setError(t(locale, "authResetSessionExpired"));
+      resetForgotState();
+      return;
+    }
+    if (otpCode.trim().length < 4) {
+      setError(t(locale, "authInvalidOtp"));
+      return;
+    }
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setError(t(locale, "authWeakPassword"));
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setError(t(locale, "authPasswordMismatch"));
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const auth = getFirebaseAuth();
+      if (!auth) {
+        throw new Error(t(locale, "authFirebaseInitFailed"));
+      }
+
+      const cred = await confirmationRef.current.confirm(otpCode.trim());
+      const idToken = await cred.user.getIdToken(true);
+
+      await api.post("/auth/password-reset/phone/confirm", {
+        phone: resetPhone,
+        sessionId: resetSessionId,
+        idToken,
+        newPassword,
+      });
+
+      const phoneForLogin = resetPhone.replace(/^964/, "");
+
+      // Phone OTP may leave a temporary session — always return to login.
+      try {
+        await signOut(auth);
+      } catch {
+        // ignore
+      }
+
+      resetForgotState();
+      setPhone(phoneForLogin || phone);
+      setInfo(t(locale, "authResetSmsSuccess"));
+    } catch (err) {
+      setError(mapAuthError(err, locale));
+      const code = firebaseErrorCode(err);
+      if (
+        code === "auth/code-expired" ||
+        (err instanceof ApiError && err.status === 400)
+      ) {
+        // Keep OTP form so user can retry or go back.
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const showResetOtp = resetPhase === "otp";
 
   return (
     <div className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 pt-28 pb-16">
@@ -317,151 +519,227 @@ function AuthForm() {
             <IraqMotorsWordmark />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">
-            {mode === "login" ? t(locale, "signIn") : t(locale, "authRegisterTitle")}
+            {showResetOtp
+              ? t(locale, "authForgotPassword")
+              : mode === "login"
+                ? t(locale, "signIn")
+                : t(locale, "authRegisterTitle")}
           </h1>
           <p className="mt-2 text-sm text-muted">
-            {mode === "login"
-              ? t(locale, "authSignInSubtitle")
-              : t(locale, "authRegisterSubtitle")}
+            {showResetOtp
+              ? t(locale, "authResetSmsSent")
+              : mode === "login"
+                ? t(locale, "authSignInSubtitle")
+                : t(locale, "authRegisterSubtitle")}
           </p>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-3.5">
-          {mode === "register" ? (
+          {showResetOtp ? (
             <>
+              <div className="relative">
+                <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-sm text-muted">
+                  +964
+                </span>
+                <input
+                  type="tel"
+                  value={resetPhone.replace(/^964/, "")}
+                  readOnly
+                  className={`${fieldClass} ps-16 opacity-80`}
+                  aria-label={t(locale, "authPhoneLabel")}
+                />
+              </div>
               <input
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={t(locale, "dashDisplayName")}
-                className={fieldClass}
-              />
-              <select
-                value={accountType}
-                onChange={(e) =>
-                  setAccountType(e.target.value as "individual" | "showroom")
-                }
-                className={fieldClass}
-              >
-                <option value="individual">{t(locale, "accountTypeIndividual")}</option>
-                <option value="showroom">{t(locale, "accountTypeShowroom")}</option>
-              </select>
-              {accountType === "showroom" ? (
-                <>
-                  <input
-                    value={showroomName}
-                    onChange={(e) => setShowroomName(e.target.value)}
-                    placeholder={t(locale, "dashShowroomName")}
-                    required
-                    className={fieldClass}
-                    autoComplete="organization"
-                  />
-                  <input
-                    value={ownerName}
-                    onChange={(e) => setOwnerName(e.target.value)}
-                    placeholder={t(locale, "dashOwnerName")}
-                    required
-                    className={fieldClass}
-                    autoComplete="name"
-                  />
-                </>
-              ) : null}
-              <select
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
                 required
-                className={`${fieldClass} ${city ? "" : "text-muted"}`}
-                aria-label={t(locale, "authSelectCity")}
-              >
-                <option value="" disabled>
-                  {t(locale, "authSelectCity")}
-                </option>
-                {IRAQ_PROVINCE_ORDER.map((province) => (
-                  <option key={province} value={province}>
-                    {localizeProvince(locale, province)}
-                  </option>
-                ))}
-              </select>
-            </>
-          ) : null}
-
-          <div className="relative">
-            <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-sm text-muted">
-              +964
-            </span>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="750 000 0000"
-              required={mode === "register" || !email.trim().includes("@")}
-              className={`${fieldClass} ps-16`}
-              autoComplete="tel"
-              inputMode="tel"
-              aria-label={t(locale, "authPhoneLabel")}
-            />
-          </div>
-
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={
-              mode === "login"
-                ? t(locale, "authEmailLoginPlaceholder")
-                : t(locale, "authEmailOptionalPlaceholder")
-            }
-            required={false}
-            className={fieldClass}
-            autoComplete="email"
-          />
-
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              required
-              minLength={MIN_PASSWORD_LENGTH}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t(locale, "authPassword")}
-              className={fieldClass}
-              autoComplete={
-                mode === "login" ? "current-password" : "new-password"
-              }
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted"
-            >
-              {showPassword ? t(locale, "hide") : t(locale, "show")}
-            </button>
-          </div>
-          {mode === "register" ? (
-            <>
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                placeholder={t(locale, "authOtpCode")}
+                className={fieldClass}
+                maxLength={8}
+              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={MIN_PASSWORD_LENGTH}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder={t(locale, "authNewPassword")}
+                  className={fieldClass}
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted"
+                >
+                  {showPassword ? t(locale, "hide") : t(locale, "show")}
+                </button>
+              </div>
               <input
                 type={showPassword ? "text" : "password"}
                 required
                 minLength={MIN_PASSWORD_LENGTH}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder={t(locale, "authConfirmPassword")}
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder={t(locale, "authConfirmNewPassword")}
                 className={fieldClass}
                 autoComplete="new-password"
               />
               <p className="text-xs text-muted">{t(locale, "authPasswordHint")}</p>
             </>
           ) : (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void onForgotPassword()}
-                className="text-xs font-semibold text-muted hover:text-primary disabled:opacity-60"
-              >
-                {t(locale, "authForgotPassword")}
-              </button>
-            </div>
+            <>
+              {mode === "register" ? (
+                <>
+                  <input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder={t(locale, "dashDisplayName")}
+                    className={fieldClass}
+                  />
+                  <select
+                    value={accountType}
+                    onChange={(e) =>
+                      setAccountType(e.target.value as "individual" | "showroom")
+                    }
+                    className={fieldClass}
+                  >
+                    <option value="individual">
+                      {t(locale, "accountTypeIndividual")}
+                    </option>
+                    <option value="showroom">
+                      {t(locale, "accountTypeShowroom")}
+                    </option>
+                  </select>
+                  {accountType === "showroom" ? (
+                    <>
+                      <input
+                        value={showroomName}
+                        onChange={(e) => setShowroomName(e.target.value)}
+                        placeholder={t(locale, "dashShowroomName")}
+                        required
+                        className={fieldClass}
+                        autoComplete="organization"
+                      />
+                      <input
+                        value={ownerName}
+                        onChange={(e) => setOwnerName(e.target.value)}
+                        placeholder={t(locale, "dashOwnerName")}
+                        required
+                        className={fieldClass}
+                        autoComplete="name"
+                      />
+                    </>
+                  ) : null}
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    required
+                    className={`${fieldClass} ${city ? "" : "text-muted"}`}
+                    aria-label={t(locale, "authSelectCity")}
+                  >
+                    <option value="" disabled>
+                      {t(locale, "authSelectCity")}
+                    </option>
+                    {IRAQ_PROVINCE_ORDER.map((province) => (
+                      <option key={province} value={province}>
+                        {localizeProvince(locale, province)}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              ) : null}
+
+              <div className="relative">
+                <span className="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-sm text-muted">
+                  +964
+                </span>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="750 000 0000"
+                  required={mode === "register" || !email.trim().includes("@")}
+                  className={`${fieldClass} ps-16`}
+                  autoComplete="tel"
+                  inputMode="tel"
+                  aria-label={t(locale, "authPhoneLabel")}
+                />
+              </div>
+
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={
+                  mode === "login"
+                    ? t(locale, "authEmailLoginPlaceholder")
+                    : t(locale, "authEmailOptionalPlaceholder")
+                }
+                required={false}
+                className={fieldClass}
+                autoComplete="email"
+              />
+
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={MIN_PASSWORD_LENGTH}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t(locale, "authPassword")}
+                  className={fieldClass}
+                  autoComplete={
+                    mode === "login" ? "current-password" : "new-password"
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted"
+                >
+                  {showPassword ? t(locale, "hide") : t(locale, "show")}
+                </button>
+              </div>
+              {mode === "register" ? (
+                <>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={MIN_PASSWORD_LENGTH}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder={t(locale, "authConfirmPassword")}
+                    className={fieldClass}
+                    autoComplete="new-password"
+                  />
+                  <p className="text-xs text-muted">
+                    {t(locale, "authPasswordHint")}
+                  </p>
+                </>
+              ) : (
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void onForgotPassword()}
+                    className="text-xs font-semibold text-muted hover:text-primary disabled:opacity-60"
+                  >
+                    {t(locale, "authForgotPassword")}
+                  </button>
+                  <p className="text-end text-[11px] leading-snug text-muted">
+                    {t(locale, "authForgotPasswordHint")}
+                  </p>
+                </div>
+              )}
+            </>
           )}
+
           {error ? (
             <p
               role="alert"
@@ -478,39 +756,76 @@ function AuthForm() {
               {info}
             </p>
           ) : null}
-          <TurnstileWidget
-            key={turnstileKey}
-            action={mode === "register" ? "register" : "login"}
-            onToken={setTurnstileToken}
-          />
+
+          {!showResetOtp ? (
+            <TurnstileWidget
+              key={turnstileKey}
+              action={mode === "register" ? "register" : "login"}
+              onToken={setTurnstileToken}
+            />
+          ) : null}
+
+          <div ref={recaptchaHostRef} className="hidden" aria-hidden />
+
           <button
             type="submit"
-            disabled={busy || (isTurnstileEnabled() && !turnstileToken)}
+            disabled={
+              busy ||
+              (!showResetOtp && isTurnstileEnabled() && !turnstileToken)
+            }
             className="mt-2 w-full rounded-[12px] bg-primary py-3.5 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110 disabled:opacity-60"
           >
             {busy
               ? t(locale, "pleaseWait")
-              : mode === "login"
-                ? t(locale, "signIn")
-                : t(locale, "authRegisterButton")}
+              : showResetOtp
+                ? t(locale, "authConfirmPhoneReset")
+                : mode === "login"
+                  ? t(locale, "signIn")
+                  : t(locale, "authRegisterButton")}
           </button>
         </form>
-        <button
-          type="button"
-          className="mt-5 w-full text-center text-sm font-medium text-primary"
-          onClick={() => {
-            setMode(mode === "login" ? "register" : "login");
-            setError(null);
-            setInfo(null);
-            setConfirmPassword("");
-            setTurnstileToken(null);
-            setTurnstileKey((k) => k + 1);
-          }}
-        >
-          {mode === "login"
-            ? t(locale, "authSwitchToRegister")
-            : t(locale, "authSwitchToSignIn")}
-        </button>
+
+        {showResetOtp ? (
+          <button
+            type="button"
+            className="mt-5 w-full text-center text-sm font-medium text-primary"
+            onClick={() => {
+              void (async () => {
+                const auth = getFirebaseAuth();
+                if (auth) {
+                  try {
+                    await signOut(auth);
+                  } catch {
+                    // ignore
+                  }
+                }
+                resetForgotState();
+                setError(null);
+                setInfo(null);
+              })();
+            }}
+          >
+            {t(locale, "authResetBackToSignIn")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="mt-5 w-full text-center text-sm font-medium text-primary"
+            onClick={() => {
+              setMode(mode === "login" ? "register" : "login");
+              setError(null);
+              setInfo(null);
+              setConfirmPassword("");
+              resetForgotState();
+              setTurnstileToken(null);
+              setTurnstileKey((k) => k + 1);
+            }}
+          >
+            {mode === "login"
+              ? t(locale, "authSwitchToRegister")
+              : t(locale, "authSwitchToSignIn")}
+          </button>
+        )}
       </div>
     </div>
   );
