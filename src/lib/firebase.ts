@@ -67,8 +67,10 @@ export const RECAPTCHA_ENTERPRISE_SITE_KEY =
   process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY ||
   "6Lci2CstAAAAAP4dOUHfxeVt2ai057KzVKnJYsQg";
 
-/** DOM host for RecaptchaVerifier — matches Flutter `#recaptcha-container`. */
+/** DOM host for visible RecaptchaVerifier fallback. */
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
+/** Real Send button id for invisible RecaptchaVerifier (Firebase docs). */
+export const PHONE_OTP_SEND_BUTTON_ID = "phone-otp-send-btn";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
@@ -223,7 +225,29 @@ export function toIraqE164(normalizedDigits: string): string {
   return digits.startsWith("+") ? digits : `+${digits}`;
 }
 
-function createCompactVerifier(authInstance: Auth): RecaptchaVerifier {
+function createInvisibleVerifier(
+  authInstance: Auth,
+  buttonId: string,
+): RecaptchaVerifier {
+  clearPhoneRecaptchaVerifier();
+  const button = document.getElementById(buttonId);
+  if (!button) {
+    throw new Error(`Missing #${buttonId} for invisible reCAPTCHA`);
+  }
+  const verifier = new RecaptchaVerifier(authInstance, buttonId, {
+    size: "invisible",
+    callback: () => {
+      // solved — signInWithPhoneNumber continues
+    },
+    "expired-callback": () => {
+      clearPhoneRecaptchaVerifier();
+    },
+  });
+  activePhoneVerifier = verifier;
+  return verifier;
+}
+
+function createVisibleVerifier(authInstance: Auth): RecaptchaVerifier {
   clearPhoneRecaptchaVerifier();
   const host = document.getElementById(RECAPTCHA_CONTAINER_ID);
   if (!host) {
@@ -233,10 +257,13 @@ function createCompactVerifier(authInstance: Auth): RecaptchaVerifier {
   }
   host.replaceChildren();
 
-  // Compact widget (Flutter web pattern). Do not use pointer-events-none /
-  // display:none hosts — that breaks RecaptchaVerifier.
+  // Official visible widget:
+  // https://firebase.google.com/docs/auth/web/phone-auth
   const verifier = new RecaptchaVerifier(authInstance, RECAPTCHA_CONTAINER_ID, {
-    size: "compact",
+    size: "normal",
+    callback: () => {
+      // reCAPTCHA solved
+    },
     "expired-callback": () => {
       clearPhoneRecaptchaVerifier();
     },
@@ -248,13 +275,15 @@ function createCompactVerifier(authInstance: Auth): RecaptchaVerifier {
 /**
  * Send phone SMS for register / password-reset OTP.
  *
- * Project phone reCAPTCHA is AUDIT (verifier required). Prefer compact
- * RecaptchaVerifier on `#recaptcha-container` (Flutter pattern). Optionally
- * try without verifier if Enterprise Enforce is enabled later.
+ * Firebase JS phone-auth pattern (AUDIT mode requires ApplicationVerifier):
+ * 1) Prefer invisible RecaptchaVerifier on the Send button the user just clicked
+ * 2) Fall back to a visible widget in `#recaptcha-container`
+ * 3) Clear/reset the verifier on failure so retries work
  */
 export async function sendPhoneSmsCode(
   authInstance: Auth,
   e164Phone: string,
+  options?: { buttonId?: string },
 ): Promise<ConfirmationResult> {
   const e164 = e164Phone.trim().startsWith("+")
     ? e164Phone.trim()
@@ -267,34 +296,44 @@ export async function sendPhoneSmsCode(
     throw err;
   }
 
-  await ensurePhoneAuthRecaptcha(authInstance);
-
-  // AUDIT mode (current project): classic verifier required.
-  // Enforce mode: omit verifier. Try compact first, then without.
-  const verifier = createCompactVerifier(authInstance);
+  // Best-effort Enterprise config (Flutter). Classic RecaptchaVerifier still works in AUDIT.
   try {
-    return await signInWithPhoneNumber(authInstance, e164, verifier);
+    await ensurePhoneAuthRecaptcha(authInstance);
   } catch (err) {
-    logPhoneSmsError("with-compact-verifier", err);
-    clearPhoneRecaptchaVerifier();
+    console.warn("[firebase] ensurePhoneAuthRecaptcha skipped", err);
+  }
 
-    const code = firebaseErrCode(err);
-    const fatal =
-      code === "auth/invalid-phone-number" ||
-      code === "auth/missing-phone-number" ||
-      code === "auth/quota-exceeded" ||
-      code === "auth/too-many-requests" ||
-      code === "auth/operation-not-allowed" ||
-      code === "auth/user-disabled" ||
-      code === "auth/captcha-check-failed";
-    if (fatal) throw err;
+  const buttonId = options?.buttonId || PHONE_OTP_SEND_BUTTON_ID;
 
+  // 1) Invisible on the real Send button (docs: size invisible + button id).
+  if (document.getElementById(buttonId)) {
+    const invisible = createInvisibleVerifier(authInstance, buttonId);
     try {
-      return await signInWithPhoneNumber(authInstance, e164);
-    } catch (err2) {
-      logPhoneSmsError("without-verifier-fallback", err2);
-      throw err2;
+      return await signInWithPhoneNumber(authInstance, e164, invisible);
+    } catch (err) {
+      logPhoneSmsError("invisible-verifier", err);
+      clearPhoneRecaptchaVerifier();
+      const code = firebaseErrCode(err);
+      const fatal =
+        code === "auth/invalid-phone-number" ||
+        code === "auth/missing-phone-number" ||
+        code === "auth/quota-exceeded" ||
+        code === "auth/too-many-requests" ||
+        code === "auth/operation-not-allowed" ||
+        code === "auth/user-disabled";
+      if (fatal) throw err;
     }
+  }
+
+  // 2) Visible checkbox in the form (must not be fixed under other UI).
+  const visible = createVisibleVerifier(authInstance);
+  try {
+    await visible.render();
+    return await signInWithPhoneNumber(authInstance, e164, visible);
+  } catch (err) {
+    logPhoneSmsError("visible-verifier", err);
+    clearPhoneRecaptchaVerifier();
+    throw err;
   }
 }
 

@@ -15,6 +15,7 @@ import {
   EmailAuthProvider,
   linkWithCredential,
   RECAPTCHA_CONTAINER_ID,
+  PHONE_OTP_SEND_BUTTON_ID,
   type ConfirmationResult,
   type User,
 } from "@/lib/firebase";
@@ -312,6 +313,7 @@ function AuthForm() {
       const confirmation = await sendPhoneSmsCode(
         auth,
         toIraqE164(normalizedPhone),
+        { buttonId: PHONE_OTP_SEND_BUTTON_ID },
       );
       confirmationRef.current = confirmation;
       verifiedRegisterPhoneRef.current = null;
@@ -588,6 +590,7 @@ function AuthForm() {
       const confirmation = await sendPhoneSmsCode(
         auth,
         toIraqE164(normalizedPhone),
+        { buttonId: PHONE_OTP_SEND_BUTTON_ID },
       );
       confirmationRef.current = confirmation;
       setResetSessionId(start.sessionId);
@@ -1020,14 +1023,14 @@ function AuthForm() {
             />
           ) : null}
 
-          {/* Firebase Phone Auth reCAPTCHA host (Flutter `#recaptcha-container`).
-              Must remain interactive — not pointer-events-none / display:none. */}
+          {/* Visible reCAPTCHA fallback (in-form — never fixed under other UI). */}
           <div
             id={RECAPTCHA_CONTAINER_ID}
-            className="fixed bottom-4 end-4 z-[9999] min-h-px"
+            className="flex min-h-[1px] justify-center py-1"
           />
 
           <button
+            id={PHONE_OTP_SEND_BUTTON_ID}
             type="submit"
             disabled={
               busy ||

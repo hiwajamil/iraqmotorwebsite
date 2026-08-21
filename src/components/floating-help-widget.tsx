@@ -107,6 +107,8 @@ export function FloatingHelpWidget() {
 
   if (!ready || hiddenNow) return null;
   if (pathname?.startsWith("/admin")) return null;
+  // Phone Auth reCAPTCHA must stay clickable on /auth (do not cover it).
+  if (pathname?.startsWith("/auth")) return null;
 
   function dismiss() {
     setHiddenNow(true);
