@@ -8,6 +8,7 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   sendPhoneSmsCode,
+  confirmPhoneSmsCode,
   toIraqE164,
   signOut,
   ensurePhoneAuthRecaptcha,
@@ -346,7 +347,13 @@ function AuthForm() {
     }
     setBusy(true);
     try {
-      const cred = await confirmationRef.current.confirm(otpCode.trim());
+      clearPhoneRecaptchaVerifier();
+      const cred = await confirmPhoneSmsCode(
+        confirmationRef.current,
+        otpCode,
+      );
+      // Ensure the API client can attach a Bearer token for /users/me.
+      await cred.user.getIdToken(true);
       const normalizedPhone = normalizeIraqPhone(phone);
 
       // Existing marketplace profile → ask them to sign in.
@@ -372,9 +379,9 @@ function AuthForm() {
       }
 
       verifiedRegisterPhoneRef.current = normalizedPhone;
+      confirmationRef.current = null;
       setRegisterStep("details");
       setInfo(null);
-      void cred;
     } catch (err) {
       setError(mapAuthError(err, locale));
     } finally {
@@ -642,7 +649,11 @@ function AuthForm() {
         throw new Error(t(locale, "authFirebaseInitFailed"));
       }
 
-      const cred = await confirmationRef.current.confirm(otpCode.trim());
+      clearPhoneRecaptchaVerifier();
+      const cred = await confirmPhoneSmsCode(
+        confirmationRef.current,
+        otpCode,
+      );
       const idToken = await cred.user.getIdToken(true);
 
       await api.post("/auth/password-reset/phone/confirm", {
@@ -1030,7 +1041,11 @@ function AuthForm() {
           />
 
           <button
-            id={PHONE_OTP_SEND_BUTTON_ID}
+            id={
+              showRegisterPhone || (mode === "login" && resetPhase === "idle")
+                ? PHONE_OTP_SEND_BUTTON_ID
+                : undefined
+            }
             type="submit"
             disabled={
               busy ||

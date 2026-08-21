@@ -309,7 +309,14 @@ export async function sendPhoneSmsCode(
   if (document.getElementById(buttonId)) {
     const invisible = createInvisibleVerifier(authInstance, buttonId);
     try {
-      return await signInWithPhoneNumber(authInstance, e164, invisible);
+      const confirmation = await signInWithPhoneNumber(
+        authInstance,
+        e164,
+        invisible,
+      );
+      // Detach the widget so later OTP "Verify" clicks are not intercepted.
+      clearPhoneRecaptchaVerifier();
+      return confirmation;
     } catch (err) {
       logPhoneSmsError("invisible-verifier", err);
       clearPhoneRecaptchaVerifier();
@@ -329,11 +336,43 @@ export async function sendPhoneSmsCode(
   const visible = createVisibleVerifier(authInstance);
   try {
     await visible.render();
-    return await signInWithPhoneNumber(authInstance, e164, visible);
+    const confirmation = await signInWithPhoneNumber(
+      authInstance,
+      e164,
+      visible,
+    );
+    clearPhoneRecaptchaVerifier();
+    return confirmation;
   } catch (err) {
     logPhoneSmsError("visible-verifier", err);
     clearPhoneRecaptchaVerifier();
     throw err;
+  }
+}
+
+/** Confirm SMS OTP with a hard timeout so the auth UI cannot hang forever. */
+export async function confirmPhoneSmsCode(
+  confirmation: ConfirmationResult,
+  code: string,
+  timeoutMs = 45_000,
+): Promise<Awaited<ReturnType<ConfirmationResult["confirm"]>>> {
+  const trimmed = code.trim();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      confirmation.confirm(trimmed),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          const err = Object.assign(
+            new Error("Phone verification timed out. Please request a new code."),
+            { code: "auth/network-request-failed" },
+          );
+          reject(err);
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
