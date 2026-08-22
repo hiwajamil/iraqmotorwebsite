@@ -5,7 +5,6 @@ import {
 } from "firebase/app";
 import {
   getAuth,
-  initializeRecaptchaConfig,
   RecaptchaVerifier,
   signInWithPhoneNumber,
   signInWithEmailAndPassword,
@@ -30,9 +29,10 @@ import {
  * Firebase Console checklist if SMS still fails:
  * - Authentication → Sign-in method → Phone enabled
  * - Blaze billing (required for real SMS)
- * - Settings → Authorized domains includes localhost + production host
- * - Settings → SMS region policy allows Iraq (IQ)
- * - reCAPTCHA Enterprise / fraud prevention configured for the web app
+ * - Settings → Authorized domains: iraqmotors.net + www.iraqmotors.net
+ * - SMS region policy allows Iraq (IQ)
+ * - reCAPTCHA SMS toll fraud protection BLOCK causes auth/error-code:-39
+ *   (disabled on this project so classic RecaptchaVerifier can send SMS)
  */
 
 /** Public web config (same as Flutter `DefaultFirebaseOptions.web`). Env vars override. */
@@ -63,19 +63,11 @@ const firebaseConfig = {
  * Same reCAPTCHA Enterprise web key as Flutter `RecaptchaEnterpriseConfig`
  * and `app/web/index.html`. Override with env if rotated.
  */
-export const RECAPTCHA_ENTERPRISE_SITE_KEY =
-  process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY ||
-  "6Lci2CstAAAAAP4dOUHfxeVt2ai057KzVKnJYsQg";
-
-/** DOM host for visible RecaptchaVerifier fallback. */
+/** DOM host for RecaptchaVerifier (Firebase JS phone-auth docs). */
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
-/** Real Send button id for invisible RecaptchaVerifier (Firebase docs). */
-export const PHONE_OTP_SEND_BUTTON_ID = "phone-otp-send-btn";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
-let enterpriseScriptPromise: Promise<void> | null = null;
-let recaptchaConfigPromise: Promise<void> | null = null;
 let activePhoneVerifier: RecaptchaVerifier | null = null;
 
 export function getFirebaseApp() {
@@ -92,92 +84,6 @@ export function getFirebaseAuth() {
   if (!a) return null;
   if (!auth) auth = getAuth(a);
   return auth;
-}
-
-declare global {
-  interface Window {
-    grecaptcha?: {
-      enterprise?: { ready: (cb: () => void) => void };
-      ready?: (cb: () => void) => void;
-    };
-  }
-}
-
-/** Preload reCAPTCHA Enterprise (matches Flutter web). Soft-fail on CSP/network. */
-export function loadRecaptchaEnterpriseScript(): Promise<void> {
-  if (typeof window === "undefined") return Promise.resolve();
-  if (enterpriseScriptPromise) return enterpriseScriptPromise;
-
-  const src = `https://www.google.com/recaptcha/enterprise.js?render=${RECAPTCHA_ENTERPRISE_SITE_KEY}`;
-
-  enterpriseScriptPromise = new Promise((resolve, reject) => {
-    const finishOk = () => resolve();
-
-    const waitReady = () => {
-      const g = window.grecaptcha;
-      if (g?.enterprise?.ready) {
-        g.enterprise.ready(finishOk);
-        return;
-      }
-      if (g?.ready) {
-        g.ready(finishOk);
-        return;
-      }
-      finishOk();
-    };
-
-    const existing = document.querySelector(
-      `script[src^="https://www.google.com/recaptcha/enterprise.js"]`,
-    ) as HTMLScriptElement | null;
-    if (existing) {
-      if (window.grecaptcha) {
-        waitReady();
-        return;
-      }
-      existing.addEventListener("load", waitReady, { once: true });
-      existing.addEventListener(
-        "error",
-        () => reject(new Error("Failed to load reCAPTCHA Enterprise")),
-        { once: true },
-      );
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = src;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => waitReady();
-    script.onerror = () => {
-      enterpriseScriptPromise = null;
-      reject(new Error("Failed to load reCAPTCHA Enterprise"));
-    };
-    document.head.appendChild(script);
-  });
-  return enterpriseScriptPromise;
-}
-
-/**
- * Fetch Auth reCAPTCHA Enterprise config (required when the project uses
- * Firebase Auth fraud prevention / Enterprise keys).
- */
-export async function ensurePhoneAuthRecaptcha(
-  authInstance: Auth,
-): Promise<void> {
-  try {
-    await loadRecaptchaEnterpriseScript();
-  } catch (err) {
-    console.warn("[firebase] reCAPTCHA Enterprise script preload failed", err);
-  }
-  if (!recaptchaConfigPromise) {
-    recaptchaConfigPromise = initializeRecaptchaConfig(authInstance).catch(
-      (err) => {
-        recaptchaConfigPromise = null;
-        throw err;
-      },
-    );
-  }
-  await recaptchaConfigPromise;
 }
 
 function firebaseErrCode(err: unknown): string {
@@ -225,28 +131,6 @@ export function toIraqE164(normalizedDigits: string): string {
   return digits.startsWith("+") ? digits : `+${digits}`;
 }
 
-function createInvisibleVerifier(
-  authInstance: Auth,
-  buttonId: string,
-): RecaptchaVerifier {
-  clearPhoneRecaptchaVerifier();
-  const button = document.getElementById(buttonId);
-  if (!button) {
-    throw new Error(`Missing #${buttonId} for invisible reCAPTCHA`);
-  }
-  const verifier = new RecaptchaVerifier(authInstance, buttonId, {
-    size: "invisible",
-    callback: () => {
-      // solved — signInWithPhoneNumber continues
-    },
-    "expired-callback": () => {
-      clearPhoneRecaptchaVerifier();
-    },
-  });
-  activePhoneVerifier = verifier;
-  return verifier;
-}
-
 function createVisibleVerifier(authInstance: Auth): RecaptchaVerifier {
   clearPhoneRecaptchaVerifier();
   const host = document.getElementById(RECAPTCHA_CONTAINER_ID);
@@ -257,12 +141,10 @@ function createVisibleVerifier(authInstance: Auth): RecaptchaVerifier {
   }
   host.replaceChildren();
 
-  // Official visible widget:
-  // https://firebase.google.com/docs/auth/web/phone-auth
   const verifier = new RecaptchaVerifier(authInstance, RECAPTCHA_CONTAINER_ID, {
     size: "normal",
     callback: () => {
-      // reCAPTCHA solved
+      // reCAPTCHA solved — send can proceed
     },
     "expired-callback": () => {
       clearPhoneRecaptchaVerifier();
@@ -273,17 +155,27 @@ function createVisibleVerifier(authInstance: Auth): RecaptchaVerifier {
 }
 
 /**
+ * Pre-render the visible reCAPTCHA checkbox (Firebase JS phone-auth docs).
+ * Call when the register/reset phone step is shown — not after the Send click.
+ */
+export async function preparePhoneRecaptcha(
+  authInstance: Auth,
+): Promise<void> {
+  if (activePhoneVerifier) return;
+  const verifier = createVisibleVerifier(authInstance);
+  await verifier.render();
+}
+
+/**
  * Send phone SMS for register / password-reset OTP.
  *
- * Firebase JS phone-auth pattern (AUDIT mode requires ApplicationVerifier):
- * 1) Prefer invisible RecaptchaVerifier on the Send button the user just clicked
- * 2) Fall back to a visible widget in `#recaptcha-container`
- * 3) Clear/reset the verifier on failure so retries work
+ * Official pattern: RecaptchaVerifier on `#recaptcha-container` +
+ * signInWithPhoneNumber(auth, e164, appVerifier). Do not mix
+ * initializeRecaptchaConfig / Enterprise script with this v2 widget.
  */
 export async function sendPhoneSmsCode(
   authInstance: Auth,
   e164Phone: string,
-  options?: { buttonId?: string },
 ): Promise<ConfirmationResult> {
   const e164 = e164Phone.trim().startsWith("+")
     ? e164Phone.trim()
@@ -296,55 +188,16 @@ export async function sendPhoneSmsCode(
     throw err;
   }
 
-  // Best-effort Enterprise config (Flutter). Classic RecaptchaVerifier still works in AUDIT.
-  try {
-    await ensurePhoneAuthRecaptcha(authInstance);
-  } catch (err) {
-    console.warn("[firebase] ensurePhoneAuthRecaptcha skipped", err);
+  let appVerifier = activePhoneVerifier;
+  if (!appVerifier) {
+    appVerifier = createVisibleVerifier(authInstance);
+    await appVerifier.render();
   }
 
-  const buttonId = options?.buttonId || PHONE_OTP_SEND_BUTTON_ID;
-
-  // 1) Invisible on the real Send button (docs: size invisible + button id).
-  if (document.getElementById(buttonId)) {
-    const invisible = createInvisibleVerifier(authInstance, buttonId);
-    try {
-      const confirmation = await signInWithPhoneNumber(
-        authInstance,
-        e164,
-        invisible,
-      );
-      // Detach the widget so later OTP "Verify" clicks are not intercepted.
-      clearPhoneRecaptchaVerifier();
-      return confirmation;
-    } catch (err) {
-      logPhoneSmsError("invisible-verifier", err);
-      clearPhoneRecaptchaVerifier();
-      const code = firebaseErrCode(err);
-      const fatal =
-        code === "auth/invalid-phone-number" ||
-        code === "auth/missing-phone-number" ||
-        code === "auth/quota-exceeded" ||
-        code === "auth/too-many-requests" ||
-        code === "auth/operation-not-allowed" ||
-        code === "auth/user-disabled";
-      if (fatal) throw err;
-    }
-  }
-
-  // 2) Visible checkbox in the form (must not be fixed under other UI).
-  const visible = createVisibleVerifier(authInstance);
   try {
-    await visible.render();
-    const confirmation = await signInWithPhoneNumber(
-      authInstance,
-      e164,
-      visible,
-    );
-    clearPhoneRecaptchaVerifier();
-    return confirmation;
+    return await signInWithPhoneNumber(authInstance, e164, appVerifier);
   } catch (err) {
-    logPhoneSmsError("visible-verifier", err);
+    logPhoneSmsError("signInWithPhoneNumber", err);
     clearPhoneRecaptchaVerifier();
     throw err;
   }

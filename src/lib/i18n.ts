@@ -393,6 +393,8 @@ const en = {
   authResetSessionExpired: "Reset session expired. Request a new code.",
   authPhoneSmsFailed:
     "Could not send the SMS code. Please try again in a moment.",
+  authPhoneSmsBlocked:
+    "SMS could not be sent to this number right now (Firebase blocked it). Try another Iraqi number, wait a few minutes, or use a test number in Firebase Console.",
   authPhoneSmsQuotaExceeded:
     "SMS quota exceeded. Try again later or use a test phone in Firebase Console.",
   authPhoneSmsNotAllowed:
@@ -1470,6 +1472,8 @@ const ar: Record<DictKey, string> = {
   authResetSessionExpired: "انتهت جلسة إعادة التعيين. اطلب رمزاً جديداً.",
   authPhoneSmsFailed:
     "تعذر إرسال رمز SMS. حاول مرة أخرى بعد لحظات.",
+  authPhoneSmsBlocked:
+    "تعذر إرسال SMS لهذا الرقم حالياً (حظره Firebase). جرّب رقماً آخر أو انتظر قليلاً.",
   authPhoneSmsQuotaExceeded:
     "تم تجاوز حصة رسائل SMS. حاول لاحقاً أو استخدم رقم اختبار في Firebase.",
   authPhoneSmsNotAllowed:
@@ -2544,6 +2548,8 @@ const ku: Record<DictKey, string> = {
   authResetSessionExpired: "دانیشتنی نوێکردنەوە بەسەرچوو. کۆدێکی نوێ داوا بکە.",
   authPhoneSmsFailed:
     "نەتوانرا کۆدی SMS بنێردرێت. دوای چەند چرکەیەک دووبارە هەوڵبدەرەوە.",
+  authPhoneSmsBlocked:
+    "نەتوانرا SMS بنێردرێت بۆ ئەم ژمارەیە ئێستا (Firebase ڕێگری لێکرد). ژمارەیەکی تر تاقی بکەوە یان چاوەڕێ بە.",
   authPhoneSmsQuotaExceeded:
     "سنووری SMS تێپەڕی. دواتر هەوڵبدەرەوە یان ژمارەی تاقیکاری لە Firebase بەکاربهێنە.",
   authPhoneSmsNotAllowed:

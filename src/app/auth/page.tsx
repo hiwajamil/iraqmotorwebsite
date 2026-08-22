@@ -11,12 +11,11 @@ import {
   confirmPhoneSmsCode,
   toIraqE164,
   signOut,
-  ensurePhoneAuthRecaptcha,
+  preparePhoneRecaptcha,
   clearPhoneRecaptchaVerifier,
   EmailAuthProvider,
   linkWithCredential,
   RECAPTCHA_CONTAINER_ID,
-  PHONE_OTP_SEND_BUTTON_ID,
   type ConfirmationResult,
   type User,
 } from "@/lib/firebase";
@@ -86,7 +85,7 @@ function firebaseErrorCode(err: unknown): string | null {
     return (err as { code: string }).code;
   }
   const message = err instanceof Error ? err.message : String(err);
-  const match = message.match(/auth\/[a-z0-9-]+/i);
+  const match = message.match(/auth\/[a-z0-9:-]+/i);
   return match ? match[0].toLowerCase() : null;
 }
 
@@ -148,7 +147,9 @@ function mapAuthError(err: unknown, locale: Locale): string {
     case "auth/internal-error":
     case "auth/argument-error":
     case "auth/missing-client-identifier":
-      message = t(locale, "authPhoneSmsFailed");
+    case "auth/error-code:-39":
+    case "auth/error-code":
+      message = t(locale, "authPhoneSmsBlocked");
       break;
     case "auth/network-request-failed":
       message = t(locale, "authNetworkError");
@@ -251,10 +252,13 @@ function AuthForm() {
   useEffect(() => {
     const auth = getFirebaseAuth();
     if (!auth) return;
-    void ensurePhoneAuthRecaptcha(auth).catch(() => {
-      // surfaced when user actually starts SMS
-    });
-  }, []);
+    const timer = window.setTimeout(() => {
+      void preparePhoneRecaptcha(auth).catch(() => {
+        // surfaced when the user sends SMS
+      });
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [mode, registerStep, resetPhase]);
 
   async function redirectAfterAuth() {
     await refreshMe();
@@ -314,7 +318,6 @@ function AuthForm() {
       const confirmation = await sendPhoneSmsCode(
         auth,
         toIraqE164(normalizedPhone),
-        { buttonId: PHONE_OTP_SEND_BUTTON_ID },
       );
       confirmationRef.current = confirmation;
       verifiedRegisterPhoneRef.current = null;
@@ -597,7 +600,6 @@ function AuthForm() {
       const confirmation = await sendPhoneSmsCode(
         auth,
         toIraqE164(normalizedPhone),
-        { buttonId: PHONE_OTP_SEND_BUTTON_ID },
       );
       confirmationRef.current = confirmation;
       setResetSessionId(start.sessionId);
@@ -1034,18 +1036,13 @@ function AuthForm() {
             />
           ) : null}
 
-          {/* Visible reCAPTCHA fallback (in-form — never fixed under other UI). */}
+          {/* Visible Firebase reCAPTCHA (must stay in-form and clickable). */}
           <div
             id={RECAPTCHA_CONTAINER_ID}
-            className="flex min-h-[1px] justify-center py-1"
+            className="flex min-h-[78px] justify-center py-1"
           />
 
           <button
-            id={
-              showRegisterPhone || (mode === "login" && resetPhase === "idle")
-                ? PHONE_OTP_SEND_BUTTON_ID
-                : undefined
-            }
             type="submit"
             disabled={
               busy ||

@@ -54,7 +54,7 @@ SMS OTP is sent by the **Firebase client** (`signInWithPhoneNumber` in `src/lib/
 4. **SMS region policy** allows Iraq (`IQ`)  
 5. reCAPTCHA Enterprise / fraud prevention configured for the web app (same key as Flutter)
 
-Note: Phone reCAPTCHA on this project is **AUDIT** (a `RecaptchaVerifier` is required). Do not rely on omitting the verifier unless enforcement is switched to **ENFORCE**.
+Note: SMS toll-fraud **BLOCK** was disabled on this Firebase project because it caused `auth/error-code:-39` with the web RecaptchaVerifier. Phone provider + IQ region policy still apply. `localhost` cannot send real SMS — use production or Firebase test numbers.
 
 ## Routes
 
