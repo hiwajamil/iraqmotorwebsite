@@ -16,7 +16,10 @@ import {
   EmailAuthProvider,
   linkWithCredential,
   RECAPTCHA_CONTAINER_ID,
+  getMultiFactorResolver,
+  TotpMultiFactorGenerator,
   type ConfirmationResult,
+  type MultiFactorResolver,
   type User,
 } from "@/lib/firebase";
 import { api, ApiError } from "@/lib/api";
@@ -139,10 +142,8 @@ function mapAuthError(err: unknown, locale: Locale): string {
     case "auth/invalid-email":
       message = t(locale, "helpInvalidEmail");
       break;
-    case "auth/invalid-verification-code":
-    case "auth/code-expired":
-    case "auth/invalid-verification-id":
-      message = t(locale, "authInvalidOtp");
+    case "auth/multi-factor-auth-required":
+      message = t(locale, "adminMfaRequired");
       break;
     case "auth/internal-error":
     case "auth/argument-error":
@@ -229,7 +230,12 @@ function AuthForm() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const confirmationRef = useRef<ConfirmationResult | null>(null);
+  const mfaResolverRef = useRef<MultiFactorResolver | null>(null);
   const verifiedRegisterPhoneRef = useRef<string | null>(null);
+  const [mfaStep, setMfaStep] = useState<"idle" | "totp" | "recovery">("idle");
+  const [mfaCode, setMfaCode] = useState("");
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
 
   const registerInProgress =
     mode === "register" &&
@@ -239,31 +245,36 @@ function AuthForm() {
 
   useEffect(() => {
     if (loading || !user || !me) return;
+    if (mfaStep !== "idle") return;
     // During phone OTP reset / register we briefly hold a phone session — stay.
     if (resetPhase !== "idle") return;
     if (registerInProgress) return;
-    if (me.isSuperAdmin) {
+    if (me.isSuperAdmin || me.mfaEnrollmentRequired) {
       router.replace(nextPath.startsWith("/admin") ? nextPath : "/admin");
       return;
     }
     router.replace(nextPath);
-  }, [loading, user, me, nextPath, router, resetPhase, registerInProgress]);
+  }, [loading, user, me, nextPath, router, resetPhase, registerInProgress, mfaStep]);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
     if (!auth) return;
+    if (mfaStep !== "idle") return;
     const timer = window.setTimeout(() => {
       void preparePhoneRecaptcha(auth).catch(() => {
         // surfaced when the user sends SMS
       });
     }, 50);
     return () => window.clearTimeout(timer);
-  }, [mode, registerStep, resetPhase]);
+  }, [mode, registerStep, resetPhase, mfaStep]);
 
   async function redirectAfterAuth() {
     await refreshMe();
-    const session = await api.get<{ isSuperAdmin?: boolean }>("/users/me");
-    if (session.isSuperAdmin) {
+    const session = await api.get<{
+      isSuperAdmin?: boolean;
+      mfaEnrollmentRequired?: boolean;
+    }>("/users/me");
+    if (session.isSuperAdmin || session.mfaEnrollmentRequired) {
       router.push(nextPath.startsWith("/admin") ? nextPath : "/admin");
     } else {
       router.push(nextPath);
@@ -520,6 +531,13 @@ function AuthForm() {
         try {
           await signInWithEmailAndPassword(auth, trimmedEmail, password);
         } catch (err) {
+          if (firebaseErrorCode(err) === "auth/multi-factor-auth-required") {
+            mfaResolverRef.current = getMultiFactorResolver(auth, err as Parameters<typeof getMultiFactorResolver>[1]);
+            setMfaStep("totp");
+            setMfaCode("");
+            setRecoveryEmail(trimmedEmail);
+            return;
+          }
           if (!isCredentialError(err) || !isValidIraqMobile(trimmedPhone)) {
             throw err;
           }
@@ -683,6 +701,61 @@ function AuthForm() {
     }
   }
 
+  async function onVerifyAdminMfa(e: React.FormEvent) {
+    e.preventDefault();
+    const resolver = mfaResolverRef.current;
+    const auth = getFirebaseAuth();
+    if (!resolver || !auth) {
+      setError(t(locale, "adminMfaSignInAgain"));
+      setMfaStep("idle");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const hint =
+        resolver.hints.find(
+          (h) => h.factorId === TotpMultiFactorGenerator.FACTOR_ID,
+        ) ?? resolver.hints[0];
+      if (!hint) {
+        throw new Error(t(locale, "adminMfaEnrollFailed"));
+      }
+      const assertion = TotpMultiFactorGenerator.assertionForSignIn(
+        hint.uid,
+        mfaCode.trim(),
+      );
+      await resolver.resolveSignIn(assertion);
+      mfaResolverRef.current = null;
+      setMfaStep("idle");
+      trackEvent("login", { method: "email_mfa" });
+      await redirectAfterAuth();
+    } catch (err) {
+      setError(mapAuthError(err, locale));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onAdminMfaRecovery(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      await api.post("/auth/admin/mfa/recovery", {
+        email: recoveryEmail.trim(),
+        code: recoveryCode.trim(),
+      });
+      mfaResolverRef.current = null;
+      setMfaStep("idle");
+      setRecoveryCode("");
+      setInfo(t(locale, "adminMfaRecoveryUsed"));
+    } catch (err) {
+      setError(mapAuthError(err, locale));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const showResetOtp = resetPhase === "otp";
   const showRegisterPhone = mode === "register" && registerStep === "phone";
   const showRegisterOtp = mode === "register" && registerStep === "otp";
@@ -727,15 +800,112 @@ function AuthForm() {
             <IraqMotorsWordmark />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">
-            {showResetOtp
-              ? t(locale, "authForgotPassword")
-              : mode === "login"
-                ? t(locale, "signIn")
-                : t(locale, "authRegisterTitle")}
+            {mfaStep === "totp"
+              ? t(locale, "adminMfaTitle")
+              : mfaStep === "recovery"
+                ? t(locale, "adminMfaRecoverySignIn")
+                : showResetOtp
+                  ? t(locale, "authForgotPassword")
+                  : mode === "login"
+                    ? t(locale, "signIn")
+                    : t(locale, "authRegisterTitle")}
           </h1>
-          <p className="mt-2 text-sm text-muted">{subtitle}</p>
+          <p className="mt-2 text-sm text-muted">
+            {mfaStep === "totp"
+              ? t(locale, "adminMfaHint")
+              : mfaStep === "recovery"
+                ? t(locale, "adminMfaRecoverySignInHint")
+                : subtitle}
+          </p>
         </div>
 
+        {mfaStep === "totp" ? (
+          <form onSubmit={(e) => void onVerifyAdminMfa(e)} className="space-y-3.5">
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              required
+              maxLength={6}
+              value={mfaCode}
+              onChange={(e) =>
+                setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+              placeholder={t(locale, "adminMfaCodePlaceholder")}
+              className={`${fieldClass} text-center text-lg tracking-[0.4em]`}
+            />
+            {error ? (
+              <p role="alert" className="text-sm text-red-600">
+                {error}
+              </p>
+            ) : null}
+            <button
+              type="submit"
+              disabled={busy || mfaCode.length !== 6}
+              className="mt-2 w-full rounded-[12px] bg-primary py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
+            >
+              {busy ? t(locale, "pleaseWait") : t(locale, "adminMfaVerify")}
+            </button>
+            <button
+              type="button"
+              className="w-full text-center text-sm font-medium text-primary"
+              onClick={() => {
+                setError(null);
+                setMfaStep("recovery");
+              }}
+            >
+              {t(locale, "adminMfaUseRecovery")}
+            </button>
+          </form>
+        ) : mfaStep === "recovery" ? (
+          <form onSubmit={(e) => void onAdminMfaRecovery(e)} className="space-y-3.5">
+            <input
+              type="email"
+              required
+              value={recoveryEmail}
+              onChange={(e) => setRecoveryEmail(e.target.value)}
+              placeholder={t(locale, "adminMfaRecoveryEmail")}
+              className={fieldClass}
+              autoComplete="email"
+            />
+            <input
+              type="text"
+              required
+              value={recoveryCode}
+              onChange={(e) => setRecoveryCode(e.target.value)}
+              placeholder={t(locale, "adminMfaRecoveryCode")}
+              className={fieldClass}
+              autoComplete="off"
+            />
+            {error ? (
+              <p role="alert" className="text-sm text-red-600">
+                {error}
+              </p>
+            ) : null}
+            {info ? (
+              <p role="status" className="text-sm text-emerald-700">
+                {info}
+              </p>
+            ) : null}
+            <button
+              type="submit"
+              disabled={busy}
+              className="mt-2 w-full rounded-[12px] bg-primary py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
+            >
+              {busy ? t(locale, "pleaseWait") : t(locale, "adminMfaRecoverySubmit")}
+            </button>
+            <button
+              type="button"
+              className="w-full text-center text-sm font-medium text-primary"
+              onClick={() => {
+                setError(null);
+                setMfaStep("totp");
+              }}
+            >
+              {t(locale, "adminMfaBackToCode")}
+            </button>
+          </form>
+        ) : (
         <form onSubmit={onSubmit} className="space-y-3.5">
           {showResetOtp ? (
             <>
@@ -1053,8 +1223,9 @@ function AuthForm() {
             {submitLabel}
           </button>
         </form>
+        )}
 
-        {showResetOtp ? (
+        {mfaStep === "idle" && showResetOtp ? (
           <button
             type="button"
             className="mt-5 w-full text-center text-sm font-medium text-primary"

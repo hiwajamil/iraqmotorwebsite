@@ -5,7 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { ADMIN_NAV } from "@/lib/admin";
-import { getFirebaseAuth, sendEmailVerification } from "@/lib/firebase";
+import { AdminMfaEnroll } from "@/components/admin-mfa-enroll";
+import { getFirebaseAuth, sendEmailVerification, multiFactor } from "@/lib/firebase";
 import { t } from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
 
@@ -14,7 +15,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, me, loading } = useAuth();
+  const { user, me, loading, refreshMe } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const locale = useAppSelector((s) => s.preferences.locale);
@@ -100,6 +101,12 @@ export default function AdminLayout({
   }
 
   if (!me.isSuperAdmin) {
+    const enrolledCount = firebaseUser
+      ? multiFactor(firebaseUser).enrolledFactors.length
+      : 0;
+    if (me.mfaEnrollmentRequired && enrolledCount === 0 && emailVerified) {
+      return <AdminMfaEnroll onEnrolled={async () => { await refreshMe(); }} />;
+    }
     return (
       <div className="mx-auto max-w-lg px-[4%] pb-16 pt-24 text-center">
         <h1 className="text-2xl font-bold">{t(locale, "adminAccessDenied")}</h1>

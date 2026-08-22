@@ -16,6 +16,7 @@ export type Me = {
   uid: string;
   email?: string;
   isSuperAdmin?: boolean;
+  mfaEnrollmentRequired?: boolean;
   profile?: Record<string, unknown> | null;
   preferences?: {
     priceAlerts: boolean;

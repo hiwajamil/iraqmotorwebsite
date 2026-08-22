@@ -17,8 +17,13 @@ import {
   signOut,
   onAuthStateChanged,
   linkWithCredential,
+  getMultiFactorResolver,
+  multiFactor,
+  TotpMultiFactorGenerator,
   type Auth,
   type ConfirmationResult,
+  type MultiFactorResolver,
+  type TotpSecret,
   type User,
 } from "firebase/auth";
 
@@ -242,5 +247,8 @@ export {
   linkWithCredential,
   signOut,
   onAuthStateChanged,
+  getMultiFactorResolver,
+  multiFactor,
+  TotpMultiFactorGenerator,
 };
-export type { User, ConfirmationResult };
+export type { User, ConfirmationResult, MultiFactorResolver, TotpSecret };

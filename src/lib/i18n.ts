@@ -1086,6 +1086,32 @@ const en = {
   servicesRejectedToast: "Service rejected",
   servicesPrev: "Previous",
   servicesNext: "Next",
+  adminMfaTitle: "Authenticator code",
+  adminMfaHint: "Enter the 6-digit code from your authenticator app.",
+  adminMfaRequired: "Authenticator verification is required for this admin account.",
+  adminMfaCodePlaceholder: "000000",
+  adminMfaVerify: "Verify",
+  adminMfaEnrollTitle: "Set up admin authenticator",
+  adminMfaEnrollHint:
+    "Scan the QR code with Google Authenticator, Authy, or a similar app, then enter the 6-digit code. Super-admin access requires this step.",
+  adminMfaQrAlt: "Authenticator QR code",
+  adminMfaEnrollFailed: "Could not start authenticator setup. Try signing in again.",
+  adminMfaInvalidCode: "That code is not valid. Try a new code from the app.",
+  adminMfaSignInAgain: "Sign in again to continue.",
+  adminMfaRecoveryTitle: "Save your recovery codes",
+  adminMfaRecoveryHint:
+    "Store these codes somewhere safe. Each code can be used once if you lose your authenticator. They will not be shown again.",
+  adminMfaRecoverySaved: "I have saved these codes",
+  adminMfaUseRecovery: "Use a recovery code",
+  adminMfaRecoverySignIn: "Admin recovery code",
+  adminMfaRecoverySignInHint:
+    "This removes authenticator MFA so you can sign in with your password and set it up again.",
+  adminMfaRecoveryEmail: "Admin email",
+  adminMfaRecoveryCode: "Recovery code",
+  adminMfaRecoverySubmit: "Continue",
+  adminMfaRecoveryUsed:
+    "Authenticator was removed. Sign in with your password, then set up a new authenticator.",
+  adminMfaBackToCode: "Back to authenticator code",
 } as const;
 
 export type DictKey = keyof typeof en;
@@ -2169,6 +2195,32 @@ const ar: Record<DictKey, string> = {
   servicesRejectedToast: "رُفضت الخدمة",
   servicesPrev: "السابق",
   servicesNext: "التالي",
+  adminMfaTitle: "رمز المصادق",
+  adminMfaHint: "أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة.",
+  adminMfaRequired: "يتطلب حساب المشرف هذا التحقق عبر تطبيق المصادقة.",
+  adminMfaCodePlaceholder: "000000",
+  adminMfaVerify: "تحقق",
+  adminMfaEnrollTitle: "إعداد مصادق الإدارة",
+  adminMfaEnrollHint:
+    "امسح رمز QR بتطبيق Google Authenticator أو Authy أو ما شابه، ثم أدخل الرمز المكوّن من 6 أرقام. وصول المشرف الأعلى يتطلب هذه الخطوة.",
+  adminMfaQrAlt: "رمز QR للمصادق",
+  adminMfaEnrollFailed: "تعذر بدء إعداد المصادق. حاول تسجيل الدخول مجدداً.",
+  adminMfaInvalidCode: "الرمز غير صالح. جرّب رمزاً جديداً من التطبيق.",
+  adminMfaSignInAgain: "سجّل الدخول مجدداً للمتابعة.",
+  adminMfaRecoveryTitle: "احفظ رموز الاسترداد",
+  adminMfaRecoveryHint:
+    "احفظ هذه الرموز في مكان آمن. يُستخدم كل رمز مرة واحدة إذا فقدت تطبيق المصادقة. لن تُعرض مرة أخرى.",
+  adminMfaRecoverySaved: "لقد حفظت هذه الرموز",
+  adminMfaUseRecovery: "استخدام رمز استرداد",
+  adminMfaRecoverySignIn: "رمز استرداد المشرف",
+  adminMfaRecoverySignInHint:
+    "يزيل هذا مصادقة التطبيق حتى تتمكن من الدخول بكلمة المرور وإعادة الإعداد.",
+  adminMfaRecoveryEmail: "بريد المشرف",
+  adminMfaRecoveryCode: "رمز الاسترداد",
+  adminMfaRecoverySubmit: "متابعة",
+  adminMfaRecoveryUsed:
+    "تمت إزالة تطبيق المصادقة. سجّل الدخول بكلمة المرور ثم أعد إعداد مصادق جديد.",
+  adminMfaBackToCode: "العودة إلى رمز المصادق",
 };
 
 const ku: Record<DictKey, string> = {
@@ -3255,6 +3307,32 @@ const ku: Record<DictKey, string> = {
   servicesRejectedToast: "خزمەتگوزاری ڕەتکرایەوە",
   servicesPrev: "پێشوو",
   servicesNext: "دواتر",
+  adminMfaTitle: "کۆدی پشتڕاستکەرەوە",
+  adminMfaHint: "کۆدی ٦ ژمارەیی لە ئەپی پشتڕاستکەرەوە بنووسە.",
+  adminMfaRequired: "ئەم هەژماری بەڕێوەبەرە پێویستی بە پشتڕاستکردنەوەی ئەپ هەیە.",
+  adminMfaCodePlaceholder: "000000",
+  adminMfaVerify: "پشتڕاستکردنەوە",
+  adminMfaEnrollTitle: "ڕێکخستنی پشتڕاستکەری بەڕێوەبەر",
+  adminMfaEnrollHint:
+    "کۆدی QR بە Google Authenticator یان Authy یان هاوشێوەیەک سکان بکە، پاشان کۆدی ٦ ژمارەیی بنووسە. دەستگەیشتنی بەڕێوەبەری سەرەکی پێویستی بەم هەنگاوە هەیە.",
+  adminMfaQrAlt: "کۆدی QR ی پشتڕاستکەرەوە",
+  adminMfaEnrollFailed: "نەتوانرا ڕێکخستنی پشتڕاستکەرەوە دەست پێبکرێت. دووبارە بچۆ ژوورەوە.",
+  adminMfaInvalidCode: "ئەم کۆدە دروست نییە. کۆدێکی نوێ لە ئەپەکە تاقی بکەرەوە.",
+  adminMfaSignInAgain: "بۆ بەردەوامبوون دووبارە بچۆ ژوورەوە.",
+  adminMfaRecoveryTitle: "کۆدەکانی گەڕانەوە پاشەکەوت بکە",
+  adminMfaRecoveryHint:
+    "ئەم کۆدانە لە شوێنێکی پارێزراو دابنێ. هەر کۆدێک جارێک بەکاردێت ئەگەر ئەپەکەت لەدەست دەیت. جارێکی تر پیشان نادرێن.",
+  adminMfaRecoverySaved: "ئەم کۆدانەم پاشەکەوت کرد",
+  adminMfaUseRecovery: "بەکارهێنانی کۆدی گەڕانەوە",
+  adminMfaRecoverySignIn: "کۆدی گەڕانەوەی بەڕێوەبەر",
+  adminMfaRecoverySignInHint:
+    "ئەمە پشتڕاستکەری ئەپ لادەبات تا بتوانیت بە وشەی نهێنی بچیتە ژوورەوە و دووبارە ڕێکی بخەیت.",
+  adminMfaRecoveryEmail: "ئیمەیڵی بەڕێوەبەر",
+  adminMfaRecoveryCode: "کۆدی گەڕانەوە",
+  adminMfaRecoverySubmit: "بەردەوام بە",
+  adminMfaRecoveryUsed:
+    "پشتڕاستکەری ئەپ لابرا. بە وشەی نهێنی بچۆ ژوورەوە، پاشان پشتڕاستکەرێکی نوێ ڕێک بخە.",
+  adminMfaBackToCode: "گەڕانەوە بۆ کۆدی پشتڕاستکەرەوە",
 };
 
 const dict: Record<Locale, Record<DictKey, string>> = { en, ar, ku };
