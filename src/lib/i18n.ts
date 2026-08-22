@@ -630,9 +630,12 @@ const en = {
   adminUsersSubtitle: "Ban, change account type, or update city ({count})",
   adminDeleteUserTitle: "Delete user?",
   adminDeleteUserDescription:
-    "Soft-delete {name}: ban the account, disable Firebase Auth, and mark deleted. Active/pending listings must be expired first.",
+    "This permanently deletes {name}. They will be removed from Users and Firebase Auth and cannot sign in. Active or pending listings are expired or rejected first. This cannot be undone.",
   adminDeleteUserConfirmHint:
-    'Type the name "{name}" or DELETE to confirm.',
+    "Type your admin password to confirm this permanent delete.",
+  adminDeleteUserWrongPassword: "Wrong password. Try again.",
+  adminDeleteUserCannotSelf: "You cannot delete your own account.",
+  adminDeleteUserCannotSuperAdmin: "You cannot delete another super admin.",
   adminDeleteUserHasListings:
     "This user still has active or pending listings. Expire or ban them first.",
   adminDeleteUserFailed: "Could not delete user",
@@ -1710,9 +1713,12 @@ const ar: Record<DictKey, string> = {
   adminUsersSubtitle: "حظر أو تغيير نوع الحساب أو تحديث المدينة ({count})",
   adminDeleteUserTitle: "حذف المستخدم؟",
   adminDeleteUserDescription:
-    "حذف ناعم لـ {name}: حظر الحساب وتعطيل Firebase Auth ووضع علامة محذوف. يجب إنهاء الإعلانات النشطة/المعلّقة أولاً.",
+    "سيُحذف {name} نهائياً. يُزال من المستخدمين ومن Firebase Auth ولن يتمكن من تسجيل الدخول. تُنهى أو تُرفض الإعلانات النشطة/المعلّقة أولاً. لا يمكن التراجع.",
   adminDeleteUserConfirmHint:
-    'اكتب الاسم "{name}" أو DELETE للتأكيد.',
+    "اكتب كلمة مرور المسؤول لتأكيد هذا الحذف النهائي.",
+  adminDeleteUserWrongPassword: "كلمة المرور غير صحيحة. حاول مرة أخرى.",
+  adminDeleteUserCannotSelf: "لا يمكنك حذف حسابك.",
+  adminDeleteUserCannotSuperAdmin: "لا يمكنك حذف مسؤول أعلى آخر.",
   adminDeleteUserHasListings:
     "هذا المستخدم لديه إعلانات نشطة أو معلّقة. أنهِها أو احظرها أولاً.",
   adminDeleteUserFailed: "تعذر حذف المستخدم",
@@ -2786,9 +2792,12 @@ const ku: Record<DictKey, string> = {
   adminUsersSubtitle: "قەدەغە، گۆڕینی جۆری هەژمار، یان نوێکردنەوەی شار ({count})",
   adminDeleteUserTitle: "بەکارهێنەر بسڕیتەوە؟",
   adminDeleteUserDescription:
-    "سڕینەوەی نەرم بۆ {name}: قەدەغەکردنی هەژمار، ناکاراکردنی Firebase Auth، و نیشانەی سڕاوە. پێویستە ڕیکلامە چالاک/چاوەڕوانەکان یەکەم جار بەسەربچن.",
+    "ئەمە {name} بۆ هەمیشە دەسڕێتەوە. لە بەکارهێنەران و Firebase Auth دەخرێتە دەرەوە و ناتوانێت بچێتە ژوورەوە. ڕیکلامە چالاک/چاوەڕوانەکان یەکەم جار بەسەردەچن یان ڕەتدەکرێنەوە. گەڕانەوە نییە.",
   adminDeleteUserConfirmHint:
-    'ناوی "{name}" یان DELETE بنووسە بۆ پشتڕاستکردنەوە.',
+    "وشەی نهێنی بەڕێوەبەر بنووسە بۆ پشتڕاستکردنەوەی ئەم سڕینەوەیە.",
+  adminDeleteUserWrongPassword: "وشەی نهێنی هەڵەیە. دووبارە هەوڵ بدەرەوە.",
+  adminDeleteUserCannotSelf: "ناتوانیت هەژماری خۆت بسڕیتەوە.",
+  adminDeleteUserCannotSuperAdmin: "ناتوانیت بەڕێوەبەرێکی سەرووی تر بسڕیتەوە.",
   adminDeleteUserHasListings:
     "ئەم بەکارهێنەرە هێشتا ڕیکلامی چالاک یان چاوەڕوانی هەیە. یەکەم جار بەسەریان ببە یان قەدەغەیان بکە.",
   adminDeleteUserFailed: "نەتوانرا بەکارهێنەر بسڕدرێتەوە",

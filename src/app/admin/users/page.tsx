@@ -8,9 +8,20 @@ import { t, accountTypeLabel } from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
 import { UserStatsWidget } from "@/components/user-stats-widget";
 import { AdminConfirmDialog } from "@/components/admin-confirm-dialog";
+import {
+  EmailAuthProvider,
+  getFirebaseAuth,
+  reauthenticateWithCredential,
+} from "@/lib/firebase";
+
+function firebaseAuthCode(err: unknown): string {
+  if (!err || typeof err !== "object" || !("code" in err)) return "";
+  return String((err as { code: unknown }).code);
+}
 
 export default function AdminUsersPage() {
   const locale = useAppSelector((s) => s.preferences.locale);
+  const sessionUid = useAppSelector((s) => s.auth.user?.uid ?? s.auth.me?.uid);
   const [items, setItems] = useState<AdminUser[]>([]);
   const [city, setCity] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +34,7 @@ export default function AdminUsersPage() {
   const [view, setView] = useState<"list" | "cities">("list");
   const [cityFilter, setCityFilter] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
 
   async function load(nextCity = city) {
     try {
@@ -115,29 +126,34 @@ export default function AdminUsersPage() {
     );
   }, [deleteTarget]);
 
-  const deleteConfirmOk = useMemo(() => {
-    const typed = deleteConfirmText.trim();
-    if (!typed || !deleteTarget) return false;
-    if (typed.toUpperCase() === "DELETE") return true;
-    return typed === deleteLabel;
-  }, [deleteConfirmText, deleteTarget, deleteLabel]);
+  const deleteConfirmOk = Boolean(deleteTarget && deletePassword.trim());
 
   async function confirmDelete() {
     if (!deleteTarget || !deleteConfirmOk) return;
+    const authUser = getFirebaseAuth()?.currentUser;
+    const email = authUser?.email;
+    if (!authUser || !email) {
+      setError(t(locale, "adminDeleteUserFailed"));
+      return;
+    }
     setBusyId(deleteTarget.uid);
     setError(null);
     try {
+      const cred = EmailAuthProvider.credential(email, deletePassword);
+      await reauthenticateWithCredential(authUser, cred);
+      await authUser.getIdToken(true);
       await api.delete(`/admin/users/${deleteTarget.uid}`);
-      setItems((list) =>
-        list.map((row) =>
-          row.uid === deleteTarget.uid ? { ...row, banned: true } : row,
-        ),
-      );
+      setItems((list) => list.filter((row) => row.uid !== deleteTarget.uid));
       setDeleteTarget(null);
-      setDeleteConfirmText("");
+      setDeletePassword("");
     } catch (e) {
-      if (e instanceof ApiError && e.status === 409) {
-        setError(t(locale, "adminDeleteUserHasListings"));
+      const code = firebaseAuthCode(e);
+      if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+        setError(t(locale, "adminDeleteUserWrongPassword"));
+      } else if (e instanceof ApiError && e.status === 400) {
+        setError(t(locale, "adminDeleteUserCannotSelf"));
+      } else if (e instanceof ApiError && e.status === 403) {
+        setError(t(locale, "adminDeleteUserCannotSuperAdmin"));
       } else {
         setError(
           e instanceof Error ? e.message : t(locale, "adminDeleteUserFailed"),
@@ -363,18 +379,20 @@ export default function AdminUsersPage() {
                         >
                           {u.banned ? t(locale, "unban") : t(locale, "ban")}
                         </button>
-                        <button
-                          type="button"
-                          disabled={busyId === u.uid}
-                          className="text-xs font-semibold text-red-600 disabled:opacity-50"
-                          onClick={() => {
-                            setDeleteTarget(u);
-                            setDeleteConfirmText("");
-                            setError(null);
-                          }}
-                        >
-                          {t(locale, "dashDelete")}
-                        </button>
+                        {u.uid !== sessionUid ? (
+                          <button
+                            type="button"
+                            disabled={busyId === u.uid}
+                            className="text-xs font-semibold text-red-600 disabled:opacity-50"
+                            onClick={() => {
+                              setDeleteTarget(u);
+                              setDeletePassword("");
+                              setError(null);
+                            }}
+                          >
+                            {t(locale, "dashDelete")}
+                          </button>
+                        ) : null}
                         <Link
                           href={`/admin/listings?sellerId=${encodeURIComponent(u.uid)}`}
                           className="text-xs font-semibold text-muted hover:text-foreground"
@@ -405,18 +423,18 @@ export default function AdminUsersPage() {
         onCancel={() => {
           if (!busyId) {
             setDeleteTarget(null);
-            setDeleteConfirmText("");
+            setDeletePassword("");
           }
         }}
       >
         <label className="mt-4 block text-xs font-semibold text-muted">
-          {t(locale, "adminDeleteUserConfirmHint", { name: deleteLabel || "DELETE" })}
+          {t(locale, "adminDeleteUserConfirmHint")}
           <input
-            value={deleteConfirmText}
-            onChange={(e) => setDeleteConfirmText(e.target.value)}
-            autoComplete="off"
+            type="password"
+            value={deletePassword}
+            onChange={(e) => setDeletePassword(e.target.value)}
+            autoComplete="current-password"
             className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm text-foreground"
-            placeholder="DELETE"
           />
         </label>
       </AdminConfirmDialog>
