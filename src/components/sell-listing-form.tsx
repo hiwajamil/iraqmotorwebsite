@@ -372,6 +372,7 @@ export function SellListingForm() {
 
   const photoSlots = Array.from({ length: PHOTO_SLOT_COUNT }, (_, i) => draft.imageUrls[i] ?? null);
   const isEditingActive = listingStatus === "active";
+  const isEditingPending = listingStatus === "pending";
   const canPublishDraft = listingStatus === "draft" && Boolean(draftId);
 
   if (loadingEdit) {
@@ -392,7 +393,9 @@ export function SellListingForm() {
     >
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{label("sellTitle")}</h1>
-        <p className="mt-1 text-sm text-muted">{label("sellSubtitle")}</p>
+        <p className="mt-1 text-sm text-muted">
+          {isEditingPending ? label("sellPendingHint") : label("sellSubtitle")}
+        </p>
       </div>
 
       <SectionCard title={label("sellSectionLocation")} field="province">
@@ -910,7 +913,7 @@ export function SellListingForm() {
         >
           {busy
             ? label("sellSubmitting")
-            : isEditingActive
+            : isEditingActive || isEditingPending
               ? label("sellSaveChanges")
               : label("sellSubmit")}
         </button>

@@ -179,7 +179,12 @@ const en = {
   dashEdit: "Edit",
   dashViewListing: "View listing",
   dashPublish: "Publish",
+  dashWithdraw: "Withdraw",
+  dashWithdrawConfirm:
+    "Withdraw this listing from review? It will become a draft you can edit and publish later.",
   sellSaveChanges: "Save changes",
+  sellPendingHint:
+    "This listing is in review. Saving updates it without publishing again; it stays in review.",
   sellLoadFailed: "Could not load this listing",
   sellLoadForbidden: "You can only edit your own listings",
   dashEmptyFavorites: "Wishlist is empty",
@@ -1264,7 +1269,12 @@ const ar: Record<DictKey, string> = {
   dashEdit: "تعديل",
   dashViewListing: "عرض الإعلان",
   dashPublish: "نشر",
+  dashWithdraw: "سحب",
+  dashWithdrawConfirm:
+    "سحب هذا الإعلان من المراجعة؟ سيصبح مسودة يمكنك تعديلها ونشرها لاحقاً.",
   sellSaveChanges: "حفظ التغييرات",
+  sellPendingHint:
+    "هذا الإعلان قيد المراجعة. الحفظ يحدّثه دون إعادة النشر ويبقى قيد المراجعة.",
   sellLoadFailed: "تعذر تحميل هذا الإعلان",
   sellLoadForbidden: "يمكنك تعديل إعلاناتك فقط",
   dashEmptyFavorites: "قائمة المفضلة فارغة",
@@ -2340,7 +2350,12 @@ const ku: Record<DictKey, string> = {
   dashEdit: "دەستکاری",
   dashViewListing: "بینینی ڕیکلام",
   dashPublish: "بڵاوکردنەوە",
+  dashWithdraw: "کشاندنەوە",
+  dashWithdrawConfirm:
+    "ئەم ڕیکلامە لە پێداچوونەوە بکێشیتەوە؟ دەبێتە ڕەشنووس کە دەتوانیت دواتر دەستکاری و بڵاوی بکەیتەوە.",
   sellSaveChanges: "گۆڕانکارییەکان پاشەکەوت بکە",
+  sellPendingHint:
+    "ئەم ڕیکلامە لە پێداچوونەوەدایە. پاشەکەوتکردن نوێی دەکاتەوە بەبێ دووبارە بڵاوکردنەوە و لە پێداچوونەوە دەمێنێتەوە.",
   sellLoadFailed: "نەتوانرا ئەم ڕیکلامە باربکرێت",
   sellLoadForbidden: "تەنها دەتوانیت ڕیکلامەکانی خۆت دەستکاری بکەیت",
   dashEmptyFavorites: "لیستی دڵخواز بەتاڵە",

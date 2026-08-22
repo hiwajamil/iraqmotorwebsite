@@ -24,6 +24,7 @@ type ListingCounts = {
 type ConfirmAction =
   | { type: "sold"; car: Car }
   | { type: "delete"; car: Car }
+  | { type: "withdraw"; car: Car }
   | null;
 
 export default function DashboardListingsPage() {
@@ -81,6 +82,22 @@ export default function DashboardListingsPage() {
                 ...prev,
                 active: Math.max(0, prev.active - 1),
                 sold: prev.sold + 1,
+              }
+            : prev,
+        );
+      } else if (type === "withdraw") {
+        await api.patch(`/cars/${car.id}/status`, { status: "draft" });
+        setAds((list) =>
+          list.map((row) =>
+            row.id === car.id ? { ...row, status: "draft" } : row,
+          ),
+        );
+        setCounts((prev) =>
+          prev
+            ? {
+                ...prev,
+                pending: Math.max(0, prev.pending - 1),
+                draft: prev.draft + 1,
               }
             : prev,
         );
@@ -207,6 +224,7 @@ export default function DashboardListingsPage() {
               busy={busyId === car.id}
               onMarkSold={() => setConfirm({ type: "sold", car })}
               onDelete={() => setConfirm({ type: "delete", car })}
+              onWithdraw={() => setConfirm({ type: "withdraw", car })}
               onPublish={() => void publish(car.id)}
             />
           ))}
@@ -218,17 +236,23 @@ export default function DashboardListingsPage() {
         title={
           confirm?.type === "delete"
             ? t(locale, "dashDelete")
-            : t(locale, "dashMarkSold")
+            : confirm?.type === "withdraw"
+              ? t(locale, "dashWithdraw")
+              : t(locale, "dashMarkSold")
         }
         description={
           confirm?.type === "delete"
             ? t(locale, "dashDeleteConfirm")
-            : t(locale, "dashMarkSoldConfirm")
+            : confirm?.type === "withdraw"
+              ? t(locale, "dashWithdrawConfirm")
+              : t(locale, "dashMarkSoldConfirm")
         }
         confirmLabel={
           confirm?.type === "delete"
             ? t(locale, "dashDelete")
-            : t(locale, "dashMarkSold")
+            : confirm?.type === "withdraw"
+              ? t(locale, "dashWithdraw")
+              : t(locale, "dashMarkSold")
         }
         danger={confirm?.type === "delete"}
         busy={busyId != null && confirm != null}
@@ -247,12 +271,14 @@ function OwnerListingRow({
   busy,
   onMarkSold,
   onDelete,
+  onWithdraw,
   onPublish,
 }: {
   car: Car;
   busy: boolean;
   onMarkSold: () => void;
   onDelete: () => void;
+  onWithdraw: () => void;
   onPublish: () => void;
 }) {
   const locale = useAppSelector((s) => s.preferences.locale);
@@ -267,12 +293,20 @@ function OwnerListingRow({
     car.priceValue != null && Number(car.priceValue) > 0
       ? formatAskPrice(car)
       : "—";
-  const canEdit = status === "draft" || status === "active" || status === "rejected";
+  const canEdit =
+    status === "draft" ||
+    status === "active" ||
+    status === "rejected" ||
+    status === "pending";
   const canView = status === "active" || status === "sold";
   const canMarkSold = status === "active";
   const canDelete =
-    status === "draft" || status === "sold" || status === "expired";
+    status === "draft" ||
+    status === "sold" ||
+    status === "expired" ||
+    status === "pending";
   const canPublish = status === "draft";
+  const canWithdraw = status === "pending";
 
   return (
     <li className="flex flex-col gap-3 rounded-[16px] bg-card p-3 ring-1 ring-outline sm:flex-row sm:items-center sm:gap-4 sm:p-4">
@@ -322,6 +356,16 @@ function OwnerListingRow({
               className="rounded-[12px] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-60"
             >
               {t(locale, "dashPublish")}
+            </button>
+          ) : null}
+          {canWithdraw ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={onWithdraw}
+              className="rounded-[12px] bg-input px-3 py-2 text-xs font-semibold disabled:opacity-60"
+            >
+              {t(locale, "dashWithdraw")}
             </button>
           ) : null}
           {canMarkSold ? (
