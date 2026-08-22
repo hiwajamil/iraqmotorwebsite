@@ -238,6 +238,20 @@ const en = {
   dashConfirmPassword: "Confirm new password",
   dashUpdatePassword: "Update password",
   dashCancel: "Cancel",
+  dashAuthenticatorTitle: "Authenticator (2FA)",
+  dashAuthenticatorHint:
+    "Use Google Authenticator. After you enable this, the next sign-in will ask for a 6-digit code. Marketplace accounts are not required to use 2FA.",
+  dashAuthenticatorOff: "Off",
+  dashAuthenticatorOn: "On",
+  dashAuthenticatorEnable: "Enable",
+  dashAuthenticatorUnenroll: "Turn off",
+  dashAuthenticatorReauthPassword: "Current password",
+  dashAuthenticatorNeedPassword: "Enter your current password to start authenticator setup.",
+  dashAuthenticatorUnenrollHint:
+    "Enter your password and the current authenticator code to turn off 2FA.",
+  dashAuthenticatorEnrolled:
+    "Authenticator is on. The next sign-in will require Google Authenticator.",
+  dashAuthenticatorDisabled: "Authenticator was turned off.",
   dashNoPassword: "Password change is only available for email accounts",
   dashSelectCity: "Select governorate / city",
   dashMarkSoldConfirm: "Mark this listing as sold? Buyers will see a sold badge.",
@@ -1354,6 +1368,20 @@ const ar: Record<DictKey, string> = {
   dashConfirmPassword: "تأكيد كلمة المرور الجديدة",
   dashUpdatePassword: "تحديث كلمة المرور",
   dashCancel: "إلغاء",
+  dashAuthenticatorTitle: "المصادق (التحقق بخطوتين)",
+  dashAuthenticatorHint:
+    "استخدم Google Authenticator. بعد التفعيل، سيطلب تسجيل الدخول التالي رمزاً من 6 أرقام. حسابات السوق لا تحتاج التحقق بخطوتين.",
+  dashAuthenticatorOff: "إيقاف",
+  dashAuthenticatorOn: "تشغيل",
+  dashAuthenticatorEnable: "تفعيل",
+  dashAuthenticatorUnenroll: "إيقاف",
+  dashAuthenticatorReauthPassword: "كلمة المرور الحالية",
+  dashAuthenticatorNeedPassword: "أدخل كلمة المرور الحالية لبدء إعداد المصادق.",
+  dashAuthenticatorUnenrollHint:
+    "أدخل كلمة المرور ورمز المصادق الحالي لإيقاف التحقق بخطوتين.",
+  dashAuthenticatorEnrolled:
+    "المصادق مفعّل. سيتطلب تسجيل الدخول التالي Google Authenticator.",
+  dashAuthenticatorDisabled: "تم إيقاف المصادق.",
   dashNoPassword: "تغيير كلمة المرور متاح لحسابات البريد فقط",
   dashSelectCity: "اختر المحافظة / المدينة",
   dashMarkSoldConfirm: "تعليم هذا الإعلان كمباع؟ سيظهر شارة مباع للمشترين.",
@@ -2461,6 +2489,20 @@ const ku: Record<DictKey, string> = {
   dashConfirmPassword: "وشەی نهێنی نوێ پشتڕاست بکەرەوە",
   dashUpdatePassword: "وشەی نهێنی نوێ بکەرەوە",
   dashCancel: "پاشگەزبوونەوە",
+  dashAuthenticatorTitle: "پشتڕاستکەرەوە (2FA)",
+  dashAuthenticatorHint:
+    "Google Authenticator بەکاربهێنە. دوای چالاککردن، چوونەژوورەوەی داهاتوو کۆدی ٦ ژمارەیی داوا دەکات. هەژمارەکانی بازاڕ پێویستیان بە 2FA نییە.",
+  dashAuthenticatorOff: "کوژاوە",
+  dashAuthenticatorOn: "داگیرساو",
+  dashAuthenticatorEnable: "چالاککردن",
+  dashAuthenticatorUnenroll: "کوژاندنەوە",
+  dashAuthenticatorReauthPassword: "وشەی نهێنی ئێستا",
+  dashAuthenticatorNeedPassword: "وشەی نهێنی ئێستا بنووسە بۆ دەستپێکردنی ڕێکخستنی پشتڕاستکەرەوە.",
+  dashAuthenticatorUnenrollHint:
+    "وشەی نهێنی و کۆدی پشتڕاستکەرەوەی ئێستا بنووسە بۆ کوژاندنەوەی 2FA.",
+  dashAuthenticatorEnrolled:
+    "پشتڕاستکەرەوە داگیرساوە. چوونەژوورەوەی داهاتوو Google Authenticator داوا دەکات.",
+  dashAuthenticatorDisabled: "پشتڕاستکەرەوە کوژایەوە.",
   dashNoPassword: "گۆڕینی وشەی نهێنی تەنها بۆ هەژماری ئیمەیڵ بەردەستە",
   dashSelectCity: "پارێزگا / شار هەڵبژێرە",
   dashMarkSoldConfirm: "ئەم ڕیکلامە وەک فرۆشراو نیشان بکەیت؟ کڕیاران نیشانەی فرۆشراو دەبینن.",

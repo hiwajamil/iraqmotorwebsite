@@ -17,6 +17,7 @@ export type Me = {
   email?: string;
   isSuperAdmin?: boolean;
   mfaEnrollmentRequired?: boolean;
+  isAllowlistedSuperAdmin?: boolean;
   profile?: Record<string, unknown> | null;
   preferences?: {
     priceAlerts: boolean;

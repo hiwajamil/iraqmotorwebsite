@@ -12,6 +12,7 @@ import {
 } from "@/lib/firebase";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { refreshMe } from "@/store/slices/authSlice";
+import { AuthenticatorSettings } from "@/components/authenticator-settings";
 import { t } from "@/lib/i18n";
 
 export default function DashboardSettingsPage() {
@@ -195,6 +196,8 @@ export default function DashboardSettingsPage() {
           </div>
         </div>
       </section>
+
+      {me?.isAllowlistedSuperAdmin ? <AuthenticatorSettings /> : null}
 
       <section className="rounded-[16px] bg-card p-6 ring-1 ring-outline">
         <h2 className="text-lg font-semibold">{t(locale, "dashSecurity")}</h2>
