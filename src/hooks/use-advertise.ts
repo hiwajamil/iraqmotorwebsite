@@ -26,8 +26,10 @@ export function useAdvertise(opts: {
     setLoading(true);
     void fetchAds({
       langCode: opts.langCode,
+      locationId: opts.locationId,
       listSize: opts.listSize,
       slot: opts.slot,
+      advertiseTypeIds: opts.advertiseTypeIds,
     }).then((items) => {
       if (!cancelled) {
         setAds(items);
@@ -37,7 +39,7 @@ export function useAdvertise(opts: {
     return () => {
       cancelled = true;
     };
-  }, [opts.langCode, opts.listSize, opts.slot]);
+  }, [opts.langCode, opts.locationId, opts.listSize, opts.slot, opts.advertiseTypeIds?.join(",")]);
 
   return { ads, loading };
 }

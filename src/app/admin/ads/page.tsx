@@ -10,6 +10,7 @@ import { AdminToast } from "@/components/admin-toast";
 import { api } from "@/lib/api";
 import {
   AD_SLOTS,
+  AD_TYPE_LABELS,
   adDeliveryBadgeClass,
   adDeliveryState,
   adHasCreative,
@@ -54,7 +55,7 @@ function SkeletonRows({ rows = 5 }: { rows?: number }) {
     <>
       {Array.from({ length: rows }, (_, i) => (
         <tr key={i} className="border-b border-outline/70 last:border-0">
-          <td className="px-4 py-3" colSpan={7}>
+          <td className="px-4 py-3" colSpan={10}>
             <div className="flex items-center gap-3">
               <div className="h-12 w-20 animate-pulse rounded-lg bg-input" />
               <div className="min-w-0 flex-1 space-y-2">
@@ -360,10 +361,19 @@ export default function AdminAdsPage() {
                 {t(locale, "colTitle")}
               </th>
               <th className="px-4 py-3 font-semibold">
+                {t(locale, "colType")}
+              </th>
+              <th className="px-4 py-3 font-semibold">
                 {t(locale, "colSlot")}
               </th>
               <th className="px-4 py-3 font-semibold">
                 {t(locale, "colStatus")}
+              </th>
+              <th className="px-4 py-3 font-semibold">
+                {t(locale, "colImpressions")}
+              </th>
+              <th className="px-4 py-3 font-semibold">
+                {t(locale, "colClicks")}
               </th>
               <th className="px-4 py-3 font-semibold">
                 {t(locale, "colStartDate")}
@@ -381,7 +391,7 @@ export default function AdminAdsPage() {
               <SkeletonRows />
             ) : visible.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-10 text-center">
+                <td colSpan={10} className="px-4 py-10 text-center">
                   <p className="font-semibold">{t(locale, "adsEmptyTitle")}</p>
                   <p className="mt-1 text-sm text-muted">
                     {t(locale, "adsEmptyHint")}
@@ -455,6 +465,11 @@ export default function AdminAdsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-input px-2 py-0.5 text-[11px] font-medium">
+                        {AD_TYPE_LABELS[ad.advertiseTypeId ?? 1]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="rounded-full bg-input px-2 py-0.5 text-[11px] font-medium">
                         {adSlotLabel(locale, ad.slotPosition)}
                       </span>
                     </td>
@@ -500,6 +515,15 @@ export default function AdminAdsPage() {
                               : t(locale, "statusInactive")}
                         </span>
                       </button>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted">
+                      {ad.impressionCount ?? 0}
+                      {ad.impressionLimit != null
+                        ? ` / ${ad.impressionLimit}`
+                        : ""}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted">
+                      {ad.clickCount ?? 0}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-muted">
                       <p>{formatAdDate(ad.startDate)}</p>

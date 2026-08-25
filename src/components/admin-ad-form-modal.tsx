@@ -4,37 +4,81 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AdminConfirmDialog } from "@/components/admin-confirm-dialog";
 import { api } from "@/lib/api";
 import {
-  AD_CREATIVE_SIZES,
+  AD_CREATIVE_SLOTS,
   AD_SLOTS,
+  AD_TARGET_CITIES,
+  AdvertiseType,
   adImageUrl,
   adIsEnabled,
   formatAdDateIraq,
   formatAdDateUtc,
   liveAdsInSlot,
-  type AdSlotKey,
   type AdvertiseAdmin,
+  type AdvertiseTypeId,
 } from "@/lib/ads";
 import { t } from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
 
+const LANGS = ["en", "ar", "ku"] as const;
+type FormLang = (typeof LANGS)[number];
+type CreativeKey = (typeof AD_CREATIVE_SLOTS)[number]["key"];
+
 export type AdFormState = {
-  title: string;
+  titleEn: string;
+  titleAr: string;
+  titleKu: string;
+  actionLinkEn: string;
+  actionLinkAr: string;
+  actionLinkKu: string;
+  url: string;
   description: string;
+  advertiseTypeId: AdvertiseTypeId;
+  phone: string;
+  carId: string;
+  showroomSellerId: string;
+  showroomUserName: string;
+  locationIds: string[];
   targetLink: string;
   slotPosition: string;
   startDate: string;
   endDate: string;
   isActive: boolean;
+  impressionLimit: string;
+  forceExternalUrl: boolean;
 };
 
+type CreativeUrls = Record<FormLang, Record<CreativeKey, string>>;
+type CreativeFiles = Partial<Record<`${FormLang}:${CreativeKey}`, File>>;
+type CreativePreviews = Partial<Record<`${FormLang}:${CreativeKey}`, string>>;
+
+const emptyCreatives = (): CreativeUrls => ({
+  en: { webLandscape: "", landscape: "", webSquare: "", portrait: "" },
+  ar: { webLandscape: "", landscape: "", webSquare: "", portrait: "" },
+  ku: { webLandscape: "", landscape: "", webSquare: "", portrait: "" },
+});
+
 export const emptyAdForm = (): AdFormState => ({
-  title: "",
+  titleEn: "",
+  titleAr: "",
+  titleKu: "",
+  actionLinkEn: "",
+  actionLinkAr: "",
+  actionLinkKu: "",
+  url: "",
   description: "",
+  advertiseTypeId: AdvertiseType.UrlAndPhone,
+  phone: "",
+  carId: "",
+  showroomSellerId: "",
+  showroomUserName: "",
+  locationIds: ["*"],
   targetLink: "",
   slotPosition: "home_banner",
   startDate: "",
   endDate: "",
   isActive: true,
+  impressionLimit: "",
+  forceExternalUrl: false,
 });
 
 function toLocalInput(iso: string | null | undefined): string {
@@ -51,31 +95,135 @@ function toIsoOrNull(local: string): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-function isSlotKey(value: string): value is AdSlotKey {
-  return AD_SLOTS.some((s) => s.key === value);
+function locValue(
+  map: { en?: string | null; ar?: string | null; ku?: string | null } | undefined,
+  lang: FormLang,
+): string {
+  const value = map?.[lang];
+  return typeof value === "string" ? value : "";
 }
 
-export function formFromAd(ad: AdvertiseAdmin): AdFormState {
+function formFromAd(ad: AdvertiseAdmin): AdFormState {
+  const titles = ad.titleLocalized ?? {};
+  const action =
+    ad.actionLink && typeof ad.actionLink === "object" ? ad.actionLink : {};
+  const actionStr = typeof ad.actionLink === "string" ? ad.actionLink : "";
   return {
-    title: ad.title || "",
+    titleEn: locValue(titles, "en") || ad.title || "",
+    titleAr: locValue(titles, "ar"),
+    titleKu: locValue(titles, "ku"),
+    actionLinkEn: locValue(action, "en") || actionStr,
+    actionLinkAr: locValue(action, "ar"),
+    actionLinkKu: locValue(action, "ku"),
+    url: ad.url || ad.targetLink || "",
     description: ad.description || "",
+    advertiseTypeId: ad.advertiseTypeId ?? AdvertiseType.UrlAndPhone,
+    phone: ad.phone || "",
+    carId: ad.carId || "",
+    showroomSellerId: ad.showroomSellerId || ad.showroomId || "",
+    showroomUserName: ad.showroomUserName || "",
+    locationIds: ad.locationIds?.length ? ad.locationIds : ["*"],
     targetLink: ad.targetLink || ad.url || "",
     slotPosition: ad.slotPosition || "home_banner",
     startDate: toLocalInput(ad.startDate),
     endDate: toLocalInput(ad.endDate),
     isActive: adIsEnabled(ad),
+    impressionLimit:
+      ad.impressionLimit == null ? "" : String(ad.impressionLimit),
+    forceExternalUrl: Boolean(ad.forceExternalUrl),
   };
 }
 
-function toPayload(form: AdFormState) {
+function creativesFromAd(ad: AdvertiseAdmin | null): CreativeUrls {
+  const next = emptyCreatives();
+  if (!ad) return next;
+  const localized = ad.creativesLocalized;
+  for (const lang of LANGS) {
+    const set = localized?.[lang] ?? (lang === "en" ? ad.creatives : undefined);
+    if (!set) continue;
+    next[lang] = {
+      webLandscape: set.webLandscape || "",
+      landscape: set.landscape || "",
+      webSquare: set.webSquare || "",
+      portrait: set.portrait || "",
+    };
+  }
+  if (!next.en.webLandscape && ad.creatives?.webLandscape) {
+    next.en.webLandscape = ad.creatives.webLandscape;
+  }
+  if (!next.en.landscape && ad.creatives?.landscape) {
+    next.en.landscape = ad.creatives.landscape;
+  }
+  if (!next.en.webSquare && ad.creatives?.webSquare) {
+    next.en.webSquare = ad.creatives.webSquare;
+  }
+  if (!next.en.portrait && (ad.creatives?.portrait || ad.imageUrl)) {
+    next.en.portrait = ad.creatives?.portrait || ad.imageUrl || "";
+  }
+  return next;
+}
+
+function compactLocalized(values: {
+  en: string;
+  ar: string;
+  ku: string;
+}): { en?: string; ar?: string; ku?: string } {
   return {
-    title: form.title.trim(),
+    ...(values.en.trim() ? { en: values.en.trim() } : {}),
+    ...(values.ar.trim() ? { ar: values.ar.trim() } : {}),
+    ...(values.ku.trim() ? { ku: values.ku.trim() } : {}),
+  };
+}
+
+function compactCreatives(urls: CreativeUrls) {
+  const out: Record<string, Record<string, string>> = {};
+  for (const lang of LANGS) {
+    const set: Record<string, string> = {};
+    for (const slot of AD_CREATIVE_SLOTS) {
+      const value = urls[lang][slot.key]?.trim();
+      if (value) set[slot.key] = value;
+    }
+    if (Object.keys(set).length) out[lang] = set;
+  }
+  return out;
+}
+
+function toPayload(form: AdFormState, urls: CreativeUrls) {
+  const titles = compactLocalized({
+    en: form.titleEn,
+    ar: form.titleAr,
+    ku: form.titleKu,
+  });
+  const actionLink = compactLocalized({
+    en: form.actionLinkEn,
+    ar: form.actionLinkAr,
+    ku: form.actionLinkKu,
+  });
+  const limit = form.impressionLimit.trim();
+  return {
+    title: titles,
+    actionLink,
+    url: form.url.trim() || null,
+    targetLink:
+      form.actionLinkEn.trim() ||
+      form.url.trim() ||
+      form.targetLink.trim() ||
+      null,
     description: form.description.trim() || null,
-    targetLink: form.targetLink.trim() || null,
+    advertiseTypeId: form.advertiseTypeId,
+    phone: form.phone.trim() || null,
+    carId: form.carId.trim() || null,
+    showroomSellerId: form.showroomSellerId.trim() || null,
+    showroomUserName: form.showroomUserName.trim() || null,
+    locationIds: form.locationIds.length ? form.locationIds : ["*"],
     slotPosition: form.slotPosition,
     startDate: toIsoOrNull(form.startDate),
     endDate: toIsoOrNull(form.endDate),
     isActive: form.isActive,
+    impressionLimit: limit ? Number(limit) : null,
+    forceExternalUrl: form.forceExternalUrl,
+    creativesLocalized: compactCreatives(urls),
+    creatives: compactCreatives(urls).en,
   };
 }
 
@@ -94,8 +242,10 @@ export function AdminAdFormModal({
 }) {
   const locale = useAppSelector((s) => s.preferences.locale);
   const [form, setForm] = useState<AdFormState>(emptyAdForm);
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [urls, setUrls] = useState<CreativeUrls>(emptyCreatives);
+  const [files, setFiles] = useState<CreativeFiles>({});
+  const [previews, setPreviews] = useState<CreativePreviews>({});
+  const [langTab, setLangTab] = useState<FormLang>("en");
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,8 +254,10 @@ export function AdminAdFormModal({
   useEffect(() => {
     if (!open) return;
     setForm(ad ? formFromAd(ad) : emptyAdForm());
-    setFile(null);
-    setPreview(ad ? adImageUrl(ad) : null);
+    setUrls(creativesFromAd(ad));
+    setFiles({});
+    setPreviews({});
+    setLangTab("en");
     setError(null);
     setBusy(false);
     setUploading(false);
@@ -123,15 +275,11 @@ export function AdminAdFormModal({
 
   useEffect(() => {
     return () => {
-      if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
+      Object.values(previews).forEach((url) => {
+        if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
     };
-  }, [preview]);
-
-  const slotKey: AdSlotKey = isSlotKey(form.slotPosition)
-    ? form.slotPosition
-    : "home_banner";
-  const creative = AD_CREATIVE_SIZES[slotKey];
-  const bannerPreview = slotKey === "home_banner";
+  }, [previews]);
 
   const competing = useMemo(
     () => liveAdsInSlot(existingAds, form.slotPosition, ad?.id),
@@ -141,23 +289,51 @@ export function AdminAdFormModal({
   const startIso = toIsoOrNull(form.startDate);
   const endIso = toIsoOrNull(form.endDate);
 
-  const hasCreative = Boolean(file) || Boolean(ad && adImageUrl(ad));
+  const hasCreative =
+    Object.values(files).some(Boolean) ||
+    LANGS.some((lang) =>
+      AD_CREATIVE_SLOTS.some((slot) => urls[lang][slot.key]?.trim()),
+    ) ||
+    Boolean(ad && adImageUrl(ad));
 
   if (!open) return null;
 
   const editing = Boolean(ad?.id);
 
-  async function uploadImage(id: string, nextFile: File) {
+  function toggleCity(key: string) {
+    setForm((prev) => {
+      if (key === "*") return { ...prev, locationIds: ["*"] };
+      const next = prev.locationIds.filter((id) => id !== "*");
+      if (next.includes(key)) {
+        const filtered = next.filter((id) => id !== key);
+        return { ...prev, locationIds: filtered.length ? filtered : ["*"] };
+      }
+      return { ...prev, locationIds: [...next, key] };
+    });
+  }
+
+  async function uploadPending(id: string, current: AdvertiseAdmin) {
+    let saved = current;
+    const entries = Object.entries(files).filter(([, file]) => file);
+    if (!entries.length) return saved;
     setUploading(true);
     try {
-      return await api.upload<AdvertiseAdmin>(`/admin/ads/${id}/image`, nextFile);
+      for (const [key, file] of entries) {
+        if (!file) continue;
+        const [lang, slot] = key.split(":") as [FormLang, CreativeKey];
+        saved = await api.upload<AdvertiseAdmin>(
+          `/admin/ads/${id}/image?slot=${slot}&lang=${lang}`,
+          file,
+        );
+      }
     } finally {
       setUploading(false);
     }
+    return saved;
   }
 
   async function save() {
-    const body = toPayload(form);
+    const body = toPayload(form, urls);
     setBusy(true);
     setError(null);
     try {
@@ -167,9 +343,7 @@ export function AdminAdFormModal({
       } else {
         saved = await api.post<AdvertiseAdmin>("/admin/ads", body);
       }
-      if (file) {
-        saved = await uploadImage(saved.id, file);
-      }
+      saved = await uploadPending(saved.id, saved);
       onSaved(saved, !ad?.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : t(locale, "couldNotSaveAd"));
@@ -180,8 +354,8 @@ export function AdminAdFormModal({
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    const body = toPayload(form);
-    if (!body.title) {
+    const body = toPayload(form, urls);
+    if (!body.title.en && !body.title.ar && !body.title.ku) {
       setError(t(locale, "adTitleRequired"));
       return;
     }
@@ -198,6 +372,12 @@ export function AdminAdFormModal({
     await save();
   }
 
+  const localeLabel = {
+    en: "adLocaleEn",
+    ar: "adLocaleAr",
+    ku: "adLocaleKu",
+  } as const;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
       <div
@@ -209,7 +389,7 @@ export function AdminAdFormModal({
       />
       <form
         onSubmit={(e) => void onSubmit(e)}
-        className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[var(--radius-card)] bg-card p-5 shadow-xl ring-1 ring-outline"
+        className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[var(--radius-card)] bg-card p-5 shadow-xl ring-1 ring-outline"
       >
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -244,40 +424,139 @@ export function AdminAdFormModal({
 
         <div className="mt-5 space-y-4">
           <label className="block text-sm">
-            <span className="font-medium">{t(locale, "adFieldTitle")}</span>
-            <input
-              value={form.title}
-              onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-              className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
-              placeholder={t(locale, "adTitlePlaceholder")}
-              required
-            />
-          </label>
-
-          <label className="block text-sm">
-            <span className="font-medium">{t(locale, "adFieldDescription")}</span>
-            <textarea
-              value={form.description}
+            <span className="font-medium">{t(locale, "adFieldType")}</span>
+            <select
+              value={form.advertiseTypeId}
               onChange={(e) =>
-                setForm((p) => ({ ...p, description: e.target.value }))
-              }
-              rows={2}
-              className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
-              placeholder={t(locale, "adDescriptionPlaceholder")}
-            />
-          </label>
-
-          <label className="block text-sm">
-            <span className="font-medium">{t(locale, "adFieldTargetLink")}</span>
-            <input
-              value={form.targetLink}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, targetLink: e.target.value }))
+                setForm((p) => ({
+                  ...p,
+                  advertiseTypeId: Number(e.target.value) as AdvertiseTypeId,
+                }))
               }
               className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
-              placeholder={t(locale, "adTargetLinkPlaceholder")}
-            />
+            >
+              <option value={AdvertiseType.UrlAndPhone}>
+                {t(locale, "adTypeUrlPhone")}
+              </option>
+              <option value={AdvertiseType.Car}>{t(locale, "adTypeCar")}</option>
+              <option value={AdvertiseType.Showroom}>
+                {t(locale, "adTypeShowroom")}
+              </option>
+            </select>
           </label>
+
+          {form.advertiseTypeId === AdvertiseType.UrlAndPhone ? (
+            <>
+              <label className="block text-sm">
+                <span className="font-medium">{t(locale, "adFieldPhone")}</span>
+                <input
+                  value={form.phone}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, phone: e.target.value }))
+                  }
+                  className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+                  placeholder={t(locale, "adPhonePlaceholder")}
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium">{t(locale, "adFieldUrl")}</span>
+                <input
+                  value={form.url}
+                  onChange={(e) =>
+                    setForm((p) => ({ ...p, url: e.target.value }))
+                  }
+                  className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+                  placeholder={t(locale, "adTargetLinkPlaceholder")}
+                />
+              </label>
+              <label className="flex items-center justify-between gap-3 rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm">
+                <span className="font-medium">
+                  {t(locale, "adFieldForceExternal")}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={form.forceExternalUrl}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      forceExternalUrl: e.target.checked,
+                    }))
+                  }
+                  className="h-4 w-4 accent-[var(--primary)]"
+                />
+              </label>
+            </>
+          ) : null}
+
+          {form.advertiseTypeId === AdvertiseType.Car ? (
+            <label className="block text-sm">
+              <span className="font-medium">{t(locale, "adFieldCarId")}</span>
+              <input
+                value={form.carId}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, carId: e.target.value }))
+                }
+                className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+                placeholder={t(locale, "adCarIdPlaceholder")}
+              />
+            </label>
+          ) : null}
+
+          {form.advertiseTypeId === AdvertiseType.Showroom ? (
+            <>
+              <label className="block text-sm">
+                <span className="font-medium">
+                  {t(locale, "adFieldShowroomId")}
+                </span>
+                <input
+                  value={form.showroomSellerId}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      showroomSellerId: e.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+                  placeholder={t(locale, "adShowroomIdPlaceholder")}
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="font-medium">
+                  {t(locale, "adFieldShowroomUsername")}
+                </span>
+                <input
+                  value={form.showroomUserName}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      showroomUserName: e.target.value,
+                    }))
+                  }
+                  className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+                />
+              </label>
+            </>
+          ) : null}
+
+          <div>
+            <p className="text-sm font-medium">{t(locale, "adFieldLocations")}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {AD_TARGET_CITIES.map((city) => (
+                <button
+                  key={city.key}
+                  type="button"
+                  onClick={() => toggleCity(city.key)}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    form.locationIds.includes(city.key)
+                      ? "bg-primary text-on-primary"
+                      : "bg-input text-muted"
+                  }`}
+                >
+                  {city.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <label className="block text-sm">
             <span className="font-medium">{t(locale, "adFieldSlot")}</span>
@@ -294,10 +573,149 @@ export function AdminAdFormModal({
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-muted">
-              {t(locale, "adsCreativeSizeHint", { size: creative.size })}
-            </p>
           </label>
+
+          <div className="flex flex-wrap gap-1.5">
+            {LANGS.map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                onClick={() => setLangTab(lang)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  langTab === lang
+                    ? "bg-primary text-on-primary"
+                    : "bg-input text-muted"
+                }`}
+              >
+                {t(locale, localeLabel[lang])}
+              </button>
+            ))}
+          </div>
+
+          <label className="block text-sm">
+            <span className="font-medium">{t(locale, "adFieldTitle")}</span>
+            <input
+              value={
+                langTab === "en"
+                  ? form.titleEn
+                  : langTab === "ar"
+                    ? form.titleAr
+                    : form.titleKu
+              }
+              onChange={(e) => {
+                const value = e.target.value;
+                setForm((p) =>
+                  langTab === "en"
+                    ? { ...p, titleEn: value }
+                    : langTab === "ar"
+                      ? { ...p, titleAr: value }
+                      : { ...p, titleKu: value },
+                );
+              }}
+              className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+              placeholder={t(locale, "adTitlePlaceholder")}
+              required={langTab === "en"}
+            />
+          </label>
+
+          {form.advertiseTypeId === AdvertiseType.UrlAndPhone ? (
+            <label className="block text-sm">
+              <span className="font-medium">{t(locale, "adFieldActionLink")}</span>
+              <input
+                value={
+                  langTab === "en"
+                    ? form.actionLinkEn
+                    : langTab === "ar"
+                      ? form.actionLinkAr
+                      : form.actionLinkKu
+                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setForm((p) =>
+                    langTab === "en"
+                      ? { ...p, actionLinkEn: value }
+                      : langTab === "ar"
+                        ? { ...p, actionLinkAr: value }
+                        : { ...p, actionLinkKu: value },
+                  );
+                }}
+                className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+                placeholder={t(locale, "adTargetLinkPlaceholder")}
+              />
+              <p className="mt-1 text-xs text-muted">
+                {t(locale, "adActionLinkHint")}
+              </p>
+            </label>
+          ) : null}
+
+          <label className="block text-sm">
+            <span className="font-medium">{t(locale, "adFieldDescription")}</span>
+            <textarea
+              value={form.description}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, description: e.target.value }))
+              }
+              rows={2}
+              className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
+              placeholder={t(locale, "adDescriptionPlaceholder")}
+            />
+          </label>
+
+          <div>
+            <p className="text-sm font-medium">{t(locale, "adCreativesTitle")}</p>
+            <div className="mt-2 grid gap-3 sm:grid-cols-2">
+              {AD_CREATIVE_SLOTS.map((slot) => {
+                const key = `${langTab}:${slot.key}` as const;
+                const preview =
+                  previews[key] || urls[langTab][slot.key] || "";
+                return (
+                  <label key={slot.key} className="block text-sm">
+                    <span className="font-medium">
+                      {slot.label}{" "}
+                      <span className="text-muted">({slot.size})</span>
+                    </span>
+                    {preview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={preview}
+                        alt=""
+                        className="mt-2 h-20 w-full rounded-xl object-cover ring-1 ring-outline"
+                      />
+                    ) : (
+                      <div className="mt-2 flex h-20 items-center justify-center rounded-xl bg-input text-xs text-muted ring-1 ring-outline">
+                        {t(locale, "noImageSelected")}
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      disabled={busy || uploading}
+                      onChange={(e) => {
+                        const next = e.target.files?.[0] ?? null;
+                        e.target.value = "";
+                        if (!next) return;
+                        setFiles((p) => ({ ...p, [key]: next }));
+                        setPreviews((p) => {
+                          const prev = p[key];
+                          if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
+                          return { ...p, [key]: URL.createObjectURL(next) };
+                        });
+                      }}
+                      className="mt-2 w-full text-xs"
+                    />
+                  </label>
+                );
+              })}
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              {t(locale, "adImageUploadHint")}
+            </p>
+            {form.isActive && !hasCreative ? (
+              <p className="mt-2 text-xs font-medium text-amber-700">
+                {t(locale, "adsNoImageWarning")}
+              </p>
+            ) : null}
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">
@@ -350,56 +768,23 @@ export function AdminAdFormModal({
             </p>
           ) : null}
 
-          <div>
-            <p className="text-sm font-medium">{t(locale, "adFieldBannerImage")}</p>
-            {preview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={preview}
-                alt=""
-                style={{ aspectRatio: creative.aspect }}
-                className={
-                  bannerPreview
-                    ? "mt-2 w-full min-h-16 rounded-xl object-cover ring-1 ring-outline"
-                    : "mt-2 w-40 rounded-xl object-cover ring-1 ring-outline"
-                }
-              />
-            ) : (
-              <div
-                style={{ aspectRatio: creative.aspect }}
-                className={
-                  bannerPreview
-                    ? "mt-2 flex min-h-16 w-full items-center justify-center rounded-xl bg-input text-xs text-muted ring-1 ring-outline"
-                    : "mt-2 flex w-40 items-center justify-center rounded-xl bg-input text-xs text-muted ring-1 ring-outline"
-                }
-              >
-                {t(locale, "noImageSelected")}
-              </div>
-            )}
+          <label className="block text-sm">
+            <span className="font-medium">
+              {t(locale, "adFieldImpressionLimit")}
+            </span>
             <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              disabled={busy || uploading}
-              onChange={(e) => {
-                const next = e.target.files?.[0] ?? null;
-                e.target.value = "";
-                setFile(next);
-                setPreview((current) => {
-                  if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
-                  return next ? URL.createObjectURL(next) : current;
-                });
-              }}
-              className="mt-2 w-full text-xs"
+              type="number"
+              min={0}
+              value={form.impressionLimit}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, impressionLimit: e.target.value }))
+              }
+              className="mt-1 w-full rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm"
             />
             <p className="mt-1 text-xs text-muted">
-              {t(locale, "adImageUploadHint")}
+              {t(locale, "adImpressionLimitHint")}
             </p>
-            {form.isActive && !hasCreative ? (
-              <p className="mt-2 text-xs font-medium text-amber-700">
-                {t(locale, "adsNoImageWarning")}
-              </p>
-            ) : null}
-          </div>
+          </label>
 
           <label className="flex items-center justify-between gap-3 rounded-[var(--radius-control)] bg-input px-3 py-2 text-sm">
             <span className="font-medium">{t(locale, "adFieldActive")}</span>

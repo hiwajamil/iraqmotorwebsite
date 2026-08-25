@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
 import {
   adHref,
@@ -8,6 +8,7 @@ import {
   isExternalAd,
   resolveAdImage,
   resolveHomeBannerContent,
+  trackAdEvent,
   type AdBannerContent,
   type Advertise,
   type AdViewport,
@@ -82,30 +83,63 @@ function wrapAdHref(
   label: string,
   media: ReactNode,
   className: string,
+  ad?: Advertise | null,
 ) {
   if (!href) return media;
-  if (href.startsWith("tel:")) {
+  const kind = href.startsWith("tel:") ? "call" : "click";
+  const external =
+    href.startsWith("http") || Boolean(ad?.forceExternalUrl && href.startsWith("/"));
+  const dest =
+    ad?.forceExternalUrl && href.startsWith("/")
+      ? `${typeof window !== "undefined" ? window.location.origin : ""}${href}`
+      : href;
+
+  async function onNavigate(
+    event: MouseEvent<HTMLAnchorElement>,
+  ) {
+    if (!ad?.id) return;
+    event.preventDefault();
+    await trackAdEvent(ad.id, kind);
+    if (kind === "call" || external) {
+      window.open(dest, kind === "call" ? "_self" : "_blank", "noopener,noreferrer");
+      return;
+    }
+    window.location.assign(dest);
+  }
+
+  if (kind === "call") {
     return (
-      <a href={href} className={className} aria-label={label}>
+      <a
+        href={dest}
+        className={className}
+        aria-label={label}
+        onClick={(e) => void onNavigate(e)}
+      >
         {media}
       </a>
     );
   }
-  if (href.startsWith("http")) {
+  if (external) {
     return (
       <a
-        href={href}
+        href={dest}
         target="_blank"
         rel="noopener noreferrer sponsored"
         className={className}
         aria-label={label}
+        onClick={(e) => void onNavigate(e)}
       >
         {media}
       </a>
     );
   }
   return (
-    <Link href={href} className={className} aria-label={label}>
+    <Link
+      href={dest}
+      className={className}
+      aria-label={label}
+      onClick={(e) => void onNavigate(e)}
+    >
       {media}
     </Link>
   );
@@ -158,6 +192,7 @@ export function AdHomeBanner({
     content.title,
     media,
     "block transition hover:opacity-95",
+    ad,
   );
 }
 
@@ -172,7 +207,7 @@ export function AdGridTile({
 }) {
   const src = resolveAdImage(ad, "gridTile", viewport);
   if (!src) return null;
-  const href = adHref(ad);
+  const href = adHref(ad, (locale as Locale) || "en");
   const title = ad.title || DEFAULT_HOME_BANNER.title;
   const description = ad.description || DEFAULT_HOME_BANNER.description;
 
@@ -209,5 +244,6 @@ export function AdGridTile({
     title,
     media,
     "block h-full transition hover:-translate-y-0.5",
+    ad,
   );
 }

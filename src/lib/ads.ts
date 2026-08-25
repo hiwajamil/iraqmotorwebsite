@@ -19,6 +19,7 @@ export type Advertise = {
   description?: string;
   phone?: string;
   url?: string;
+  actionLink?: string | { en?: string; ar?: string; ku?: string } | null;
   targetLink?: string | null;
   slotPosition?: string;
   isActive?: boolean;
@@ -27,10 +28,16 @@ export type Advertise = {
   carId?: string;
   showroomId?: string;
   showroomSellerId?: string;
+  showroomUserName?: string;
+  forceExternalUrl?: boolean;
+  impressionLimit?: number | null;
+  impressionCount?: number;
+  clickCount?: number;
   webLandscapeImageUrl?: string;
   landscapeImageUrl?: string;
   webImageUrl?: string;
   imageUrl?: string;
+  detailImageUrl?: string;
   WebLandscapeImageUrlEn?: string;
   LandscapeImageUrlEn?: string;
   WebImageUrlEn?: string;
@@ -176,29 +183,87 @@ export async function fetchAds(opts?: {
   slot?: string;
   advertiseTypeIds?: AdvertiseTypeId[];
 }): Promise<Advertise[]> {
+  const query = {
+    langCode: opts?.langCode || "en",
+    listSize: String(opts?.listSize ?? 12),
+    ...(opts?.slot ? { slot: opts.slot } : {}),
+    ...(opts?.locationId ? { locationId: opts.locationId } : {}),
+  };
+  const body = {
+    LocationIds: opts?.locationId ? [opts.locationId] : [],
+    AdvertiseTypeIds: opts?.advertiseTypeIds ?? [1, 2, 3],
+    langCode: opts?.langCode || "en",
+    ...(opts?.slot ? { slot: opts.slot } : {}),
+  };
   try {
-    const data = await api.get<{ items: Advertise[] }>("/ads", {
-      langCode: opts?.langCode || "en",
-      listSize: String(opts?.listSize ?? 12),
-      ...(opts?.slot ? { slot: opts.slot } : {}),
-    });
+    const data = await api.post<{ items: Advertise[] }>(
+      `/ads?${new URLSearchParams(query).toString()}`,
+      body,
+    );
     return data.items ?? [];
   } catch {
-    return [];
+    try {
+      const data = await api.get<{ items: Advertise[] }>("/ads", query);
+      return data.items ?? [];
+    } catch {
+      return [];
+    }
   }
 }
 
-export function adHref(ad: Advertise): string | null {
-  if (ad.targetLink) return ad.targetLink;
-  if (ad.advertiseTypeId === AdvertiseType.Car && ad.carId) {
+export async function trackAdEvent(
+  id: string,
+  kind: "click" | "call",
+  extra?: { locationId?: string | null; userUniqueId?: string | null },
+): Promise<void> {
+  if (!id) return;
+  try {
+    await Promise.race([
+      api.post(`/ads/${id}/${kind}`, extra ?? {}),
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, 400);
+      }),
+    ]);
+  } catch {
+    // Missing destination / network must never break navigation.
+  }
+}
+
+function localizedText(
+  value: string | { en?: string; ar?: string; ku?: string } | null | undefined,
+  locale: Locale = "en",
+): string | null {
+  if (!value) return null;
+  if (typeof value === "string") return value.trim() || null;
+  return (
+    firstNonEmpty(value[locale], value.en, value.ar, value.ku)
+  );
+}
+
+export function adHref(ad: Advertise, locale: Locale = "en"): string | null {
+  const type = ad.advertiseTypeId ?? AdvertiseType.UrlAndPhone;
+  if (type === AdvertiseType.Car && ad.carId) {
     return `/cars/${ad.carId}`;
   }
-  if (ad.advertiseTypeId === AdvertiseType.Showroom) {
-    if (ad.showroomSellerId) return `/cars?sellerId=${encodeURIComponent(ad.showroomSellerId)}`;
-    if (ad.url) return ad.url;
+  if (type === AdvertiseType.Showroom) {
+    const rawName = ad.showroomUserName?.trim();
+    if (rawName && (/^https?:\/\//i.test(rawName) || rawName.startsWith("/"))) {
+      return rawName;
+    }
+    const seller = ad.showroomSellerId || ad.showroomId;
+    if (seller) return `/cars?sellerId=${encodeURIComponent(seller)}`;
+    if (rawName) return `/${rawName.replace(/^\/+/, "")}`;
+    const showroomUrl = localizedText(
+      typeof ad.url === "string" ? ad.url : undefined,
+      locale,
+    );
+    if (showroomUrl) return showroomUrl;
   }
-  if (ad.url) return ad.url;
+  const action = localizedText(ad.actionLink, locale);
+  if (action) return action;
   if (ad.phone) return `tel:${ad.phone.replace(/\s+/g, "")}`;
+  if (ad.url) return localizedText(ad.url, locale);
+  if (ad.targetLink) return ad.targetLink;
   return null;
 }
 
@@ -218,7 +283,7 @@ export function resolveHomeBannerContent(
     overrides.targetLink !== undefined
       ? overrides.targetLink
       : ad
-        ? adHref(ad)
+        ? adHref(ad, locale)
         : DEFAULT_HOME_BANNER.targetLink;
 
   return {
@@ -469,10 +534,30 @@ export type AdvertiseAdmin = {
   updatedAt?: string;
   source?: "store" | "seed";
   url?: string | null;
+  advertiseTypeId?: AdvertiseTypeId;
+  locationIds?: string[];
+  phone?: string | null;
+  carId?: string | null;
+  showroomId?: string | null;
+  showroomSellerId?: string | null;
+  showroomUserName?: string | null;
+  forceExternalUrl?: boolean;
+  impressionLimit?: number | null;
+  impressionCount?: number;
+  clickCount?: number;
+  titleLocalized?: { en?: string | null; ar?: string | null; ku?: string | null };
+  actionLink?: string | { en?: string | null; ar?: string | null; ku?: string | null } | null;
+  urls?: { en?: string | null; ar?: string | null; ku?: string | null };
   creatives?: {
-    webLandscape?: string;
-    landscape?: string;
-    webSquare?: string;
-    portrait?: string;
+    webLandscape?: string | null;
+    landscape?: string | null;
+    webSquare?: string | null;
+    portrait?: string | null;
+    detail?: string | null;
+  };
+  creativesLocalized?: {
+    en?: AdvertiseAdmin["creatives"];
+    ar?: AdvertiseAdmin["creatives"];
+    ku?: AdvertiseAdmin["creatives"];
   };
 };
