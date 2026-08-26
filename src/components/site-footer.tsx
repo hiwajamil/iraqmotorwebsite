@@ -8,7 +8,25 @@ export function SiteFooter() {
   const locale = useAppSelector((s) => s.preferences.locale);
   return (
     <footer className="mt-10 border-t border-outline px-[4%] py-10 text-center text-sm text-muted">
-      <nav className="mb-3 flex justify-center gap-4">
+      <nav className="mb-3 flex flex-wrap justify-center gap-4">
+        <Link
+          href="/showrooms"
+          className="font-semibold text-foreground/80 transition hover:text-primary"
+        >
+          {t(locale, "showrooms")}
+        </Link>
+        <Link
+          href="/services"
+          className="font-semibold text-foreground/80 transition hover:text-primary"
+        >
+          {t(locale, "services")}
+        </Link>
+        <Link
+          href="/ev-map"
+          className="font-semibold text-foreground/80 transition hover:text-primary"
+        >
+          {t(locale, "evMap")}
+        </Link>
         <Link
           href="/privacy"
           className="font-semibold text-foreground/80 transition hover:text-primary"

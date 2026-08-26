@@ -324,6 +324,7 @@ export const ADMIN_NAV = [
   { href: "/admin/flagged", labelKey: "adminNavFlagged" as const },
   { href: "/admin/leads", labelKey: "adminNavLeads" as const },
   { href: "/admin/services", labelKey: "adminNavServices" as const },
+  { href: "/admin/ev", labelKey: "adminNavEv" as const },
   { href: "/admin/messages", labelKey: "dashMessages" as const },
   { href: "/admin/catalog", labelKey: "adminNavCatalog" as const },
   { href: "/admin/analytics", labelKey: "adminNavAnalytics" as const },

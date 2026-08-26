@@ -176,6 +176,12 @@ export default function AdminLayout({
           >
             {t(locale, "adminPublicShowrooms")}
           </Link>
+          <Link
+            href="/ev-map"
+            className="block rounded-[var(--radius-control)] px-3 py-2 text-xs font-medium text-muted hover:bg-input hover:text-foreground"
+          >
+            {t(locale, "adminEvPublicMap")}
+          </Link>
         </div>
       </aside>
       <div className="min-w-0 w-full">{children}</div>

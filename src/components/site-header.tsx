@@ -14,6 +14,7 @@ const navLinks = [
   { href: "/compare", labelKey: "compare" as const },
   { href: "/showrooms", labelKey: "showrooms" as const },
   { href: "/services", labelKey: "services" as const },
+  { href: "/ev-map", labelKey: "evMap" as const },
 ];
 
 function accountChipLabel(displayName: unknown, locale: Locale) {

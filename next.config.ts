@@ -31,6 +31,9 @@ const CONTENT_SECURITY_POLICY = [
   [
     "img-src 'self' data: blob:",
     "https://*.r2.dev",
+    "https://cdn-evmap.iqcars.io",
+    "https://*.tile.openstreetmap.org",
+    "https://tile.openstreetmap.org",
     "https://www.google-analytics.com",
     "https://*.google-analytics.com",
     "https://www.googletagmanager.com",
@@ -72,6 +75,8 @@ const CONTENT_SECURITY_POLICY = [
     "https://www.recaptcha.net",
     "https://*.recaptcha.net",
     "https://*.r2.dev",
+    "https://cdn-evmap.iqcars.io",
+    "https://*.tile.openstreetmap.org",
     "https://*.ngenius-payments.com",
     "wss://*.firebaseio.com",
   ].join(" "),
@@ -105,7 +110,7 @@ const SECURITY_HEADERS = [
   {
     key: "Permissions-Policy",
     value:
-      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), bluetooth=(), midi=()",
+      "camera=(), microphone=(), geolocation=(self), payment=(), usb=(), bluetooth=(), midi=()",
   },
   {
     key: "X-Frame-Options",
@@ -146,6 +151,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "**.r2.dev" },
       { protocol: "https", hostname: "pub-4d3c544f5beb41b1a3cd7a4bd0c205ed.r2.dev" },
+      { protocol: "https", hostname: "cdn-evmap.iqcars.io" },
     ],
   },
 };
