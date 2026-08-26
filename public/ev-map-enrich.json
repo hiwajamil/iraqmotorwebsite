@@ -1,0 +1,2552 @@
+{
+  "5abd6ab0-65d9-4982-9c75-2f644086ad89": {
+    "neighborhood": {
+      "ku": "کەلاکان"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "5b56ca1f-bcee-4819-b2d8-002bce44e071": {
+    "neighborhood": {
+      "ku": "پردی بەتتە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری حللە"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "ffb2f0f4-c193-4eea-ad7b-46b7fbe1bccc": {
+    "neighborhood": {
+      "ku": "ئەلئەعزەمییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "ec134bfd-6599-4c68-ad47-004a2100f08b": {
+    "neighborhood": {
+      "ku": "گوڵان 2"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "b4706cff-ed04-4423-9651-fa4c1f9d328f": {
+    "neighborhood": {
+      "ku": "ڕاپەرین"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    }
+  },
+  "8734120f-0a21-4e8b-97ce-4d6ea6c2f855": {
+    "neighborhood": {
+      "ku": "ئەمپایەر وۆرڵد"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "ae8e4b4c-2852-4d9d-a5b4-d98252d6af48": {
+    "neighborhood": {
+      "ku": "توراق"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "b994fd6f-140e-419e-92e9-197204ece203": {
+    "neighborhood": {
+      "ku": "حەبیبییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "15:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "15:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "15:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "15:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "15:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "15:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "15:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "5cb1552d-4eea-4a5f-94f4-4eb85ec1ab0f": {
+    "neighborhood": {
+      "ku": "ئەلتوجار"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "8bebccab-508e-4820-a254-f2c9f1aeb8cf": {
+    "neighborhood": {
+      "ku": "سەفین"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "16:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      }
+    ]
+  },
+  "14c4e3b0-ec4f-4ba0-a19c-7a3640b3d9aa": {
+    "neighborhood": {
+      "ku": "زەیونە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "11:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "e14c718f-7dbb-45ca-82d4-6cc1b45c2157": {
+    "neighborhood": {
+      "ku": "نيل"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      }
+    ]
+  },
+  "04a5c47c-008a-4ed3-8e66-0d17de0c76d9": {
+    "neighborhood": {
+      "ku": "ئەلئەعزەمییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      }
+    ]
+  },
+  "288b1050-9eba-4324-8669-101abecbe2c9": {
+    "neighborhood": {
+      "ku": "زاگرۆس"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "12:00"
+      }
+    ]
+  },
+  "09a69f51-9a67-4489-9bd0-85946ab2a647": {
+    "neighborhood": {
+      "ku": "گوندی ئیسپانی"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "9c462f66-03ed-40ba-8a54-83794d5c8ee6": {
+    "neighborhood": {
+      "ku": "ئاوابارە و ئاشە سپی"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "19:30"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "19:30"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "19:30"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "19:30"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "19:30"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "19:30"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "19:30"
+      }
+    ]
+  },
+  "a274eaef-da21-4626-8357-e01f06b25fa2": {
+    "neighborhood": {
+      "ku": "ئیبراهیم ئەحمەد"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "08:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "08:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "08:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "08:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "08:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "15:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "08:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "7b12246a-d227-431a-8637-949cfe23b4fd": {
+    "neighborhood": {
+      "ku": "پرۆژەی نیشتەجێبونی شاهقن تاوەر"
+    },
+    "district": {
+      "ku": "سەنتەری شاری دهۆک"
+    }
+  },
+  "820c12e5-0c00-446e-a16f-d0ba599a0736": {
+    "neighborhood": {
+      "ku": "ئەلرەبیع"
+    },
+    "district": {
+      "ku": "ناوەندی شاری کوت"
+    }
+  },
+  "db31695b-3611-4471-9abc-7b8f829e909c": {
+    "neighborhood": {
+      "ku": "بابل"
+    },
+    "district": {
+      "ku": "ناوەندی شاری حللە"
+    }
+  },
+  "6ebf67d9-44a4-4601-891e-abf435591425": {
+    "neighborhood": {
+      "ku": "ئەلموعەلمین"
+    },
+    "district": {
+      "ku": "ناوەندی شاری کەربەلا"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "17a5950f-9551-4413-9cec-8ed78817915c": {
+    "neighborhood": {
+      "ku": "ئەلزەهرا"
+    },
+    "district": {
+      "ku": "ناوەندی شاری نەجەف"
+    }
+  },
+  "91132e88-9741-44b6-baf8-0a1c56e7e78b": {
+    "neighborhood": {
+      "ku": "السعد"
+    },
+    "district": {
+      "ku": "ناوەندی شاری نەجەف"
+    }
+  },
+  "92fdd0f5-f1dc-41b9-ab74-ae5404c0343c": {
+    "neighborhood": {
+      "ku": "ئەلعەدالە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری نەجەف"
+    }
+  },
+  "9c24f29d-355a-4e00-be13-64ec3eb7c661": {
+    "neighborhood": {
+      "ku": "ئەلغەدیر"
+    },
+    "district": {
+      "ku": "ناوەندی شاری نەجەف"
+    }
+  },
+  "8dd81aa5-8edb-4d27-830f-3b7fff1898cf": {
+    "neighborhood": {
+      "ku": "ئەلغەدیر"
+    },
+    "district": {
+      "ku": "ناوەندی شاری نەجەف"
+    }
+  },
+  "dd82ba7a-3946-4378-a1bd-e604d9d6af1e": {
+    "neighborhood": {
+      "ku": "خان ئەلموسەڵا"
+    },
+    "district": {
+      "ku": "ناوەندی شاری نەجەف"
+    }
+  },
+  "4895985a-42bd-4235-b4d7-190ca35c3e19": {
+    "neighborhood": {
+      "ku": "ئەلبێجییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "f8216e0b-7055-47a5-86a0-d5f184e9f571": {
+    "neighborhood": {
+      "ku": "ئەلعەدل"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      }
+    ]
+  },
+  "7ba8edbb-75ba-4de2-832a-0c19987e41f8": {
+    "neighborhood": {
+      "ku": "مەنسور"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "b025b560-f246-48cd-856f-7941ca19ab31": {
+    "neighborhood": {
+      "ku": "دۆرە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "cc2d28be-b15a-44a4-8b9a-fddc653bf065": {
+    "neighborhood": {
+      "ku": "ئەبو غرێب"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "d95b3476-e593-43a0-bd9b-347397c564ff": {
+    "neighborhood": {
+      "ku": "ئەلجامعة"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      }
+    ]
+  },
+  "2df5ad02-2cf5-4672-a614-53e0765d6058": {
+    "neighborhood": {
+      "ku": "ئەلتالبییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      }
+    ]
+  },
+  "da0cefbd-f277-4b43-b2c7-981a2cd9d5f3": {
+    "neighborhood": {
+      "ku": "ئاکرێ"
+    },
+    "district": {
+      "ku": "ئاکرێ"
+    }
+  },
+  "5c9cf243-0f16-41ed-9245-cad07ceb062b": {
+    "neighborhood": {
+      "ku": "گەڕەکی مەنسوڕ"
+    },
+    "district": {
+      "ku": "ناوەندی شاری کەرکوک"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "21:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "15:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      }
+    ]
+  },
+  "62aa281b-26b8-4ad5-bc7a-96216537648f": {
+    "neighborhood": {
+      "ku": "مەنسور"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "00:00"
+      }
+    ]
+  },
+  "f2f1372f-e02a-4927-b97a-aceb5d7d7237": {
+    "neighborhood": {
+      "ku": "ئەبو غرێب"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "c4008ecf-6c2d-4365-b714-38e36a700b84": {
+    "neighborhood": {
+      "ku": "ئەلبێجییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "17e0bcd0-b7b4-421b-a8e0-88b6a8eaead1": {
+    "neighborhood": {
+      "ku": "کەرادەی"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "08:00",
+        "endTime": "00:00"
+      }
+    ]
+  },
+  "e9e97cbc-7c35-4179-9a85-9d46df3683ac": {
+    "neighborhood": {
+      "ku": "ئەلعوتەیفییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "01e67b10-1a80-4a0e-83e7-1202cc932c98": {
+    "neighborhood": {
+      "ku": "کەرادەی"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "ae677e81-60f8-4614-86a1-399f17d2e6e6": {
+    "neighborhood": {
+      "ku": "دۆرە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "ba4ad1d9-47ba-40f5-aa0b-1e6e4be8f2bd": {
+    "neighborhood": {
+      "ku": "دۆرە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "7d088e0b-1d97-418d-92d2-232b7f6c3ed0": {
+    "neighborhood": {
+      "ku": "کازمییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "d9c13dcf-d1d1-4df3-8909-4d26cb85dd00": {
+    "neighborhood": {
+      "ku": "مەنسور"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "22:00"
+      }
+    ]
+  },
+  "e5b8ea81-a914-4eb0-b9c0-905beca70a99": {
+    "neighborhood": {
+      "ku": "بەیاع"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "20:00"
+      }
+    ]
+  },
+  "d6947059-8312-43f5-bd5e-3c63f31c3ad3": {
+    "neighborhood": {
+      "ku": "ئەلفورات"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "fc8eb5e7-d6fe-4f40-82b4-71e2eb811644": {
+    "neighborhood": {
+      "ku": "کەرادەی"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "1870f6d4-2010-492a-bbb7-abd2eb48ca6c": {
+    "neighborhood": {
+      "ku": "زۆنی سەوز"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "33bb295c-26e8-4e19-99a0-aad48e4df3a4": {
+    "neighborhood": {
+      "ku": "بغداد مول"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "f692b67a-e128-4fab-9520-4b717e580efb": {
+    "neighborhood": {
+      "ku": "ئەلفورات"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "07:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "07:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "07:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "07:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "07:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "07:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "07:30",
+        "endTime": "20:00"
+      }
+    ]
+  },
+  "f1e8a953-2aed-49f7-b717-9cfcba784a85": {
+    "neighborhood": {
+      "ku": "عەرەسات"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "10:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "10:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "10:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "10:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "10:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "10:00",
+        "endTime": "22:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "10:00",
+        "endTime": "22:00"
+      }
+    ]
+  },
+  "6f5974a4-f0a5-4ec9-912b-1d927de7eacf": {
+    "neighborhood": {
+      "ku": "ئەلعەرەبی"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      }
+    ]
+  },
+  "4fdc3046-b940-4ed5-bfc0-7b23a1cb861d": {
+    "neighborhood": {
+      "ku": "جادرییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "24e5f0e9-d674-448c-b0e0-0e5d8ce120e1": {
+    "neighborhood": {
+      "ku": "کەرادەی"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "ebe38972-bca4-4426-904c-0951dfa0a0e1": {
+    "neighborhood": {
+      "ku": "جادرییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "1012da35-491f-4c33-ac42-7fd46ee9243d": {
+    "neighborhood": {
+      "ku": "موستەنسرییە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "44ec7d39-2c8b-49fc-b59a-8c2f087e58b4": {
+    "neighborhood": {
+      "ku": "یەرموک"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "939ae6a4-783c-4cdd-9757-c9137b5e2a5e": {
+    "neighborhood": {
+      "ku": "کەرادەی"
+    },
+    "district": {
+      "ku": "ناوەندی شاری بەغداد"
+    }
+  },
+  "4a3c7bf6-9bcf-4478-bc5b-1cb29bdcd2e0": {
+    "neighborhood": {
+      "ku": "مالتا"
+    },
+    "district": {
+      "ku": "سەنتەری شاری دهۆک"
+    }
+  },
+  "8e2f4711-e2de-46c8-bc16-27c8a37b88d7": {
+    "neighborhood": {
+      "ku": "مالتا"
+    },
+    "district": {
+      "ku": "سەنتەری شاری دهۆک"
+    }
+  },
+  "20120f63-86ab-4e9e-8f7c-73ef83150ba9": {
+    "neighborhood": {
+      "ku": "نەورۆز"
+    },
+    "district": {
+      "ku": "سەنتەری شاری دهۆک"
+    }
+  },
+  "5472b052-52dc-4376-ba19-72960e7be534": {
+    "neighborhood": {
+      "ku": "نەورۆز"
+    },
+    "district": {
+      "ku": "سەنتەری شاری دهۆک"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:30",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:30",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:30",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:30",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:30",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "09:30",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:30",
+        "endTime": "20:30"
+      }
+    ]
+  },
+  "dd6465ae-7676-47e4-973a-2d0ff7c3f0e2": {
+    "neighborhood": {
+      "ku": "بێسرێ"
+    },
+    "district": {
+      "ku": "سەنتەری شاری دهۆک"
+    }
+  },
+  "b9b46732-fe0b-4ff5-bc1d-6173914feac7": {
+    "neighborhood": {
+      "ku": "ئاوابارە و ئاشە سپی"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    }
+  },
+  "1581a7d6-85f9-4c2d-b587-2b9628a02fcb": {
+    "neighborhood": {
+      "ku": "دابان"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    }
+  },
+  "9f5d1456-f7c5-4d23-bd5a-599f74757c1d": {
+    "neighborhood": {
+      "ku": "ئەندازیاران"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "47f8b197-322f-4ede-bef4-85cdabf18dde": {
+    "neighborhood": {
+      "ku": "کۆێستان"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "4bd450b4-38e5-48d2-831e-4178ba73613a": {
+    "neighborhood": {
+      "ku": "ئەمپایەر وۆرڵد"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "5c1f42c4-e8d8-4b24-ac4d-eaa0e6327453": {
+    "neighborhood": {
+      "ku": "بختياري"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "ed2343b1-6b1c-4a10-acfb-7bdf7d0a7c65": {
+    "neighborhood": {
+      "ku": "شاوێس"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "4c3ed7ff-df48-473f-9e24-e70d8034f41c": {
+    "neighborhood": {
+      "ku": "گوندی ئیتاڵی 2"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      }
+    ]
+  },
+  "0e2d66ab-979c-43dd-a1c8-631819b6f364": {
+    "neighborhood": {
+      "ku": "تەعجیل"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "81a0afa1-a24d-44be-90cf-a285952843e5": {
+    "neighborhood": {
+      "ku": "هەولێری تازە"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      }
+    ]
+  },
+  "a9a1c6eb-36e7-4879-a12a-93aac6c8c184": {
+    "neighborhood": {
+      "ku": "غەزنە"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "a48b5828-1ccc-4a8d-a6fd-09d985142d80": {
+    "neighborhood": {
+      "ku": "ئەمپایەر وۆرڵد"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "45ac3a52-919d-456f-bf08-86c747cff700": {
+    "neighborhood": {
+      "ku": "ئەمپایەر وۆرڵد"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "2a13e474-c7aa-4089-85eb-5052d7f69dbf": {
+    "neighborhood": {
+      "ku": "ئەمپایەر وۆرڵد"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "34ee3e73-09a5-4488-8b8a-99297ab7545f": {
+    "neighborhood": {
+      "ku": "ئەمپایەر وۆرڵد"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "9a317948-fab9-4723-bef3-4b92a0eeaa68": {
+    "neighborhood": {
+      "ku": "ئەمپایەر وۆرڵد"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "83c9f113-b489-4c1b-ab2a-467fd54c01df": {
+    "neighborhood": {
+      "ku": "شاوێس"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "10:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "10:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "10:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "10:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "10:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "10:00",
+        "endTime": "00:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "10:00",
+        "endTime": "00:00"
+      }
+    ]
+  },
+  "e28153b6-9c2e-4592-b14f-983e9a863960": {
+    "neighborhood": {
+      "ku": "منارە"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      }
+    ]
+  },
+  "fc8e8901-5425-4886-8f8d-a1fbc23d5faa": {
+    "neighborhood": {
+      "ku": "سەفین"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:30",
+        "endTime": "20:00"
+      }
+    ]
+  },
+  "b137993c-aac1-423e-8083-ebedbbcc1523": {
+    "neighborhood": {
+      "ku": "شاوێس"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "26583f1a-941f-4b16-a1dd-220d11129ee2": {
+    "neighborhood": {
+      "ku": "هەولێری تازە"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "00:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "00:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "00:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "00:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "00:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "00:00",
+        "endTime": "12:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "00:00",
+        "endTime": "12:00"
+      }
+    ]
+  },
+  "a82345c0-2a8e-4e70-b137-48aca80e266d": {
+    "neighborhood": {
+      "ku": "عەنکاوە"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "12:00",
+        "endTime": "01:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "12:00",
+        "endTime": "01:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "12:00",
+        "endTime": "01:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "12:00",
+        "endTime": "01:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "12:00",
+        "endTime": "01:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "12:00",
+        "endTime": "02:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "12:00",
+        "endTime": "02:00"
+      }
+    ]
+  },
+  "afcfcd07-d542-48b3-a356-8104acb3bf0b": {
+    "neighborhood": {
+      "ku": "عەنکاوە"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "ad7a1843-38f8-4f97-8577-a35b2f411688": {
+    "neighborhood": {
+      "ku": "بختياري"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "ac45c1cf-d031-43cd-96a8-346075a84c49": {
+    "neighborhood": {
+      "ku": "عەنکاوە"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "17f58352-6871-44c3-95ce-e81ab032da3b": {
+    "neighborhood": {
+      "ku": "بختياري"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "c7155903-bf57-4205-80f2-a1287a9de9ba": {
+    "neighborhood": {
+      "ku": "پەرلەمان"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "7f6c858e-9923-4321-a9de-7970d691816e": {
+    "neighborhood": {
+      "ku": "بختياري"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "07:00",
+        "endTime": "23:59"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "07:00",
+        "endTime": "23:59"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "07:00",
+        "endTime": "23:59"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "07:00",
+        "endTime": "23:59"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "07:00",
+        "endTime": "23:59"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "07:00",
+        "endTime": "23:59"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "07:00",
+        "endTime": "23:59"
+      }
+    ]
+  },
+  "1c22d35d-9f22-4326-8596-8e2972ffb4f0": {
+    "neighborhood": {
+      "ku": "ئەمپایەر وۆرڵد"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "7dc480fb-ee91-424a-892d-1249ce9c6cd1": {
+    "neighborhood": {
+      "ku": "پەرلەمان"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "20:30"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "20:30"
+      }
+    ]
+  },
+  "282dbe2e-e661-4ad2-aba4-138366635888": {
+    "neighborhood": {
+      "ku": "سەربەستی"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "10:00",
+        "endTime": "19:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "10:00",
+        "endTime": "19:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "10:00",
+        "endTime": "19:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "10:00",
+        "endTime": "19:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "10:00",
+        "endTime": "19:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "10:00",
+        "endTime": "19:00"
+      }
+    ]
+  },
+  "5d5a2e40-82b7-4498-8104-318e1eefa3ec": {
+    "neighborhood": {
+      "ku": "توراق"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "e4e96dde-9f66-432e-a9bf-296989d0a201": {
+    "neighborhood": {
+      "ku": "پیشەسازیی باشوور"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      }
+    ]
+  },
+  "8c2e0a15-ab1e-45f8-9171-a3db7955904f": {
+    "neighborhood": {
+      "ku": "سەفین"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "e1412bf5-62c9-402f-b286-e804b1de20cc": {
+    "neighborhood": {
+      "ku": "کانی"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "08:00",
+        "endTime": "16:00"
+      }
+    ]
+  },
+  "fee0a07a-b256-434f-93f7-d749c2393236": {
+    "neighborhood": {
+      "ku": "عەنکاوە"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "c9d88c3e-696d-47ff-9620-7772c15b68e3": {
+    "neighborhood": {
+      "ku": "بەختیاریی تازە"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "11:00",
+        "endTime": "14:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "11:00",
+        "endTime": "14:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "11:00",
+        "endTime": "14:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "11:00",
+        "endTime": "14:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "11:00",
+        "endTime": "14:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "11:00",
+        "endTime": "14:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "11:00",
+        "endTime": "14:00"
+      }
+    ]
+  },
+  "d7f7e521-59a6-428f-9acf-93b086cdfa8c": {
+    "neighborhood": {
+      "ku": "بختياري"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "11:00",
+        "endTime": "13:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "11:00",
+        "endTime": "13:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "11:00",
+        "endTime": "13:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "11:00",
+        "endTime": "13:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "11:00",
+        "endTime": "14:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "11:00",
+        "endTime": "14:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "11:00",
+        "endTime": "13:00"
+      }
+    ]
+  },
+  "dbf9e761-7b93-44ef-9d25-b6483561d8d3": {
+    "neighborhood": {
+      "ku": "بختياري"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "11:00",
+        "endTime": "23:59"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "11:00",
+        "endTime": "11:59"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "10:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "21623010-041b-4288-8b22-0d2273841e8f": {
+    "neighborhood": {
+      "ku": "سەربەستی"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "10:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "10:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "10:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "10:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "10:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "16:00",
+        "endTime": "20:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "10:00",
+        "endTime": "20:00"
+      }
+    ]
+  },
+  "dede3418-b3d2-4e65-bdb1-4413714cf1ac": {
+    "neighborhood": {
+      "ku": "گەڕەکی عەسکەری"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "10:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "10:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "10:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "10:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "10:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "10:00",
+        "endTime": "18:00"
+      }
+    ]
+  },
+  "f10b29f8-053e-45db-9217-ec5671cace8c": {
+    "neighborhood": {
+      "ku": "ئازادی"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "21:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "21:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "21:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "21:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "21:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "21:00"
+      }
+    ]
+  },
+  "ac4f43b4-1f40-4d65-bf23-a1bbe5d9f4e2": {
+    "neighborhood": {
+      "ku": "توراق"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      }
+    ]
+  },
+  "12e13c48-0f6b-4721-ba9a-57cbf15aedfb": {
+    "neighborhood": {
+      "ku": "نەورۆز"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "09:00",
+        "endTime": "17:00"
+      }
+    ]
+  },
+  "1c6155a7-d90c-432a-9098-c45f415115fe": {
+    "neighborhood": {
+      "ku": "بەهار"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "66642c11-c6de-4771-a582-9f5e5816824e": {
+    "neighborhood": {
+      "ku": "ڕاستی"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    },
+    "openingHours": [
+      {
+        "dayOfWeekId": 0,
+        "startTime": "12:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 1,
+        "startTime": "12:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 2,
+        "startTime": "12:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 3,
+        "startTime": "12:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 4,
+        "startTime": "12:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 5,
+        "startTime": "12:00",
+        "endTime": "23:00"
+      },
+      {
+        "dayOfWeekId": 6,
+        "startTime": "12:00",
+        "endTime": "23:00"
+      }
+    ]
+  },
+  "39bad69b-1476-4482-8e76-fc275c30fbd8": {
+    "neighborhood": {
+      "ku": "دارەتوو"
+    },
+    "district": {
+      "ku": "ناوەندی هەولێر"
+    }
+  },
+  "1586a1d1-0f12-4008-bece-658891b58e49": {
+    "neighborhood": {
+      "ku": "دانیا سیتی"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    }
+  },
+  "4d661658-78bb-415a-8923-10dcaaec11e8": {
+    "neighborhood": {
+      "ku": "ڕاپەرین"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    }
+  },
+  "647fc09d-a738-4872-8c62-fc1504cf0027": {
+    "neighborhood": {
+      "ku": "شاری خەونەکان"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    }
+  },
+  "941f28d2-7288-4c0d-b598-a5f81eef3adc": {
+    "neighborhood": {
+      "ku": "ڕاپەرین"
+    },
+    "district": {
+      "ku": "ناوەندی شاری سلێمانی"
+    }
+  }
+}

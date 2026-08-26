@@ -69,33 +69,110 @@ input[type="radio"] {
 }
 
 .ev-pin {
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
 }
 
-.ev-pin-dot {
+.ev-pin-marker {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  height: 28px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--primary);
-  color: var(--on-primary);
-  font-size: 10px;
-  font-weight: 800;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  width: 34px;
+  height: 34px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.28);
+  border: 2px solid #fff;
 }
 
-.ev-pin-dot-active {
+.ev-pin-marker svg {
+  transform: rotate(45deg);
+  display: block;
+}
+
+.ev-pin-marker--active {
+  background: var(--primary);
+}
+
+.ev-pin-marker--inactive {
+  background: #6b7280;
+}
+
+.ev-pin-marker--maintenance {
+  background: #d97706;
+}
+
+.ev-pin-marker--selected {
   outline: 2px solid #fff;
-  transform: scale(1.12);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--primary) 55%, transparent),
+    0 8px 18px rgba(0, 0, 0, 0.35);
+  transform: rotate(-45deg) scale(1.12);
+}
+
+.ev-cluster-wrap {
+  background: transparent !important;
+  border: none !important;
+}
+
+.ev-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary, #fff);
+  font-size: 12px;
+  font-weight: 800;
+  border: 3px solid #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+}
+
+.ev-cluster--sm {
+  width: 34px;
+  height: 34px;
+}
+
+.ev-cluster--md {
+  width: 40px;
+  height: 40px;
+  font-size: 13px;
+}
+
+.ev-cluster--lg {
+  width: 48px;
+  height: 48px;
+  font-size: 14px;
+}
+
+.ev-legend-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.ev-legend-swatch--active {
+  background: var(--primary);
+}
+
+.ev-legend-swatch--inactive {
+  background: #9ca3af;
+}
+
+.ev-legend-swatch--maintenance {
+  background: #f59e0b;
 }
 
 .leaflet-container {
-  height: 100%;
-  width: 100%;
+  position: absolute;
+  inset: 0;
+  height: 100% !important;
+  width: 100% !important;
   z-index: 0;
   font-family: inherit;
   background: var(--surface);
