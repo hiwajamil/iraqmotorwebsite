@@ -9,6 +9,7 @@ import { PriceHistoryTimeline } from "@/components/price-history-timeline";
 import { TrustChips } from "@/components/trust-chips";
 import { ListingGallery } from "@/components/listing-gallery";
 import { ListingQuickActions } from "@/components/listing-quick-actions";
+import { ReportListingDialog } from "@/components/report-listing-dialog";
 import { ListingSellerCard } from "@/components/listing-seller-card";
 import { useAuth } from "@/components/auth-provider";
 import { emitToast } from "@/components/site-toast";
@@ -85,7 +86,7 @@ export default function CarDetailClient({
   initialCar: Car | null;
 }) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const locale = useAppSelector((s) => s.preferences.locale);
   const inCompare = useCompareStore((s) =>
     s.compareList.some((item) => item.id === id),
@@ -101,6 +102,7 @@ export default function CarDetailClient({
   const [bidding, setBidding] = useState(false);
   const [revealBid, setRevealBid] = useState(false);
   const [similar, setSimilar] = useState<Car[]>([]);
+  const [reportOpen, setReportOpen] = useState(false);
 
   useEffect(() => {
     setCar(initialCar);
@@ -322,6 +324,20 @@ export default function CarDetailClient({
       : null;
   const showBid = !sold && (highestAmount != null || revealBid);
   const sellerId = car.sellerId ? String(car.sellerId) : "";
+  const isOwner = Boolean(user && sellerId && user.uid === sellerId);
+  const showReport = !isOwner && !(authLoading && !user);
+
+  function goToSignIn() {
+    router.push(`/auth?next=${encodeURIComponent(`/cars/${id}`)}`);
+  }
+
+  function openReport() {
+    if (!user) {
+      goToSignIn();
+      return;
+    }
+    setReportOpen(true);
+  }
   const priceDroppedBadge = (
     <span className="absolute start-3 top-3 inline-flex items-center gap-1 rounded-full bg-teal-700/95 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
       ↓ {t(locale, "priceDropped")}
@@ -338,7 +354,14 @@ export default function CarDetailClient({
             title={title}
             locale={locale}
             badge={priceDropped ? priceDroppedBadge : null}
-            actions={<ListingQuickActions car={car} title={title} />}
+            actions={
+              <ListingQuickActions
+                car={car}
+                title={title}
+                onReport={showReport ? openReport : undefined}
+                reportBusy={reportOpen}
+              />
+            }
           />
         </div>
 
@@ -640,6 +663,15 @@ export default function CarDetailClient({
             ))}
           </div>
         </section>
+      ) : null}
+
+      {showReport ? (
+        <ReportListingDialog
+          open={reportOpen}
+          adId={id}
+          onClose={() => setReportOpen(false)}
+          onAuthRequired={goToSignIn}
+        />
       ) : null}
     </div>
   );

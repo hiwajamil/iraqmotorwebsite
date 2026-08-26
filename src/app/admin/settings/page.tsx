@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { useAuth } from "@/components/auth-provider";
 import { AdminConfirmDialog } from "@/components/admin-confirm-dialog";
 import { AdminToast } from "@/components/admin-toast";
+import { AuthenticatorSettings } from "@/components/authenticator-settings";
 import { t } from "@/lib/i18n";
 import { useAppSelector } from "@/store/hooks";
 
@@ -32,6 +34,7 @@ type PlatformConfig = {
 type Toast = { message: string; tone: "success" | "error" };
 
 export default function AdminSettingsPage() {
+  const { me } = useAuth();
   const locale = useAppSelector((s) => s.preferences.locale);
   const [loadedMaintenance, setLoadedMaintenance] = useState(false);
   const [maintenance, setMaintenance] = useState(false);
@@ -147,6 +150,12 @@ export default function AdminSettingsPage() {
         <p className="mt-4 text-sm text-red-600" role="alert">
           {error}
         </p>
+      ) : null}
+
+      {me?.isAllowlistedSuperAdmin ? (
+        <div className="mt-8">
+          <AuthenticatorSettings />
+        </div>
       ) : null}
 
       <section className="mt-8 space-y-4 rounded-[var(--radius-card)] bg-card p-5 ring-1 ring-outline">

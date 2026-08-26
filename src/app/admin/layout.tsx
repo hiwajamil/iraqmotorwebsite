@@ -99,7 +99,10 @@ export default function AdminLayout({
     );
   }
 
-  if (!me.isSuperAdmin) {
+  // Allowlisted admins keep /admin during Settings-first TOTP enroll.
+  // isSuperAdmin is false on the same session after enroll (no second factor
+  // on the token yet). Next login still requires authenticator via Firebase.
+  if (!me.isSuperAdmin && !me.isAllowlistedSuperAdmin) {
     return (
       <div className="mx-auto max-w-lg px-[4%] pb-16 pt-24 text-center">
         <h1 className="text-2xl font-bold">{t(locale, "adminAccessDenied")}</h1>

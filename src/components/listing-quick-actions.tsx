@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, Scale, Share2 } from "lucide-react";
+import { Heart, Scale, Share2, Flag } from "lucide-react";
 import type { Car } from "@/lib/api";
 import { useAuth } from "@/components/auth-provider";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -18,9 +18,13 @@ const fabClass =
 export function ListingQuickActions({
   car,
   title,
+  onReport,
+  reportBusy = false,
 }: {
   car: Car;
   title: string;
+  onReport?: () => void;
+  reportBusy?: boolean;
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -119,6 +123,22 @@ export function ListingQuickActions({
       >
         <Share2 size={16} strokeWidth={2} />
       </button>
+      {onReport ? (
+        <button
+          type="button"
+          disabled={reportBusy}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (reportBusy) return;
+            onReport();
+          }}
+          aria-label={t(locale, "reportListing")}
+          className={`${fabClass} disabled:pointer-events-none disabled:opacity-60`}
+        >
+          <Flag size={16} strokeWidth={2} />
+        </button>
+      ) : null}
     </div>
   );
 }
