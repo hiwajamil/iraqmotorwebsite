@@ -82,14 +82,25 @@ function safeNextPath(raw: string | null): string {
   return raw;
 }
 
+function firebaseErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err ?? "");
+}
+
 function firebaseErrorCode(err: unknown): string | null {
   if (!err || typeof err !== "object") return null;
   if ("code" in err && typeof (err as { code: unknown }).code === "string") {
     return (err as { code: string }).code;
   }
-  const message = err instanceof Error ? err.message : String(err);
-  const match = message.match(/auth\/[a-z0-9:-]+/i);
+  const match = firebaseErrorMessage(err).match(/auth\/[a-z0-9:-]+/i);
   return match ? match[0].toLowerCase() : null;
+}
+
+/** Google SMS region/carrier block or Identity Platform error 39. */
+function isFirebaseSmsTollBlock(err: unknown, code: string | null): boolean {
+  const msg = firebaseErrorMessage(err);
+  if (code === "auth/error-code:-39") return true;
+  if (code === "auth/error-code" && /-39/.test(msg)) return true;
+  return /error code:\s*-?39\b/i.test(msg) || /auth\/error-code:-39/i.test(msg);
 }
 
 function mapAuthError(err: unknown, locale: Locale): string {
@@ -108,56 +119,58 @@ function mapAuthError(err: unknown, locale: Locale): string {
 
   const code = firebaseErrorCode(err);
   let message: string | null = null;
-  switch (code) {
-    case "auth/invalid-credential":
-    case "auth/wrong-password":
-    case "auth/user-not-found":
-      message = t(locale, "authInvalidCredentials");
-      break;
-    case "auth/email-already-in-use":
-    case "auth/credential-already-in-use":
-    case "auth/provider-already-linked":
-      message = t(locale, "authPhoneInUse");
-      break;
-    case "auth/weak-password":
-      message = t(locale, "authWeakPassword");
-      break;
-    case "auth/too-many-requests":
-      message = t(locale, "authTooManyRequests");
-      break;
-    case "auth/quota-exceeded":
-      message = t(locale, "authPhoneSmsQuotaExceeded");
-      break;
-    case "auth/operation-not-allowed":
-      message = t(locale, "authPhoneSmsNotAllowed");
-      break;
-    case "auth/invalid-phone-number":
-    case "auth/missing-phone-number":
-      message = t(locale, "authInvalidIraqPhone");
-      break;
-    case "auth/captcha-check-failed":
-    case "auth/missing-recaptcha-token":
-      message = t(locale, "authPhoneSmsCaptchaFailed");
-      break;
-    case "auth/invalid-email":
-      message = t(locale, "helpInvalidEmail");
-      break;
-    case "auth/multi-factor-auth-required":
-      message = t(locale, "adminMfaRequired");
-      break;
-    case "auth/internal-error":
-    case "auth/argument-error":
-    case "auth/missing-client-identifier":
-    case "auth/error-code:-39":
-    case "auth/error-code":
-      message = t(locale, "authPhoneSmsBlocked");
-      break;
-    case "auth/network-request-failed":
-      message = t(locale, "authNetworkError");
-      break;
-    default:
-      message = err instanceof Error ? err.message : t(locale, "authFailed");
-      break;
+  if (isFirebaseSmsTollBlock(err, code)) {
+    message = t(locale, "authPhoneSmsBlocked");
+  } else {
+    switch (code) {
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found":
+        message = t(locale, "authInvalidCredentials");
+        break;
+      case "auth/email-already-in-use":
+      case "auth/credential-already-in-use":
+      case "auth/provider-already-linked":
+        message = t(locale, "authPhoneInUse");
+        break;
+      case "auth/weak-password":
+        message = t(locale, "authWeakPassword");
+        break;
+      case "auth/too-many-requests":
+        message = t(locale, "authTooManyRequests");
+        break;
+      case "auth/quota-exceeded":
+        message = t(locale, "authPhoneSmsQuotaExceeded");
+        break;
+      case "auth/operation-not-allowed":
+        message = t(locale, "authPhoneSmsNotAllowed");
+        break;
+      case "auth/invalid-phone-number":
+      case "auth/missing-phone-number":
+        message = t(locale, "authInvalidIraqPhone");
+        break;
+      case "auth/captcha-check-failed":
+      case "auth/missing-recaptcha-token":
+      case "auth/argument-error":
+      case "auth/missing-client-identifier":
+        message = t(locale, "authPhoneSmsCaptchaFailed");
+        break;
+      case "auth/invalid-email":
+        message = t(locale, "helpInvalidEmail");
+        break;
+      case "auth/multi-factor-auth-required":
+        message = t(locale, "adminMfaRequired");
+        break;
+      case "auth/internal-error":
+        message = t(locale, "authPhoneSmsFailed");
+        break;
+      case "auth/network-request-failed":
+        message = t(locale, "authNetworkError");
+        break;
+      default:
+        message = err instanceof Error ? err.message : t(locale, "authFailed");
+        break;
+    }
   }
 
   if (
@@ -339,6 +352,10 @@ function AuthForm() {
       setTurnstileKey((k) => k + 1);
     } catch (err) {
       clearPhoneRecaptchaVerifier();
+      const authRetry = getFirebaseAuth();
+      if (authRetry) {
+        void preparePhoneRecaptcha(authRetry).catch(() => {});
+      }
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
       setError(mapAuthError(err, locale));
@@ -632,6 +649,10 @@ function AuthForm() {
       setTurnstileKey((k) => k + 1);
     } catch (err) {
       clearPhoneRecaptchaVerifier();
+      const authRetry = getFirebaseAuth();
+      if (authRetry) {
+        void preparePhoneRecaptcha(authRetry).catch(() => {});
+      }
       setTurnstileToken(null);
       setTurnstileKey((k) => k + 1);
       setError(mapAuthError(err, locale));
@@ -1206,7 +1227,7 @@ function AuthForm() {
             />
           ) : null}
 
-          {/* Visible Firebase reCAPTCHA (must stay in-form and clickable). */}
+          {/* Firebase reCAPTCHA host — must stay in-form and clickable. */}
           <div
             id={RECAPTCHA_CONTAINER_ID}
             className="flex min-h-[78px] justify-center py-1"

@@ -51,10 +51,23 @@ SMS OTP is sent by the **Firebase client** (`signInWithPhoneNumber` in `src/lib/
 1. **Authentication → Sign-in method → Phone** enabled  
 2. Project on **Blaze** (required for production SMS)  
 3. **Authentication → Settings → Authorized domains** must include **`iraqmotors.net`** and **`www.iraqmotors.net`** (plus `localhost` for local)  
-4. **SMS region policy** allows Iraq (`IQ`)  
-5. reCAPTCHA Enterprise / fraud prevention configured for the web app (same key as Flutter)
+4. **SMS region policy** allowlist includes Iraq (`IQ`)  
+5. **SMS defense / toll-fraud** is **MONITOR (AUDIT)**, not ENFORCE/BLOCK and not fully OFF. OFF lets Google apply a default carrier/region block (`auth/error-code:-39`). ENFORCE+BLOCK at a low score also blocks legitimate Iraqi numbers.
 
-Note: SMS toll-fraud **BLOCK** was disabled on this Firebase project because it caused `auth/error-code:-39` with the web RecaptchaVerifier. Phone provider + IQ region policy still apply. `localhost` cannot send real SMS — use production or Firebase test numbers.
+Website uses classic **invisible** `RecaptchaVerifier` (container must stay clickable). Flutter native uses `verifyPhoneNumber`. Do not mix Enterprise `initializeRecaptchaConfig` into the Next.js widget.
+
+### Firebase test phone numbers (local / CI)
+
+When real SMS is rate-limited or you are on `localhost`, add a **test phone** so Firebase never sends an SMS:
+
+1. Open [Authentication → Sign-in method → Phone](https://console.firebase.google.com/project/iqmotors-d588d/authentication/providers)  
+2. Expand **Phone numbers for testing**  
+3. Add an E.164 number that is **not** a real subscriber, e.g. `+9647000000001`, with a 6-digit code such as `123456`  
+4. On Create account, enter that number and the code you configured
+
+Test numbers work on `localhost` and production. Real Iraqi numbers (`+9647…`) need Blaze + the SMS settings above; use production (`iraqmotors.net`) or a test number when quota / `-39` appears.
+
+Do not commit test codes. Rotate them if they leak.
 
 ## Routes
 

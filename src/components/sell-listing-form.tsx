@@ -40,6 +40,18 @@ import {
   type ListingDraft,
   type ListingField,
 } from "@/lib/listing-form";
+import {
+  Armchair,
+  Banknote,
+  Camera,
+  Car,
+  Cog,
+  Fuel,
+  IdCard,
+  MapPin,
+  ShieldCheck,
+  type LucideIcon,
+} from "lucide-react";
 
 type Brand = { id: string; name?: string };
 type Model = { id: string; key?: string; name?: string; trims?: string[] };
@@ -57,22 +69,49 @@ function FieldError({ message }: { message?: string }) {
   );
 }
 
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="flex w-fit items-center gap-2">
+      <span className="size-1 shrink-0 rounded-full bg-primary" aria-hidden />
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+        {children}
+      </span>
+    </span>
+  );
+}
+
 function SectionCard({
   title,
+  icon: Icon,
   field,
   children,
 }: {
   title: string;
+  icon: LucideIcon;
   field?: ListingField;
   children: React.ReactNode;
 }) {
   return (
     <section
       data-field={field}
-      className="rounded-[16px] bg-card p-5 ring-1 ring-outline md:p-6"
+      className="overflow-hidden rounded-[var(--radius-card)] bg-card ring-1 ring-outline"
     >
-      <h2 className="text-base font-semibold tracking-tight">{title}</h2>
-      <div className="mt-4 space-y-4">{children}</div>
+      <div className="relative border-b border-primary/20 bg-primary/[0.07] px-5 py-3.5 md:px-6">
+        <span
+          className="absolute inset-y-2 start-0 w-[3px] rounded-e-full bg-primary"
+          aria-hidden
+        />
+        <div className="flex items-center gap-3 ps-2.5">
+          <span
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+            aria-hidden
+          >
+            <Icon className="size-4" strokeWidth={2} aria-hidden />
+          </span>
+          <h2 className="text-lg font-bold tracking-tight">{title}</h2>
+        </div>
+      </div>
+      <div className="mt-5 space-y-4 px-5 pb-5 md:px-6 md:pb-6">{children}</div>
     </section>
   );
 }
@@ -84,6 +123,7 @@ function ChipRow({
   locale,
   error,
   field,
+  label,
   labelFor,
 }: {
   options: readonly string[];
@@ -92,10 +132,16 @@ function ChipRow({
   locale: Locale;
   error?: string;
   field?: ListingField;
+  label?: string;
   labelFor?: (key: string) => string;
 }) {
   return (
     <div data-field={field}>
+      {label ? (
+        <div className="mb-2">
+          <FieldLabel>{label}</FieldLabel>
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         {options.map((key) => {
           const selected = value === key;
@@ -398,9 +444,9 @@ export function SellListingForm() {
         </p>
       </div>
 
-      <SectionCard title={label("sellSectionLocation")} field="province">
-        <label className="block text-sm font-medium">
-          {label("sellProvince")}
+      <SectionCard title={label("sellSectionLocation")} icon={MapPin} field="province">
+        <label className="block">
+          <FieldLabel>{label("sellProvince")}</FieldLabel>
           <select
             value={draft.province}
             onChange={(e) => patch({ province: e.target.value, city: "" })}
@@ -415,8 +461,8 @@ export function SellListingForm() {
           </select>
           <FieldError message={err("province")} />
         </label>
-        <label className="block text-sm font-medium" data-field="city">
-          {label("sellCity")}
+        <label className="block" data-field="city">
+          <FieldLabel>{label("sellCity")}</FieldLabel>
           <select
             value={draft.city}
             onChange={(e) => patch({ city: e.target.value })}
@@ -434,7 +480,7 @@ export function SellListingForm() {
         </label>
       </SectionCard>
 
-      <SectionCard title={label("sellSectionPhotos")} field="imageUrls">
+      <SectionCard title={label("sellSectionPhotos")} icon={Camera} field="imageUrls">
         <p className="text-sm text-muted">{label("sellPhotosHint")}</p>
         <input
           ref={photoInputRef}
@@ -490,9 +536,9 @@ export function SellListingForm() {
         <FieldError message={err("imageUrls")} />
       </SectionCard>
 
-      <SectionCard title={label("sellSectionBasic")} field="brandId">
-        <label className="block text-sm font-medium">
-          {label("sellBrand")}
+      <SectionCard title={label("sellSectionBasic")} icon={Car} field="brandId">
+        <label className="block">
+          <FieldLabel>{label("sellBrand")}</FieldLabel>
           <select
             value={draft.brandId}
             onChange={(e) =>
@@ -509,8 +555,8 @@ export function SellListingForm() {
           </select>
           <FieldError message={err("brandId")} />
         </label>
-        <label className="block text-sm font-medium" data-field="modelKey">
-          {label("sellModel")}
+        <label className="block" data-field="modelKey">
+          <FieldLabel>{label("sellModel")}</FieldLabel>
           <select
             value={draft.modelKey}
             onChange={(e) => patch({ modelKey: e.target.value, trim: "" })}
@@ -529,8 +575,8 @@ export function SellListingForm() {
           </select>
           <FieldError message={err("modelKey")} />
         </label>
-        <label className="block text-sm font-medium" data-field="trim">
-          {label("sellTrim")}
+        <label className="block" data-field="trim">
+          <FieldLabel>{label("sellTrim")}</FieldLabel>
           <select
             value={draft.trim}
             onChange={(e) => patch({ trim: e.target.value })}
@@ -549,8 +595,8 @@ export function SellListingForm() {
           </select>
           <FieldError message={err("trim")} />
         </label>
-        <label className="block text-sm font-medium" data-field="colorKey">
-          {label("sellColor")}
+        <label className="block" data-field="colorKey">
+          <FieldLabel>{label("sellColor")}</FieldLabel>
           <select
             value={draft.colorKey}
             onChange={(e) => patch({ colorKey: e.target.value })}
@@ -572,8 +618,8 @@ export function SellListingForm() {
           ) : null}
           <FieldError message={err("colorKey")} />
         </label>
-        <label className="block text-sm font-medium" data-field="year">
-          {label("sellYear")}
+        <label className="block" data-field="year">
+          <FieldLabel>{label("sellYear")}</FieldLabel>
           <select
             value={draft.year}
             onChange={(e) => patch({ year: e.target.value })}
@@ -590,35 +636,31 @@ export function SellListingForm() {
         </label>
       </SectionCard>
 
-      <SectionCard title={label("sellSectionPlate")}>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellPlateType")}</p>
-          <ChipRow
-            field="plateTypeKey"
-            options={PLATE_TYPE_KEYS}
-            value={draft.plateTypeKey}
-            onChange={(plateTypeKey) => patch({ plateTypeKey })}
-            locale={locale}
-            error={err("plateTypeKey")}
-          />
-        </div>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellPlateCity")}</p>
-          <ChipRow
-            field="plateCityKey"
-            options={PLATE_CITY_KEYS}
-            value={draft.plateCityKey}
-            onChange={(plateCityKey) => patch({ plateCityKey })}
-            locale={locale}
-            error={err("plateCityKey")}
-            labelFor={(key) => localizeCity(locale, key)}
-          />
-        </div>
+      <SectionCard title={label("sellSectionPlate")} icon={IdCard}>
+        <ChipRow
+          label={label("sellPlateType")}
+          field="plateTypeKey"
+          options={PLATE_TYPE_KEYS}
+          value={draft.plateTypeKey}
+          onChange={(plateTypeKey) => patch({ plateTypeKey })}
+          locale={locale}
+          error={err("plateTypeKey")}
+        />
+        <ChipRow
+          label={label("sellPlateCity")}
+          field="plateCityKey"
+          options={PLATE_CITY_KEYS}
+          value={draft.plateCityKey}
+          onChange={(plateCityKey) => patch({ plateCityKey })}
+          locale={locale}
+          error={err("plateCityKey")}
+          labelFor={(key) => localizeCity(locale, key)}
+        />
       </SectionCard>
 
-      <SectionCard title={label("sellSectionUsage")} field="mileageValue">
-        <label className="block text-sm font-medium">
-          {label("sellMileage")}
+      <SectionCard title={label("sellSectionUsage")} icon={Fuel} field="mileageValue">
+        <label className="block">
+          <FieldLabel>{label("sellMileage")}</FieldLabel>
           <div className="mt-1 flex overflow-hidden rounded-[12px] bg-input ring-1 ring-outline focus-within:ring-primary">
             <input
               value={draft.mileageValue}
@@ -648,117 +690,99 @@ export function SellListingForm() {
           </div>
           <FieldError message={err("mileageValue")} />
         </label>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellFuel")}</p>
-          <ChipRow
-            field="fuelKey"
-            options={FUEL_KEYS}
-            value={draft.fuelKey}
-            onChange={(fuelKey) => patch({ fuelKey })}
-            locale={locale}
-            error={err("fuelKey")}
-          />
-        </div>
+        <ChipRow
+          label={label("sellFuel")}
+          field="fuelKey"
+          options={FUEL_KEYS}
+          value={draft.fuelKey}
+          onChange={(fuelKey) => patch({ fuelKey })}
+          locale={locale}
+          error={err("fuelKey")}
+        />
       </SectionCard>
 
-      <SectionCard title={label("sellSectionTechnical")}>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellImportOrigin")}</p>
-          <ChipRow
-            field="importCountryKey"
-            options={IMPORT_ORIGIN_KEYS}
-            value={draft.importCountryKey}
-            onChange={(importCountryKey) => patch({ importCountryKey })}
-            locale={locale}
-            error={err("importCountryKey")}
-          />
-        </div>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellTransmission")}</p>
-          <ChipRow
-            field="transmissionKey"
-            options={TRANSMISSION_KEYS}
-            value={draft.transmissionKey}
-            onChange={(transmissionKey) => patch({ transmissionKey })}
-            locale={locale}
-            error={err("transmissionKey")}
-          />
-        </div>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellDrivetrain")}</p>
-          <ChipRow
-            field="drivetrainKey"
-            options={DRIVETRAIN_KEYS}
-            value={draft.drivetrainKey}
-            onChange={(drivetrainKey) => patch({ drivetrainKey })}
-            locale={locale}
-            error={err("drivetrainKey")}
-          />
-        </div>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellCylinders")}</p>
-          <ChipRow
-            field="cylindersKey"
-            options={CYLINDER_KEYS}
-            value={draft.cylindersKey}
-            onChange={(cylindersKey) => patch({ cylindersKey })}
-            locale={locale}
-            error={err("cylindersKey")}
-          />
-        </div>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellEngineSize")}</p>
-          <ChipRow
-            field="engineSizeKey"
-            options={ENGINE_SIZE_KEYS}
-            value={draft.engineSizeKey}
-            onChange={(engineSizeKey) => patch({ engineSizeKey })}
-            locale={locale}
-            error={err("engineSizeKey")}
-          />
-        </div>
+      <SectionCard title={label("sellSectionTechnical")} icon={Cog}>
+        <ChipRow
+          label={label("sellImportOrigin")}
+          field="importCountryKey"
+          options={IMPORT_ORIGIN_KEYS}
+          value={draft.importCountryKey}
+          onChange={(importCountryKey) => patch({ importCountryKey })}
+          locale={locale}
+          error={err("importCountryKey")}
+        />
+        <ChipRow
+          label={label("sellTransmission")}
+          field="transmissionKey"
+          options={TRANSMISSION_KEYS}
+          value={draft.transmissionKey}
+          onChange={(transmissionKey) => patch({ transmissionKey })}
+          locale={locale}
+          error={err("transmissionKey")}
+        />
+        <ChipRow
+          label={label("sellDrivetrain")}
+          field="drivetrainKey"
+          options={DRIVETRAIN_KEYS}
+          value={draft.drivetrainKey}
+          onChange={(drivetrainKey) => patch({ drivetrainKey })}
+          locale={locale}
+          error={err("drivetrainKey")}
+        />
+        <ChipRow
+          label={label("sellCylinders")}
+          field="cylindersKey"
+          options={CYLINDER_KEYS}
+          value={draft.cylindersKey}
+          onChange={(cylindersKey) => patch({ cylindersKey })}
+          locale={locale}
+          error={err("cylindersKey")}
+        />
+        <ChipRow
+          label={label("sellEngineSize")}
+          field="engineSizeKey"
+          options={ENGINE_SIZE_KEYS}
+          value={draft.engineSizeKey}
+          onChange={(engineSizeKey) => patch({ engineSizeKey })}
+          locale={locale}
+          error={err("engineSizeKey")}
+        />
       </SectionCard>
 
-      <SectionCard title={label("sellSectionInterior")}>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellSeatMaterial")}</p>
-          <ChipRow
-            field="seatMaterialKey"
-            options={SEAT_MATERIAL_KEYS}
-            value={draft.seatMaterialKey}
-            onChange={(seatMaterialKey) => patch({ seatMaterialKey })}
-            locale={locale}
-            error={err("seatMaterialKey")}
-          />
-        </div>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellSeatCount")}</p>
-          <ChipRow
-            field="seatCountKey"
-            options={SEAT_COUNT_KEYS}
-            value={draft.seatCountKey}
-            onChange={(seatCountKey) => patch({ seatCountKey })}
-            locale={locale}
-            error={err("seatCountKey")}
-          />
-        </div>
+      <SectionCard title={label("sellSectionInterior")} icon={Armchair}>
+        <ChipRow
+          label={label("sellSeatMaterial")}
+          field="seatMaterialKey"
+          options={SEAT_MATERIAL_KEYS}
+          value={draft.seatMaterialKey}
+          onChange={(seatMaterialKey) => patch({ seatMaterialKey })}
+          locale={locale}
+          error={err("seatMaterialKey")}
+        />
+        <ChipRow
+          label={label("sellSeatCount")}
+          field="seatCountKey"
+          options={SEAT_COUNT_KEYS}
+          value={draft.seatCountKey}
+          onChange={(seatCountKey) => patch({ seatCountKey })}
+          locale={locale}
+          error={err("seatCountKey")}
+        />
       </SectionCard>
 
-      <SectionCard title={label("sellSectionCondition")}>
-        <div>
-          <p className="mb-2 text-sm font-medium">{label("sellPaintedParts")}</p>
-          <ChipRow
-            field="paintedPartsKey"
-            options={PAINTED_PARTS_KEYS}
-            value={draft.paintedPartsKey}
-            onChange={(paintedPartsKey) => patch({ paintedPartsKey })}
-            locale={locale}
-            error={err("paintedPartsKey")}
-          />
-        </div>
+      <SectionCard title={label("sellSectionCondition")} icon={ShieldCheck}>
+        <ChipRow
+          label={label("sellPaintedParts")}
+          field="paintedPartsKey"
+          options={PAINTED_PARTS_KEYS}
+          value={draft.paintedPartsKey}
+          onChange={(paintedPartsKey) => patch({ paintedPartsKey })}
+          locale={locale}
+          error={err("paintedPartsKey")}
+        />
         {isDamagePaintedParts(draft.paintedPartsKey) ? (
           <div data-field="damagePhotoUrl">
-            <p className="text-sm font-medium">{label("sellDamagePhoto")}</p>
+            <FieldLabel>{label("sellDamagePhoto")}</FieldLabel>
             <p className="mt-0.5 text-xs text-muted">{label("sellDamagePhotoHint")}</p>
             <input
               ref={damageInputRef}
@@ -799,7 +823,7 @@ export function SellListingForm() {
         ) : null}
         <div>
           <div className="mb-2 flex items-center justify-between gap-3">
-            <p className="text-sm font-medium">{label("sellExtraFeatures")}</p>
+            <FieldLabel>{label("sellExtraFeatures")}</FieldLabel>
             <label className="flex items-center gap-2 text-xs font-medium text-muted">
               {label("sellSelectAll")}
               <button
@@ -851,9 +875,9 @@ export function SellListingForm() {
         </div>
       </SectionCard>
 
-      <SectionCard title={label("sellSectionPrice")} field="priceValue">
-        <label className="block text-sm font-medium">
-          {label("sellDescription")}
+      <SectionCard title={label("sellSectionPrice")} icon={Banknote} field="priceValue">
+        <label className="block">
+          <FieldLabel>{label("sellDescription")}</FieldLabel>
           <textarea
             value={draft.description}
             onChange={(e) => patch({ description: e.target.value })}
@@ -861,8 +885,8 @@ export function SellListingForm() {
             className="mt-1 w-full rounded-[12px] bg-input px-3 py-2.5 text-sm outline-none ring-1 ring-transparent focus:ring-primary"
           />
         </label>
-        <label className="block text-sm font-medium">
-          {label("sellPrice")}
+        <label className="block">
+          <FieldLabel>{label("sellPrice")}</FieldLabel>
           <div className="mt-1 flex overflow-hidden rounded-[12px] bg-input ring-1 ring-outline focus-within:ring-primary">
             <input
               value={draft.priceValue}

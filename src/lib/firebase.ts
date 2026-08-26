@@ -34,10 +34,14 @@ import {
  * Firebase Console checklist if SMS still fails:
  * - Authentication → Sign-in method → Phone enabled
  * - Blaze billing (required for real SMS)
- * - Settings → Authorized domains: iraqmotors.net + www.iraqmotors.net
- * - SMS region policy allows Iraq (IQ)
- * - reCAPTCHA SMS toll fraud protection BLOCK causes auth/error-code:-39
- *   (disabled on this project so classic RecaptchaVerifier can send SMS)
+ * - Settings → Authorized domains: iraqmotors.net + www.iraqmotors.net + localhost
+ * - SMS region policy allowlist includes Iraq (IQ)
+ * - SMS defense / toll-fraud must be MONITOR (AUDIT), not ENFORCE/BLOCK.
+ *   OFF lets Google apply a default carrier/region block (auth/error-code:-39).
+ *   ENFORCE+BLOCK at a low score also blocks legitimate IQ numbers.
+ * Website path: classic RecaptchaVerifier (invisible) + signInWithPhoneNumber.
+ * Do not mix initializeRecaptchaConfig / Enterprise.js with this widget.
+ * Flutter native keeps verifyPhoneNumber (Play Integrity / APNs).
  */
 
 /** Public web config (same as Flutter `DefaultFirebaseOptions.web`). Env vars override. */
@@ -64,10 +68,6 @@ const firebaseConfig = {
     "G-BCGJYXYT2R",
 };
 
-/**
- * Same reCAPTCHA Enterprise web key as Flutter `RecaptchaEnterpriseConfig`
- * and `app/web/index.html`. Override with env if rotated.
- */
 /** DOM host for RecaptchaVerifier (Firebase JS phone-auth docs). */
 export const RECAPTCHA_CONTAINER_ID = "recaptcha-container";
 
@@ -103,6 +103,10 @@ function firebaseErrMessage(err: unknown): string {
   return String(err);
 }
 
+function redactE164(e164: string): string {
+  return e164.replace(/^(\+\d{4})\d+(\d{2})$/, "$1******$2");
+}
+
 function logPhoneSmsError(stage: string, err: unknown): void {
   console.error(`[firebase] phone SMS ${stage}`, {
     code: firebaseErrCode(err) || undefined,
@@ -136,7 +140,7 @@ export function toIraqE164(normalizedDigits: string): string {
   return digits.startsWith("+") ? digits : `+${digits}`;
 }
 
-function createVisibleVerifier(authInstance: Auth): RecaptchaVerifier {
+function createPhoneVerifier(authInstance: Auth): RecaptchaVerifier {
   clearPhoneRecaptchaVerifier();
   const host = document.getElementById(RECAPTCHA_CONTAINER_ID);
   if (!host) {
@@ -147,9 +151,9 @@ function createVisibleVerifier(authInstance: Auth): RecaptchaVerifier {
   host.replaceChildren();
 
   const verifier = new RecaptchaVerifier(authInstance, RECAPTCHA_CONTAINER_ID, {
-    size: "normal",
+    size: "invisible",
     callback: () => {
-      // reCAPTCHA solved — send can proceed
+      // invisible challenge solved — send can proceed
     },
     "expired-callback": () => {
       clearPhoneRecaptchaVerifier();
@@ -160,21 +164,23 @@ function createVisibleVerifier(authInstance: Auth): RecaptchaVerifier {
 }
 
 /**
- * Pre-render the visible reCAPTCHA checkbox (Firebase JS phone-auth docs).
+ * Pre-render the invisible reCAPTCHA widget (Firebase JS phone-auth docs).
  * Call when the register/reset phone step is shown — not after the Send click.
+ * `#recaptcha-container` must stay in-layout and clickable (no pointer-events-none)
+ * so Google can inject a visible challenge if the invisible score fails.
  */
 export async function preparePhoneRecaptcha(
   authInstance: Auth,
 ): Promise<void> {
   if (activePhoneVerifier) return;
-  const verifier = createVisibleVerifier(authInstance);
+  const verifier = createPhoneVerifier(authInstance);
   await verifier.render();
 }
 
 /**
  * Send phone SMS for register / password-reset OTP.
  *
- * Official pattern: RecaptchaVerifier on `#recaptcha-container` +
+ * One production path: RecaptchaVerifier (invisible) on `#recaptcha-container` +
  * signInWithPhoneNumber(auth, e164, appVerifier). Do not mix
  * initializeRecaptchaConfig / Enterprise script with this v2 widget.
  */
@@ -195,12 +201,23 @@ export async function sendPhoneSmsCode(
 
   let appVerifier = activePhoneVerifier;
   if (!appVerifier) {
-    appVerifier = createVisibleVerifier(authInstance);
+    appVerifier = createPhoneVerifier(authInstance);
     await appVerifier.render();
   }
 
+  console.info("[firebase] phone SMS signInWithPhoneNumber", {
+    phone: redactE164(e164),
+    verifierReady: true,
+  });
+
   try {
-    return await signInWithPhoneNumber(authInstance, e164, appVerifier);
+    const confirmation = await signInWithPhoneNumber(
+      authInstance,
+      e164,
+      appVerifier,
+    );
+    console.info("[firebase] phone SMS sent", { phone: redactE164(e164) });
+    return confirmation;
   } catch (err) {
     logPhoneSmsError("signInWithPhoneNumber", err);
     clearPhoneRecaptchaVerifier();
