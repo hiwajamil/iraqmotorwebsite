@@ -6,6 +6,12 @@ import {
   seatsFromKey,
 } from "@/lib/listing-form-options";
 import type { DictKey } from "@/lib/i18n";
+import {
+  PAYMENT_DEBIT_CARD,
+  PACKAGE_BOOST,
+  type PackageKey,
+  type PaymentMethodKey,
+} from "@/lib/listing-packages";
 
 export type ListingDraft = {
   province: string;
@@ -34,6 +40,8 @@ export type ListingDraft = {
   description: string;
   priceValue: string;
   currencyKey: "currency_iqd" | "currency_usd";
+  packageKey: PackageKey;
+  paymentMethodKey: PaymentMethodKey;
 };
 
 export const emptyListingDraft: ListingDraft = {
@@ -63,6 +71,8 @@ export const emptyListingDraft: ListingDraft = {
   description: "",
   priceValue: "",
   currencyKey: "currency_iqd",
+  packageKey: PACKAGE_BOOST,
+  paymentMethodKey: PAYMENT_DEBIT_CARD,
 };
 
 export type ListingField = keyof ListingDraft;
@@ -94,7 +104,10 @@ const REQUIRED: ListingField[] = [
   "priceValue",
 ];
 
-export function validateListingDraft(draft: ListingDraft): ListingFieldError[] {
+export function validateListingDraft(
+  draft: ListingDraft,
+  options?: { requirePackagePayment?: boolean },
+): ListingFieldError[] {
   const errors: ListingFieldError[] = [];
   const push = (field: ListingField, messageKey: DictKey) => {
     errors.push({ field, messageKey });
@@ -128,6 +141,15 @@ export function validateListingDraft(draft: ListingDraft): ListingFieldError[] {
 
   if (isDamagePaintedParts(draft.paintedPartsKey) && !draft.damagePhotoUrl) {
     push("damagePhotoUrl", "sellNeedDamagePhoto");
+  }
+
+  if (options?.requirePackagePayment) {
+    if (!draft.packageKey) {
+      push("packageKey", "sellRequired");
+    }
+    if (!draft.paymentMethodKey) {
+      push("paymentMethodKey", "sellRequired");
+    }
   }
 
   return errors;
@@ -188,6 +210,8 @@ export function listingDraftToPayload(draft: ListingDraft) {
     description: draft.description.trim() || null,
     priceValue,
     currencyKey: draft.currencyKey,
+    packageKey: draft.packageKey,
+    paymentMethodKey: draft.paymentMethodKey,
   };
 }
 
@@ -282,5 +306,10 @@ export function listingDraftFromCar(
         ? String(car.priceValue)
         : "",
     currencyKey,
+    packageKey:
+      (asString(car.packageKey) as PackageKey) || PACKAGE_BOOST,
+    paymentMethodKey:
+      (asString(car.paymentMethodKey) as PaymentMethodKey) ||
+      PAYMENT_DEBIT_CARD,
   };
 }

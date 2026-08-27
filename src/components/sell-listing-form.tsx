@@ -41,6 +41,12 @@ import {
   type ListingField,
 } from "@/lib/listing-form";
 import {
+  NGENIUS_PENDING_PUBLISH_KEY,
+  PAYMENT_DEBIT_CARD,
+  type CatalogPackagePrices,
+} from "@/lib/listing-packages";
+import { SellPackagePaymentSection } from "@/components/sell-package-payment-section";
+import {
   Armchair,
   Banknote,
   Camera,
@@ -185,6 +191,9 @@ export function SellListingForm() {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [models, setModels] = useState<Model[]>([]);
   const [trims, setTrims] = useState<Trim[]>([]);
+  const [packagePrices, setPackagePrices] = useState<CatalogPackagePrices | null>(
+    null,
+  );
   const photoInputRef = useRef<HTMLInputElement>(null);
   const damageInputRef = useRef<HTMLInputElement>(null);
   const photoTargetSlot = useRef<number | null>(null);
@@ -198,6 +207,23 @@ export function SellListingForm() {
       .get<{ items: Brand[] }>("/catalog/brands")
       .then((d) => setBrands(d.items ?? []))
       .catch(() => setBrands([]));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void api
+      .get<{ config?: { packagePrices?: CatalogPackagePrices } | null }>(
+        "/catalog/config",
+      )
+      .then((data) => {
+        if (!cancelled) setPackagePrices(data.config?.packagePrices ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setPackagePrices(null);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -355,8 +381,51 @@ export function SellListingForm() {
     return id;
   }
 
+  async function publishListing(carId: string) {
+    if (listingStatus === "draft" || listingStatus === "rejected") {
+      await api.post(`/cars/${carId}/publish`);
+      setListingStatus("pending");
+    }
+  }
+
+  async function checkoutAndPublish(carId: string) {
+    if (draft.paymentMethodKey === PAYMENT_DEBIT_CARD) {
+      const order = await api.post<{
+        id: string;
+        paymentUrl?: string;
+        alreadyPaid?: boolean;
+        status?: string;
+      }>("/payments/ngenius/orders", {
+        carId,
+        packageKey: draft.packageKey,
+        language: locale,
+      });
+      if (order.alreadyPaid || order.status === "paid") {
+        await publishListing(carId);
+        router.push("/dashboard/listings");
+        return;
+      }
+      if (!order.paymentUrl) {
+        throw new Error(label("paymentLoadFailed"));
+      }
+      try {
+        sessionStorage.setItem(NGENIUS_PENDING_PUBLISH_KEY, carId);
+      } catch {
+        // ignore storage failures
+      }
+      window.location.href = order.paymentUrl;
+      return;
+    }
+    await publishListing(carId);
+    router.push("/dashboard/listings");
+  }
+
   async function submit() {
-    const validation = validateListingDraft(draft);
+    const showPackagePayment =
+      listingStatus !== "active" && listingStatus !== "pending";
+    const validation = validateListingDraft(draft, {
+      requirePackagePayment: showPackagePayment,
+    });
     if (validation.length) {
       const next: Partial<Record<ListingField, DictKey>> = {};
       for (const item of validation) next[item.field] = item.messageKey;
@@ -380,9 +449,9 @@ export function SellListingForm() {
         return;
       }
       const id = await saveDraftPayload();
-      if (listingStatus === "draft" || listingStatus === "rejected") {
-        await api.post(`/cars/${id}/publish`);
-        setListingStatus("pending");
+      if (showPackagePayment) {
+        await checkoutAndPublish(id);
+        return;
       }
       router.push("/dashboard/listings");
     } catch (e) {
@@ -394,7 +463,9 @@ export function SellListingForm() {
 
   async function publishOnly() {
     if (!draftId || listingStatus !== "draft") return;
-    const validation = validateListingDraft(draft);
+    const validation = validateListingDraft(draft, {
+      requirePackagePayment: true,
+    });
     if (validation.length) {
       const next: Partial<Record<ListingField, DictKey>> = {};
       for (const item of validation) next[item.field] = item.messageKey;
@@ -406,9 +477,7 @@ export function SellListingForm() {
     setError(null);
     try {
       await saveDraftPayload();
-      await api.post(`/cars/${draftId}/publish`);
-      setListingStatus("pending");
-      router.push("/dashboard/listings");
+      await checkoutAndPublish(draftId);
     } catch (e) {
       setError(e instanceof Error ? e.message : label("sellSubmit"));
     } finally {
@@ -419,6 +488,8 @@ export function SellListingForm() {
   const photoSlots = Array.from({ length: PHOTO_SLOT_COUNT }, (_, i) => draft.imageUrls[i] ?? null);
   const isEditingActive = listingStatus === "active";
   const isEditingPending = listingStatus === "pending";
+  const showPackagePayment =
+    listingStatus !== "active" && listingStatus !== "pending";
   const canPublishDraft = listingStatus === "draft" && Boolean(draftId);
 
   if (loadingEdit) {
@@ -922,6 +993,19 @@ export function SellListingForm() {
           <FieldError message={err("priceValue")} />
         </label>
       </SectionCard>
+
+      {showPackagePayment ? (
+        <SellPackagePaymentSection
+          locale={locale}
+          packageKey={draft.packageKey}
+          paymentMethodKey={draft.paymentMethodKey}
+          packagePrices={packagePrices}
+          onPackageChange={(key) => patch({ packageKey: key })}
+          onPaymentMethodChange={(key) => patch({ paymentMethodKey: key })}
+          packageError={err("packageKey")}
+          paymentError={err("paymentMethodKey")}
+        />
+      ) : null}
 
       {error ? (
         <p className="text-sm text-red-600" role="alert">

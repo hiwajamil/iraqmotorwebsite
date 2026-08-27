@@ -10,11 +10,11 @@ import { setLocale, toggleTheme } from "@/store/slices/preferencesSlice";
 import { t, type Locale } from "@/lib/i18n";
 
 const navLinks = [
-  { href: "/cars", labelKey: "browse" as const },
-  { href: "/compare", labelKey: "compare" as const },
-  { href: "/showrooms", labelKey: "showrooms" as const },
-  { href: "/services", labelKey: "services" as const },
-  { href: "/ev-map", labelKey: "evMap" as const },
+  { href: "/cars", labelKey: "browse" as const, navKey: "navBrowse" as const },
+  { href: "/compare", labelKey: "compare" as const, navKey: "navCompare" as const },
+  { href: "/showrooms", labelKey: "showrooms" as const, navKey: "navShowrooms" as const },
+  { href: "/services", labelKey: "services" as const, navKey: "navServices" as const },
+  { href: "/ev-map", labelKey: "evMap" as const, navKey: "navEvMap" as const },
 ];
 
 function accountChipLabel(displayName: unknown, locale: Locale) {
@@ -80,15 +80,32 @@ export function SiteHeader() {
           <IraqMotorsWordmark inverted={immersive} />
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center gap-8 text-sm font-semibold md:flex">
-          {navLinks.map((l) => (
-            <Link key={l.href} href={l.href} className={`transition ${linkClass}`}>
-              {t(locale, l.labelKey)}
-            </Link>
-          ))}
+        <nav
+          className={`hidden min-w-0 flex-1 items-center justify-center font-semibold md:flex ${
+            locale === "ku"
+              ? "gap-4 text-[13px]"
+              : locale === "ar"
+                ? "gap-5 text-sm"
+                : "gap-8 text-sm"
+          }`}
+        >
+          {navLinks.map((l) => {
+            const hideEvUntilXl = locale === "ku" && l.href === "/ev-map";
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`shrink-0 whitespace-nowrap transition ${linkClass} ${
+                  hideEvUntilXl ? "max-xl:hidden" : ""
+                }`}
+              >
+                {t(locale, l.navKey)}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="ms-auto flex items-center gap-2 md:gap-3">
+        <div className="ms-auto flex shrink-0 items-center gap-2 md:gap-3">
           <select
             value={locale}
             onChange={(e) => dispatch(setLocale(e.target.value as Locale))}
@@ -123,7 +140,7 @@ export function SiteHeader() {
 
           <Link
             href="/sell"
-            className="rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110"
+            className="shrink-0 whitespace-nowrap rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110"
           >
             {t(locale, "sell")}
           </Link>

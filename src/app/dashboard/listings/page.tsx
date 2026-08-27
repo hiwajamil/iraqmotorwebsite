@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AdminConfirmDialog } from "@/components/admin-confirm-dialog";
 import { useAuth } from "@/components/auth-provider";
 import { api, type Car } from "@/lib/api";
@@ -29,6 +30,7 @@ type ConfirmAction =
 
 export default function DashboardListingsPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const locale = useAppSelector((s) => s.preferences.locale);
   const [ads, setAds] = useState<Car[]>([]);
   const [total, setTotal] = useState(0);
@@ -125,30 +127,8 @@ export default function DashboardListingsPage() {
     }
   }
 
-  async function publish(id: string) {
-    setBusyId(id);
-    try {
-      await api.post(`/cars/${id}/publish`);
-      setAds((list) =>
-        list.map((car) =>
-          car.id === id ? { ...car, status: "pending" } : car,
-        ),
-      );
-      setCounts((prev) =>
-        prev
-          ? {
-              ...prev,
-              draft: Math.max(0, prev.draft - 1),
-              pending: prev.pending + 1,
-            }
-          : prev,
-      );
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t(locale, "dashFailed"));
-    } finally {
-      setBusyId(null);
-    }
+  function publish(id: string) {
+    router.push(`/sell?id=${encodeURIComponent(id)}`);
   }
 
   const subtitle =
