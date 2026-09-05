@@ -25,6 +25,7 @@ import { t, type Locale } from "@/lib/i18n";
 const HIGHLIGHT_MAX = 4;
 const HIGHLIGHT_MIN = 3;
 const HIGHLIGHT_INTERVAL_MS = 3000;
+const HIGHLIGHT_SLIDE_MS = 500;
 const FULL_OPTION_MIN_FEATURES = 8;
 const FEATURE_LABEL_MAX_LEN = 22;
 const FEATURE_HIGHLIGHT_PRIORITY = [
@@ -129,19 +130,23 @@ function HighlightCarousel({
   compact?: boolean;
 }) {
   const [index, setIndex] = useState(0);
+  const [animate, setAnimate] = useState(true);
   const height = compact ? 22 : 24;
+  const canRotate = items.length > 1;
+  const track = canRotate ? [...items, items[0]!] : items;
 
   useEffect(() => {
     setIndex(0);
-    if (items.length < 2) return;
+    setAnimate(true);
+    if (!canRotate) return;
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mq.matches) return;
 
-    const tick = () => {
+    const id = window.setInterval(() => {
       if (mq.matches) return;
-      setIndex((current) => (current + 1) % items.length);
-    };
-    const id = window.setInterval(tick, HIGHLIGHT_INTERVAL_MS);
+      setAnimate(true);
+      setIndex((current) => current + 1);
+    }, HIGHLIGHT_INTERVAL_MS);
     const onChange = () => {
       if (mq.matches) {
         window.clearInterval(id);
@@ -153,7 +158,16 @@ function HighlightCarousel({
       window.clearInterval(id);
       mq.removeEventListener("change", onChange);
     };
-  }, [items]);
+  }, [items, canRotate]);
+
+  useEffect(() => {
+    if (!canRotate || index !== items.length) return;
+    const id = window.setTimeout(() => {
+      setAnimate(false);
+      setIndex(0);
+    }, HIGHLIGHT_SLIDE_MS);
+    return () => window.clearTimeout(id);
+  }, [canRotate, index, items.length]);
 
   if (!items.length) {
     return <div className="mt-1 w-full shrink-0" style={{ height }} />;
@@ -161,25 +175,30 @@ function HighlightCarousel({
 
   return (
     <div
-      className="relative mt-1 w-full shrink-0 overflow-hidden rounded-full bg-primary/10"
+      className="mt-1 w-full shrink-0 overflow-hidden rounded-full bg-primary/10"
       style={{ height }}
     >
-      {items.map((text, i) => (
-        <span
-          key={text}
-          className={`absolute inset-0 flex min-w-0 items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap font-medium text-primary transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none ${
-            compact ? "px-2 text-[10px]" : "px-2.5 text-[11px]"
-          } ${
-            i === index
-              ? "translate-y-0 opacity-100"
-              : "translate-y-1.5 opacity-0"
-          }`}
-          aria-hidden={i !== index}
-          dir="auto"
-        >
-          {text}
-        </span>
-      ))}
+      <div
+        className="motion-reduce:transition-none"
+        style={{
+          transform: `translateY(-${index * height}px)`,
+          transition: animate ? `transform ${HIGHLIGHT_SLIDE_MS}ms ease-in-out` : "none",
+        }}
+      >
+        {track.map((text, i) => (
+          <span
+            key={`${text}-${i}`}
+            className={`flex min-w-0 items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap font-medium text-primary ${
+              compact ? "px-2 text-[10px]" : "px-2.5 text-[11px]"
+            }`}
+            style={{ height }}
+            aria-hidden={i !== index}
+            dir="auto"
+          >
+            {text}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
