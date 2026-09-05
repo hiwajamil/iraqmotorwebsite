@@ -47,7 +47,7 @@ export default function AdminEvPage() {
           <p className="mt-1 text-sm text-muted">{t(locale, "adminEvSubtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="cursor-pointer text-sm font-semibold text-primary">
+          <label className="cursor-pointer text-sm font-semibold text-primary-strong">
             {t(locale, "adminEvImport")}
             <input
               type="file"
@@ -79,7 +79,7 @@ export default function AdminEvPage() {
               }}
             />
           </label>
-          <Link href="/ev-map" className="text-sm font-semibold text-primary">
+          <Link href="/ev-map" className="text-sm font-semibold text-primary-strong">
             {t(locale, "adminEvPublicMap")}
           </Link>
         </div>
@@ -91,7 +91,7 @@ export default function AdminEvPage() {
             type="button"
             onClick={() => setTab(item.id)}
             className={`shrink-0 rounded-[12px] px-3 py-2 text-sm font-semibold ${
-              tab === item.id ? "bg-primary text-on-primary" : "hover:bg-input"
+              tab === item.id ? "bg-primary-fill text-on-primary" : "hover:bg-input"
             }`}
           >
             {t(locale, item.labelKey)}
@@ -224,7 +224,7 @@ function StationsTab({
         <button
           type="button"
           onClick={() => setEditor("new")}
-          className="rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary"
+          className="rounded-[12px] bg-primary-fill px-4 py-2.5 text-sm font-semibold text-on-primary"
         >
           {t(locale, "adminEvNewStation")}
         </button>
@@ -290,7 +290,7 @@ function StationsTab({
                             type="button"
                             className={`rounded-full px-2 py-1 text-xs font-semibold ${
                               String(status?.id) === String(s.id)
-                                ? "bg-primary text-on-primary"
+                                ? "bg-primary-fill text-on-primary"
                                 : "bg-input"
                             }`}
                             onClick={() => void setStatus(id, Number(s.id))}
@@ -300,7 +300,7 @@ function StationsTab({
                         ))}
                         <button
                           type="button"
-                          className="rounded-full bg-primary px-2 py-1 text-xs font-semibold text-on-primary"
+                          className="rounded-full bg-primary-fill px-2 py-1 text-xs font-semibold text-on-primary"
                           onClick={() => setEditor(row)}
                         >
                           {t(locale, "edit")}
@@ -942,7 +942,7 @@ function StationEditor({
             type="button"
             disabled={busy}
             onClick={() => void save()}
-            className="rounded-[12px] bg-primary px-4 py-2 text-sm font-semibold text-on-primary"
+            className="rounded-[12px] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary"
           >
             {t(locale, "save")}
           </button>
@@ -1381,7 +1381,7 @@ function CitiesTab({
         <input className="rounded-[12px] bg-input px-3 py-2 text-sm" placeholder="EN" value={nameEn} onChange={(e) => setNameEn(e.target.value)} required />
         <input className="rounded-[12px] bg-input px-3 py-2 text-sm" placeholder="AR" value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
         <input className="rounded-[12px] bg-input px-3 py-2 text-sm" placeholder="KU" value={nameKu} onChange={(e) => setNameKu(e.target.value)} />
-        <button type="submit" className="rounded-[12px] bg-primary px-3 py-2 text-sm font-semibold text-on-primary">
+        <button type="submit" className="rounded-[12px] bg-primary-fill px-3 py-2 text-sm font-semibold text-on-primary">
           {t(locale, "save")}
         </button>
       </form>
@@ -1457,7 +1457,7 @@ function OperatorsTab({
         <input className="rounded-[12px] bg-input px-3 py-2 text-sm" placeholder="EN" value={operatorEn} onChange={(e) => setOperatorEn(e.target.value)} required />
         <input className="rounded-[12px] bg-input px-3 py-2 text-sm" placeholder="AR" value={operatorAr} onChange={(e) => setOperatorAr(e.target.value)} />
         <input className="rounded-[12px] bg-input px-3 py-2 text-sm" placeholder="KU" value={operatorKu} onChange={(e) => setOperatorKu(e.target.value)} />
-        <button type="submit" className="rounded-[12px] bg-primary px-3 py-2 text-sm font-semibold text-on-primary">
+        <button type="submit" className="rounded-[12px] bg-primary-fill px-3 py-2 text-sm font-semibold text-on-primary">
           {t(locale, "save")}
         </button>
       </form>
@@ -1539,7 +1539,7 @@ function TypesTab({
           <option value="1">AC</option>
           <option value="2">DC</option>
         </select>
-        <button type="submit" className="rounded-[12px] bg-primary px-3 py-2 text-sm font-semibold text-on-primary">
+        <button type="submit" className="rounded-[12px] bg-primary-fill px-3 py-2 text-sm font-semibold text-on-primary">
           {t(locale, "save")}
         </button>
       </form>

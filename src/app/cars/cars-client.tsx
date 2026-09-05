@@ -222,7 +222,7 @@ export default function CarsClient() {
         </select>
         <Link
           href="/sell"
-          className="inline-flex items-center justify-center rounded-[12px] bg-primary px-5 py-3.5 text-sm font-semibold text-on-primary"
+          className="inline-flex items-center justify-center rounded-[12px] bg-primary-fill px-5 py-3.5 text-sm font-semibold text-on-primary"
         >
           {t(locale, "sellYourCar")}
         </Link>
@@ -232,14 +232,14 @@ export default function CarsClient() {
         <button
           type="button"
           onClick={clearFilters}
-          className="mt-3 text-sm font-semibold text-primary"
+          className="mt-3 text-sm font-semibold text-primary-strong"
         >
           {t(locale, "clearFilters")}
         </button>
       ) : null}
 
       {loading ? (
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div
               key={i}
@@ -261,7 +261,7 @@ export default function CarsClient() {
             <button
               type="button"
               onClick={clearFilters}
-              className="mt-4 text-sm font-semibold text-primary"
+              className="mt-4 text-sm font-semibold text-primary-strong"
             >
               {t(locale, "clearFilters")}
             </button>
@@ -272,7 +272,7 @@ export default function CarsClient() {
           <div className="mt-6">
             <AdHomeBanner ad={bannerAd} viewport={viewport} locale={locale} />
           </div>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {gridItems.map((item) =>
               item.kind === "car" ? (
                 <CarCard key={item.key} car={item.car} />

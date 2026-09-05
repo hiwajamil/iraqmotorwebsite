@@ -40,7 +40,7 @@ const CONTROL =
 function triggerClass(active: boolean) {
   return `inline-flex ${CONTROL} items-center justify-between gap-2 px-3 text-start ring-1 transition ${
     active
-      ? "bg-primary/10 text-primary ring-primary"
+      ? "bg-primary/10 text-primary-strong ring-primary"
       : "bg-input text-foreground ring-outline/70 hover:ring-primary/40"
   }`;
 }
@@ -79,7 +79,7 @@ function FilterMenu({
           <button
             type="button"
             onClick={onReset}
-            className="text-xs font-semibold text-muted hover:text-primary"
+            className="text-xs font-semibold text-muted hover:text-primary-strong"
           >
             {t(locale, "filterReset")}
           </button>
@@ -87,7 +87,7 @@ function FilterMenu({
         {children}
         <PopoverButton
           type="button"
-          className="mt-3 w-full rounded-lg bg-primary py-2 text-sm font-semibold text-on-primary hover:brightness-110"
+          className="mt-3 w-full rounded-lg bg-primary-fill py-2 text-sm font-semibold text-on-primary hover:brightness-110"
         >
           {t(locale, "filterDone")}
         </PopoverButton>
@@ -164,7 +164,7 @@ function NumberPair({
 function pillClass(active: boolean) {
   return `rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${
     active
-      ? "bg-primary text-on-primary ring-primary"
+      ? "bg-primary-fill text-on-primary ring-primary"
       : "bg-input text-foreground ring-outline/70 hover:ring-primary/40"
   }`;
 }
@@ -323,7 +323,7 @@ export function AdvancedSearchFilter({
                   onClick={() => patch({ city: null })}
                   className={`mb-1 w-full rounded-lg px-3 py-2 text-start text-sm ${
                     !draft.city
-                      ? "bg-primary/10 font-semibold text-primary"
+                      ? "bg-primary/10 font-semibold text-primary-strong"
                       : "hover:bg-input"
                   }`}
                 >
@@ -343,7 +343,7 @@ export function AdvancedSearchFilter({
                         onClick={() => patch({ city: key })}
                         className={`w-full rounded-lg px-3 py-2 text-start text-sm ${
                           selected
-                            ? "bg-primary/10 font-semibold text-primary"
+                            ? "bg-primary/10 font-semibold text-primary-strong"
                             : "hover:bg-input"
                         }`}
                       >
@@ -393,7 +393,7 @@ export function AdvancedSearchFilter({
         <div className="col-span-1 min-w-0 lg:col-span-2">
           <button
             type="submit"
-            className={`inline-flex ${CONTROL} items-center justify-center gap-2 bg-primary font-semibold text-on-primary shadow-sm hover:brightness-110`}
+            className={`inline-flex ${CONTROL} items-center justify-center gap-2 bg-primary-fill font-semibold text-on-primary shadow-sm hover:brightness-110`}
           >
             <Search className="size-4 shrink-0" aria-hidden />
             {t(locale, "filterSearch")}
@@ -416,7 +416,7 @@ export function AdvancedSearchFilter({
                     onClick={() => patch({ currency: code })}
                     className={`flex-1 rounded-md text-xs font-semibold ${
                       draft.currency === code
-                        ? "bg-primary text-on-primary"
+                        ? "bg-primary-fill text-on-primary"
                         : "text-muted hover:text-foreground"
                     }`}
                   >
@@ -456,7 +456,7 @@ export function AdvancedSearchFilter({
                     onClick={() => patch({ mileageUnit: unit })}
                     className={`flex-1 rounded-md text-xs font-semibold ${
                       draft.mileageUnit === unit
-                        ? "bg-primary text-on-primary"
+                        ? "bg-primary-fill text-on-primary"
                         : "text-muted hover:text-foreground"
                     }`}
                   >
@@ -533,7 +533,7 @@ export function AdvancedSearchFilter({
                       }
                       className={`flex items-center gap-2 rounded-lg px-3 py-2 text-start text-xs font-semibold ring-1 transition ${
                         selected
-                          ? "bg-primary/10 text-primary ring-primary"
+                          ? "bg-primary/10 text-primary-strong ring-primary"
                           : "bg-input text-foreground ring-outline/70 hover:bg-white hover:ring-primary/30 dark:hover:bg-white/5"
                       }`}
                     >
@@ -623,7 +623,7 @@ export function AdvancedSearchFilter({
                       />
                       <span
                         className={`text-xs font-semibold ${
-                          selected ? "text-primary" : "text-foreground"
+                          selected ? "text-primary-strong" : "text-foreground"
                         }`}
                       >
                         {label}
@@ -654,7 +654,7 @@ export function AdvancedSearchFilter({
             type="button"
             onClick={clearAll}
             disabled={!hasFilters}
-            className={`inline-flex ${CONTROL} items-center justify-center text-muted ring-1 ring-outline/70 transition hover:text-primary hover:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-40`}
+            className={`inline-flex ${CONTROL} items-center justify-center text-muted ring-1 ring-outline/70 transition hover:text-primary-strong hover:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-40`}
           >
             {t(locale, "filterClearAll")}
           </button>
@@ -680,7 +680,7 @@ export function AdvancedSearchFilter({
                 onClick={() =>
                   patch({ condition: "", sellerType: "" })
                 }
-                className="text-xs font-semibold text-muted hover:text-primary"
+                className="text-xs font-semibold text-muted hover:text-primary-strong"
               >
                 {t(locale, "filterReset")}
               </button>
@@ -735,7 +735,7 @@ export function AdvancedSearchFilter({
             <button
               type="button"
               onClick={() => setMoreOpen(false)}
-              className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-on-primary hover:brightness-110"
+              className="w-full rounded-lg bg-primary-fill py-2.5 text-sm font-semibold text-on-primary hover:brightness-110"
             >
               {t(locale, "filterDone")}
             </button>

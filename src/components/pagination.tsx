@@ -48,9 +48,9 @@ export function hrefWithPage(
 const btnBase =
   "inline-flex h-10 min-w-10 items-center justify-center rounded-xl px-3 text-sm font-semibold transition";
 const btnIdle =
-  "bg-card text-foreground ring-1 ring-outline/70 hover:bg-primary/10 hover:text-primary hover:ring-primary/40";
+  "bg-card text-foreground ring-1 ring-outline/70 hover:bg-primary/10 hover:text-primary-strong hover:ring-primary/40";
 const btnActive =
-  "bg-primary text-on-primary shadow-md shadow-primary/25 ring-1 ring-primary";
+  "bg-primary-fill text-on-primary shadow-md shadow-primary/25 ring-1 ring-primary";
 const btnDisabled = "cursor-not-allowed bg-card text-muted ring-1 ring-outline/40 opacity-45";
 
 type PaginationProps = {

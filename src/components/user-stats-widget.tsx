@@ -125,7 +125,7 @@ export function UserStatsWidget() {
             onClick={() => applyPreset(item.id, item.days)}
             className={`rounded-full px-3 py-1 text-xs font-semibold disabled:opacity-50 ${
               preset === item.id
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input"
             }`}
           >
@@ -175,9 +175,9 @@ export function UserStatsWidget() {
               <p className="text-xs uppercase tracking-wide text-muted">
                 {label}
               </p>
-              <Icon className="size-4 text-primary" aria-hidden />
+              <Icon className="size-4 text-primary-strong" aria-hidden />
             </div>
-            <p className="mt-2 text-2xl font-bold text-primary">
+            <p className="mt-2 text-2xl font-bold text-primary-strong">
               {loading ? "—" : value.toLocaleString()}
             </p>
           </div>

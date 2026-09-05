@@ -11,25 +11,25 @@ export function SiteFooter() {
       <nav className="mb-3 flex flex-wrap justify-center gap-4">
         <Link
           href="/showrooms"
-          className="font-semibold text-foreground/80 transition hover:text-primary"
+          className="font-semibold text-foreground/80 transition hover:text-primary-strong"
         >
           {t(locale, "showrooms")}
         </Link>
         <Link
           href="/services"
-          className="font-semibold text-foreground/80 transition hover:text-primary"
+          className="font-semibold text-foreground/80 transition hover:text-primary-strong"
         >
           {t(locale, "services")}
         </Link>
         <Link
           href="/ev-map"
-          className="font-semibold text-foreground/80 transition hover:text-primary"
+          className="font-semibold text-foreground/80 transition hover:text-primary-strong"
         >
           {t(locale, "evMap")}
         </Link>
         <Link
           href="/privacy"
-          className="font-semibold text-foreground/80 transition hover:text-primary"
+          className="font-semibold text-foreground/80 transition hover:text-primary-strong"
         >
           {t(locale, "footerPrivacy")}
         </Link>

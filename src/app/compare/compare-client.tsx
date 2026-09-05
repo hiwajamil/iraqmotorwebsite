@@ -44,7 +44,7 @@ function IosSwitch({
         aria-label={label}
         onClick={() => onChange(!checked)}
         className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 ${
-          checked ? "bg-primary" : "bg-input"
+          checked ? "bg-primary-fill" : "bg-input"
         }`}
       >
         <span
@@ -75,7 +75,7 @@ function EmptyState({
         <p className="mt-3 text-sm text-muted">{hint}</p>
         <Link
           href="/cars"
-          className="mt-8 inline-flex rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-on-primary transition hover:brightness-110"
+          className="mt-8 inline-flex rounded-full bg-primary-fill px-6 py-2.5 text-sm font-semibold text-on-primary transition hover:brightness-110"
         >
           {t(locale, "browseToCompare")}
         </Link>
@@ -96,7 +96,7 @@ function AddCarSlot({ locale }: { locale: "en" | "ar" | "ku" }) {
   return (
     <Link
       href="/cars"
-      className="flex h-full min-h-[12rem] flex-col items-center justify-center rounded-lg border border-dashed border-outline px-4 text-muted transition hover:border-primary hover:text-primary"
+      className="flex h-full min-h-[12rem] flex-col items-center justify-center rounded-lg border border-dashed border-outline px-4 text-muted transition hover:border-primary hover:text-primary-strong"
     >
       <Plus size={22} strokeWidth={2.2} />
       <span className="mt-1 text-sm font-semibold">{t(locale, "compareAddCar")}</span>
@@ -263,7 +263,7 @@ export default function CompareClient() {
       <div className="mx-auto max-w-[1400px] px-[4%] pb-24 pt-24">
         <header className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold tracking-[0.2em] text-primary uppercase">
+            <p className="text-[11px] font-semibold tracking-[0.2em] text-primary-strong uppercase">
               {t(locale, "compareDockTitle", { count: cars.length })}
             </p>
             <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-foreground">
@@ -332,7 +332,7 @@ export default function CompareClient() {
                   >
                     {title}
                   </h2>
-                  <p className="mt-1.5 text-xl font-bold text-primary" dir="ltr">
+                  <p className="mt-1.5 text-xl font-bold text-primary-strong" dir="ltr">
                     {comparePrice(car)}
                   </p>
                   {meta ? (
@@ -388,7 +388,7 @@ export default function CompareClient() {
                                 {sold ? <SoldBadge locale={locale} /> : null}
                               </div>
                               <p
-                                className="truncate text-sm font-bold text-primary"
+                                className="truncate text-sm font-bold text-primary-strong"
                                 dir="ltr"
                               >
                                 {comparePrice(car)}

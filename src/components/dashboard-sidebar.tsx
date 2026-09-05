@@ -127,7 +127,7 @@ export function DashboardSidebar({
                 href={item.href}
                 className={`flex shrink-0 items-center gap-3 rounded-[12px] px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
                   active
-                    ? "bg-primary text-on-primary"
+                    ? "bg-primary-fill text-on-primary"
                     : "text-muted hover:bg-input hover:text-foreground"
                 }`}
               >

@@ -236,7 +236,7 @@ export default function AdminAdsPage() {
           <button
             type="button"
             onClick={openCreate}
-            className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary"
+            className="rounded-[var(--radius-control)] bg-primary-fill px-3 py-2 text-xs font-semibold text-on-primary"
           >
             {t(locale, "newAd")}
           </button>
@@ -283,7 +283,7 @@ export default function AdminAdsPage() {
             ) : null}
             <Link
               href={card.previewHref}
-              className="mt-2 inline-block text-xs font-semibold text-primary hover:underline"
+              className="mt-2 inline-block text-xs font-semibold text-primary-strong hover:underline"
             >
               {t(locale, card.previewKey)}
             </Link>
@@ -297,7 +297,7 @@ export default function AdminAdsPage() {
           onClick={() => setSlotFilter("all")}
           className={`rounded-full px-3 py-1 text-xs font-semibold ${
             slotFilter === "all"
-              ? "bg-primary text-on-primary"
+              ? "bg-primary-fill text-on-primary"
               : "bg-input text-muted"
           }`}
         >
@@ -310,7 +310,7 @@ export default function AdminAdsPage() {
             onClick={() => setSlotFilter(slot.key)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               slotFilter === slot.key
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -327,7 +327,7 @@ export default function AdminAdsPage() {
             onClick={() => setStatus(pill.value)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               status === pill.value
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -402,7 +402,7 @@ export default function AdminAdsPage() {
                   <button
                     type="button"
                     onClick={openCreate}
-                    className="mt-4 rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary"
+                    className="mt-4 rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-xs font-semibold text-on-primary"
                   >
                     {t(locale, "adsEmptyCta")}
                   </button>
@@ -445,7 +445,7 @@ export default function AdminAdsPage() {
                     <td className="px-4 py-3">
                       <button
                         type="button"
-                        className="text-left font-semibold hover:text-primary"
+                        className="text-left font-semibold hover:text-primary-strong"
                         onClick={(e) => {
                           e.stopPropagation();
                           openEdit(ad);

@@ -538,7 +538,7 @@ function AdminFlaggedInner() {
             onClick={() => writeStatus(tab.value)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               status === tab.value
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -595,7 +595,7 @@ function AdminFlaggedInner() {
                     <div className="min-w-0 flex-1">
                       <button
                         type="button"
-                        className="text-left font-semibold capitalize hover:text-primary"
+                        className="text-left font-semibold capitalize hover:text-primary-strong"
                         onClick={() => void openReview(item)}
                       >
                         {preview
@@ -609,7 +609,7 @@ function AdminFlaggedInner() {
                             {" · "}
                             <Link
                               href={`/cars/${item.adId}`}
-                              className="hover:text-primary"
+                              className="hover:text-primary-strong"
                             >
                               {shortId(item.adId)}
                             </Link>
@@ -691,7 +691,7 @@ function AdminFlaggedInner() {
                         <td className="px-3 py-2">
                           <button
                             type="button"
-                            className="text-left font-semibold capitalize hover:text-primary"
+                            className="text-left font-semibold capitalize hover:text-primary-strong"
                             onClick={() => void openReview(item)}
                           >
                             {preview
@@ -702,7 +702,7 @@ function AdminFlaggedInner() {
                             <p className="text-[11px] text-muted">
                               <Link
                                 href={`/cars/${item.adId}`}
-                                className="hover:text-primary"
+                                className="hover:text-primary-strong"
                               >
                                 {item.adId}
                               </Link>

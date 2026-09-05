@@ -217,7 +217,7 @@ export function OfferServiceModal({
             <button
               type="submit"
               disabled={busy}
-              className="w-full rounded-[12px] bg-primary px-4 py-3 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110 disabled:opacity-60"
+              className="w-full rounded-[12px] bg-primary-fill px-4 py-3 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110 disabled:opacity-60"
             >
               {busy ? t(locale, "servicesSubmitting") : t(locale, "servicesSubmit")}
             </button>

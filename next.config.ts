@@ -22,6 +22,8 @@ function resolveApiOrigin(): string {
 
 const API_ORIGIN = resolveApiOrigin();
 
+// P2 follow-up: drop script-src 'unsafe-inline' / 'unsafe-eval' and style-src
+// 'unsafe-inline' via nonces or hashes once Next, Turnstile, and GTM support it.
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "base-uri 'self'",

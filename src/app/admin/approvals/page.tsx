@@ -436,7 +436,7 @@ function AdminApprovalsInner() {
           type="button"
           onClick={() => writeFilters({ city: null })}
           className={`rounded-full px-3 py-1 text-xs font-semibold ${
-            !city ? "bg-primary text-on-primary" : "bg-input text-muted"
+            !city ? "bg-primary-fill text-on-primary" : "bg-input text-muted"
           }`}
         >
           {t(locale, "all")}
@@ -448,7 +448,7 @@ function AdminApprovalsInner() {
             onClick={() => writeFilters({ city: c.key })}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               city === c.key
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -470,7 +470,7 @@ function AdminApprovalsInner() {
             onClick={() => writeFilters({ sort: value })}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               sort === value
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -487,7 +487,7 @@ function AdminApprovalsInner() {
           <button
             type="button"
             disabled={busy}
-            className="rounded-[var(--radius-control)] bg-primary px-3 py-1.5 text-xs font-semibold text-on-primary disabled:opacity-50"
+            className="rounded-[var(--radius-control)] bg-primary-fill px-3 py-1.5 text-xs font-semibold text-on-primary disabled:opacity-50"
             onClick={() => requestStatus(selectedVisible, "active")}
           >
             {t(locale, "approveSelected")}
@@ -575,7 +575,7 @@ function AdminApprovalsInner() {
                 <div className="min-w-0 flex-1">
                   <button
                     type="button"
-                    className="text-left font-semibold capitalize hover:text-primary"
+                    className="text-left font-semibold capitalize hover:text-primary-strong"
                     onClick={() => setReview(car)}
                   >
                     {carTitle(car)}
@@ -596,7 +596,7 @@ function AdminApprovalsInner() {
                     <button
                       type="button"
                       disabled={busy}
-                      className="rounded-[var(--radius-control)] bg-primary px-2.5 py-1 text-[11px] font-semibold text-on-primary disabled:opacity-50"
+                      className="rounded-[var(--radius-control)] bg-primary-fill px-2.5 py-1 text-[11px] font-semibold text-on-primary disabled:opacity-50"
                       onClick={() => requestStatus([car.id], "active")}
                     >
                       {t(locale, "approve")}
@@ -669,7 +669,7 @@ function AdminApprovalsInner() {
                     <td className="px-3 py-2">
                       <button
                         type="button"
-                        className="text-left font-semibold capitalize hover:text-primary"
+                        className="text-left font-semibold capitalize hover:text-primary-strong"
                         onClick={() => setReview(car)}
                       >
                         {carTitle(car)}
@@ -692,7 +692,7 @@ function AdminApprovalsInner() {
                         <button
                           type="button"
                           disabled={busy}
-                          className="rounded-[var(--radius-control)] bg-primary px-2.5 py-1 text-[11px] font-semibold text-on-primary disabled:opacity-50"
+                          className="rounded-[var(--radius-control)] bg-primary-fill px-2.5 py-1 text-[11px] font-semibold text-on-primary disabled:opacity-50"
                           onClick={() => requestStatus([car.id], "active")}
                         >
                           {t(locale, "approve")}

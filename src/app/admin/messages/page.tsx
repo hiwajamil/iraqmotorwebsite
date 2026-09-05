@@ -269,7 +269,7 @@ function AdminMessagesInner() {
             onClick={() => writeFilters({ status: tab.value })}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               status === tab.value
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -326,7 +326,7 @@ function AdminMessagesInner() {
                   <div className="flex items-start gap-2">
                     <span
                       className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                        unread ? "bg-primary" : "bg-outline"
+                        unread ? "bg-primary-fill" : "bg-outline"
                       }`}
                     />
                     <div className="min-w-0 flex-1">
@@ -386,7 +386,7 @@ function AdminMessagesInner() {
                     {selected?.userId ? (
                       <Link
                         href={`/admin/listings?sellerId=${encodeURIComponent(selected.userId)}`}
-                        className="text-primary hover:underline"
+                        className="text-primary-strong hover:underline"
                       >
                         {selected.userDisplayName || selected.userId}
                       </Link>
@@ -411,7 +411,7 @@ function AdminMessagesInner() {
                   <button
                     type="button"
                     disabled={busy}
-                    className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
+                    className="rounded-[var(--radius-control)] bg-primary-fill px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                     onClick={() => void setStatus("resolved")}
                   >
                     {t(locale, "resolve")}
@@ -440,7 +440,7 @@ function AdminMessagesInner() {
                         key={m.id}
                         className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                           mine
-                            ? "ml-auto bg-primary text-on-primary"
+                            ? "ml-auto bg-primary-fill text-on-primary"
                             : "bg-input"
                         }`}
                       >
@@ -481,7 +481,7 @@ function AdminMessagesInner() {
                 <button
                   type="submit"
                   disabled={busy || !reply.trim()}
-                  className="self-end rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
+                  className="self-end rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
                 >
                   {t(locale, "send")}
                 </button>

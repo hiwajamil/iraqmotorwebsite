@@ -76,7 +76,7 @@ export default function ShowroomsPage() {
               }}
               className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
                 active
-                  ? "bg-primary text-on-primary"
+                  ? "bg-primary-fill text-on-primary"
                   : "bg-card ring-1 ring-outline"
               }`}
             >
@@ -137,7 +137,7 @@ export default function ShowroomsPage() {
                 {id ? (
                   <Link
                     href={`/cars?sellerId=${id}`}
-                    className="mt-3 inline-block text-sm font-semibold text-primary"
+                    className="mt-3 inline-block text-sm font-semibold text-primary-strong"
                   >
                     {t(locale, "viewListings")}
                   </Link>

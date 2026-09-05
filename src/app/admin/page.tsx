@@ -118,7 +118,7 @@ export default function AdminPage() {
               <p className="text-xs uppercase tracking-wide text-muted">
                 {t(locale, "statAllListings")}
               </p>
-              <p className="mt-2 text-sm font-semibold text-primary">
+              <p className="mt-2 text-sm font-semibold text-primary-strong">
                 {t(locale, "manage")}
               </p>
             </Link>
@@ -129,7 +129,7 @@ export default function AdminPage() {
               <p className="text-xs uppercase tracking-wide text-muted">
                 {t(locale, "statAds")}
               </p>
-              <p className="mt-2 text-sm font-semibold text-primary">
+              <p className="mt-2 text-sm font-semibold text-primary-strong">
                 {t(locale, "manage")}
               </p>
             </Link>
@@ -140,7 +140,7 @@ export default function AdminPage() {
               <p className="text-xs uppercase tracking-wide text-muted">
                 {t(locale, "statAnalytics")}
               </p>
-              <p className="mt-2 text-sm font-semibold text-primary">
+              <p className="mt-2 text-sm font-semibold text-primary-strong">
                 {t(locale, "reports")}
               </p>
             </Link>
@@ -157,7 +157,7 @@ export default function AdminPage() {
         </p>
         <Link
           href="/admin/approvals"
-          className="mt-4 inline-flex rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary"
+          className="mt-4 inline-flex rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary"
         >
           {t(locale, "approvalsOpenQueue")}
         </Link>

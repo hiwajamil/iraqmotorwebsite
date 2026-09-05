@@ -85,7 +85,7 @@ function DashboardMessagesInner() {
           onClick={() => writeNav({ tab: "offers", ticket: null })}
           className={`rounded-full px-3 py-1 text-xs font-semibold ${
             tab === "offers"
-              ? "bg-primary text-on-primary"
+              ? "bg-primary-fill text-on-primary"
               : "bg-input text-muted"
           }`}
         >
@@ -96,7 +96,7 @@ function DashboardMessagesInner() {
           onClick={() => writeNav({ tab: "support" })}
           className={`rounded-full px-3 py-1 text-xs font-semibold ${
             tab === "support"
-              ? "bg-primary text-on-primary"
+              ? "bg-primary-fill text-on-primary"
               : "bg-input text-muted"
           }`}
         >
@@ -466,7 +466,7 @@ function SupportInbox({
             setCompose(true);
             onSelectTicket(null);
           }}
-          className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary"
+          className="rounded-[var(--radius-control)] bg-primary-fill px-3 py-2 text-xs font-semibold text-on-primary"
         >
           {t(locale, "dashNewTicket")}
         </button>
@@ -514,7 +514,7 @@ function SupportInbox({
             <button
               type="submit"
               disabled={busy || !text.trim()}
-              className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
+              className="rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
             >
               {t(locale, "send")}
             </button>
@@ -536,7 +536,7 @@ function SupportInbox({
         <div className="mt-6 rounded-[16px] bg-card p-4 ring-1 ring-outline">
           <button
             type="button"
-            className="text-xs font-semibold text-primary"
+            className="text-xs font-semibold text-primary-strong"
             onClick={() => onSelectTicket(null)}
           >
             {t(locale, "dashBackToTickets")}
@@ -568,7 +568,7 @@ function SupportInbox({
                     key={m.id}
                     className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
                       fromUser
-                        ? "ml-auto bg-primary text-on-primary"
+                        ? "ml-auto bg-primary-fill text-on-primary"
                         : "bg-input"
                     }`}
                   >
@@ -608,7 +608,7 @@ function SupportInbox({
             <button
               type="submit"
               disabled={busy || !reply.trim()}
-              className="self-end rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
+              className="self-end rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
             >
               {t(locale, "send")}
             </button>
@@ -645,7 +645,7 @@ function SupportInbox({
                       {ticket.subject || t(locale, "supportTicketFallback")}
                     </p>
                     {ticket.lastMessageIsAdmin && ticket.status !== "resolved" ? (
-                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary-strong">
                         {t(locale, "dashUnread")}
                       </span>
                     ) : null}
@@ -693,7 +693,7 @@ function MessageBody({
   return (
     <div className="flex items-start gap-3">
       {unread ? (
-        <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+        <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary-fill" />
       ) : (
         <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-outline" />
       )}
@@ -701,7 +701,7 @@ function MessageBody({
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-semibold">{sender}</p>
           {unread ? (
-            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary-strong">
               {t(locale, "dashUnread")}
             </span>
           ) : null}

@@ -49,7 +49,7 @@ export default function DashboardHomePage() {
           </Link>
           <Link
             href="/sell"
-            className="rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary"
+            className="rounded-[12px] bg-primary-fill px-4 py-2.5 text-sm font-semibold text-on-primary"
           >
             {t(locale, "dashNewListing")}
           </Link>
@@ -107,7 +107,7 @@ export default function DashboardHomePage() {
                     .join(" · ")}
                 </p>
               </div>
-              <span className="text-sm font-semibold text-primary">
+              <span className="text-sm font-semibold text-primary-strong">
                 {t(locale, "viewAll")}
               </span>
             </Link>
@@ -127,7 +127,7 @@ export default function DashboardHomePage() {
               </p>
               <Link
                 href="/sell"
-                className="mt-5 inline-block rounded-[12px] bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary"
+                className="mt-5 inline-block rounded-[12px] bg-primary-fill px-5 py-2.5 text-sm font-semibold text-on-primary"
               >
                 {t(locale, "dashCreateListing")}
               </Link>
@@ -167,7 +167,7 @@ function PreviewRow({
     <section className="mt-8">
       <div className="flex items-end justify-between gap-3">
         <h2 className="text-lg font-bold tracking-tight">{title}</h2>
-        <Link href={href} className="text-sm font-semibold text-primary">
+        <Link href={href} className="text-sm font-semibold text-primary-strong">
           {t(locale, "viewAll")}
         </Link>
       </div>

@@ -46,14 +46,14 @@ function PackageCard({
         <div>
           <p className="text-lg font-bold">{title}</p>
           {badge ? (
-            <span className="mt-2 inline-block rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-on-primary">
+            <span className="mt-2 inline-block rounded-full bg-primary-fill px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-on-primary">
               {badge}
             </span>
           ) : null}
         </div>
         <span
           className={`mt-1 flex size-6 shrink-0 items-center justify-center rounded-full border-2 ${
-            selected ? "border-primary bg-primary text-on-primary" : "border-outline"
+            selected ? "border-primary bg-primary-fill text-on-primary" : "border-outline"
           }`}
           aria-hidden
         >
@@ -136,7 +136,7 @@ export function SellPackagePaymentSection({
     <div className="space-y-6">
       <section data-field="packageKey" className="space-y-3">
         <div className="flex items-center gap-2">
-          <Rocket className="size-5 text-primary" aria-hidden />
+          <Rocket className="size-5 text-primary-strong" aria-hidden />
           <h2 className="text-lg font-bold">{t(locale, "sellSectionPackage")}</h2>
         </div>
         <p className="text-sm text-muted">{t(locale, "sellPackageSubtitle")}</p>
@@ -168,7 +168,7 @@ export function SellPackagePaymentSection({
 
       <section data-field="paymentMethodKey" className="space-y-3">
         <div className="flex items-center gap-2">
-          <CreditCard className="size-5 text-primary" aria-hidden />
+          <CreditCard className="size-5 text-primary-strong" aria-hidden />
           <h2 className="text-lg font-bold">{t(locale, "sellSectionPayment")}</h2>
         </div>
         <p className="text-sm text-muted">{t(locale, "sellPaymentSubtitle")}</p>

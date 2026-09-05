@@ -207,7 +207,7 @@ export function ServicesClient({
           <button
             type="button"
             onClick={openOffer}
-            className="w-full rounded-[12px] bg-primary px-4 py-3.5 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110"
+            className="w-full rounded-[12px] bg-primary-fill px-4 py-3.5 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110"
           >
             {t(locale, "servicesOffer")}
           </button>
@@ -245,7 +245,7 @@ export function ServicesClient({
                   setSelectedCategory(null);
                   setSelectedCity(null);
                 }}
-                className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-muted hover:text-primary"
+                className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-muted hover:text-primary-strong"
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden />
                 {t(locale, "servicesBackToGrid")}
@@ -310,7 +310,7 @@ export function ServicesClient({
                       {item.phone ? (
                         <a
                           href={`tel:${item.phone}`}
-                          className="mt-1 inline-block text-sm font-semibold text-primary"
+                          className="mt-1 inline-block text-sm font-semibold text-primary-strong"
                           dir="ltr"
                         >
                           {item.phone}
@@ -348,7 +348,7 @@ export function ServicesClient({
                         }}
                         className="flex items-start gap-4 rounded-[16px] bg-card p-5 text-start ring-1 ring-outline transition hover:ring-primary/40"
                       >
-                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-primary/10 text-primary-strong">
                           <Icon className="h-6 w-6" aria-hidden />
                         </span>
                         <span>
@@ -381,7 +381,7 @@ export function ServicesClient({
                   }}
                   className="flex flex-col items-start gap-3 rounded-[16px] bg-card p-5 text-start ring-1 ring-outline transition hover:ring-primary/40"
                 >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-primary/10 text-primary">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-primary/10 text-primary-strong">
                     <MapPin className="h-5 w-5" aria-hidden />
                   </span>
                   <span className="font-semibold">

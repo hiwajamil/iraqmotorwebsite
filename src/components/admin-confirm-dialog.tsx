@@ -78,7 +78,7 @@ export function AdminConfirmDialog({
             disabled={busy || confirmDisabled}
             onClick={onConfirm}
             className={`rounded-[var(--radius-control)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 ${
-              danger ? "bg-red-600" : "bg-primary text-on-primary"
+              danger ? "bg-red-600" : "bg-primary-fill text-on-primary"
             }`}
           >
             {busy ? t(locale, "working") : confirmLabel}

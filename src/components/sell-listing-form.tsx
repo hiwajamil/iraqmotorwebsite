@@ -78,7 +78,7 @@ function FieldError({ message }: { message?: string }) {
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <span className="flex w-fit items-center gap-2">
-      <span className="size-1 shrink-0 rounded-full bg-primary" aria-hidden />
+      <span className="size-1 shrink-0 rounded-full bg-primary-fill" aria-hidden />
       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
         {children}
       </span>
@@ -104,12 +104,12 @@ function SectionCard({
     >
       <div className="relative border-b border-primary/20 bg-primary/[0.07] px-5 py-3.5 md:px-6">
         <span
-          className="absolute inset-y-2 start-0 w-[3px] rounded-e-full bg-primary"
+          className="absolute inset-y-2 start-0 w-[3px] rounded-e-full bg-primary-fill"
           aria-hidden
         />
         <div className="flex items-center gap-3 ps-2.5">
           <span
-            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-strong"
             aria-hidden
           >
             <Icon className="size-4" strokeWidth={2} aria-hidden />
@@ -158,7 +158,7 @@ function ChipRow({
               onClick={() => onChange(key)}
               className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
                 selected
-                  ? "bg-primary text-on-primary"
+                  ? "bg-primary-fill text-on-primary"
                   : "bg-input text-foreground ring-1 ring-outline hover:ring-primary/40"
               }`}
             >
@@ -750,7 +750,7 @@ export function SellListingForm() {
                   onClick={() => patch({ mileageUnit: unit })}
                   className={`rounded-[10px] px-3 py-1.5 text-xs font-semibold ${
                     draft.mileageUnit === unit
-                      ? "bg-primary text-on-primary"
+                      ? "bg-primary-fill text-on-primary"
                       : "text-muted"
                   }`}
                 >
@@ -907,7 +907,7 @@ export function SellListingForm() {
                   })
                 }
                 className={`relative h-6 w-10 rounded-full transition ${
-                  allFeaturesSelected ? "bg-primary" : "bg-input ring-1 ring-outline"
+                  allFeaturesSelected ? "bg-primary-fill" : "bg-input ring-1 ring-outline"
                 }`}
               >
                 <span
@@ -934,7 +934,7 @@ export function SellListingForm() {
                   }
                   className={`rounded-full px-3 py-1.5 text-start text-sm font-medium transition ${
                     selected
-                      ? "bg-primary text-on-primary"
+                      ? "bg-primary-fill text-on-primary"
                       : "bg-input text-foreground ring-1 ring-outline hover:ring-primary/40"
                   }`}
                 >
@@ -981,7 +981,7 @@ export function SellListingForm() {
                   onClick={() => patch({ currencyKey: key })}
                   className={`rounded-[10px] px-3 py-1.5 text-xs font-semibold ${
                     draft.currencyKey === key
-                      ? "bg-primary text-on-primary"
+                      ? "bg-primary-fill text-on-primary"
                       : "text-muted"
                   }`}
                 >
@@ -1017,7 +1017,7 @@ export function SellListingForm() {
         <button
           type="submit"
           disabled={busy || uploading}
-          className="w-full rounded-[12px] bg-primary px-5 py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
+          className="w-full rounded-[12px] bg-primary-fill px-5 py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
         >
           {busy
             ? label("sellSubmitting")

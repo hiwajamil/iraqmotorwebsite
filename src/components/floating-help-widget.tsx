@@ -190,7 +190,7 @@ export function FloatingHelpWidget() {
             onClick={open}
             aria-expanded={false}
             aria-haspopup="dialog"
-            className="flex items-center gap-2.5 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[0_10px_28px_rgba(234,88,12,0.38)] transition hover:brightness-110 hover:shadow-[0_12px_32px_rgba(234,88,12,0.48)]"
+            className="flex items-center gap-2.5 rounded-full bg-primary-fill px-5 py-3 text-sm font-semibold text-on-primary shadow-[0_10px_28px_rgba(234,88,12,0.38)] transition hover:brightness-110 hover:shadow-[0_12px_32px_rgba(234,88,12,0.48)]"
           >
             <ChatIcon className="h-5 w-5 shrink-0" />
             <span>{t(locale, "helpCta")}</span>
@@ -211,7 +211,7 @@ export function FloatingHelpWidget() {
           role="dialog"
           aria-labelledby={`${formId}-title`}
         >
-          <div className="flex items-start justify-between gap-3 bg-primary px-5 py-4 text-on-primary">
+          <div className="flex items-start justify-between gap-3 bg-primary-fill px-5 py-4 text-on-primary">
             <div className="min-w-0">
               <p
                 id={`${formId}-title`}
@@ -245,7 +245,7 @@ export function FloatingHelpWidget() {
 
           {view === "success" ? (
             <div className="flex flex-col items-center px-6 py-8 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-fill text-on-primary">
                 <CheckIcon className="h-7 w-7" />
               </span>
               <h3 className="mt-4 text-xl font-bold text-slate-900">
@@ -257,7 +257,7 @@ export function FloatingHelpWidget() {
               <button
                 type="button"
                 onClick={() => setView("closed")}
-                className="mt-6 text-sm font-semibold text-primary"
+                className="mt-6 text-sm font-semibold text-primary-strong"
               >
                 {t(locale, "helpClose")}
               </button>
@@ -376,7 +376,7 @@ export function FloatingHelpWidget() {
               <button
                 type="submit"
                 disabled={busy || (isTurnstileEnabled() && !turnstileToken)}
-                className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-on-primary shadow-[0_8px_18px_rgba(234,88,12,0.28)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
+                className="w-full rounded-xl bg-primary-fill py-3 text-sm font-bold text-on-primary shadow-[0_8px_18px_rgba(234,88,12,0.28)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {busy ? t(locale, "helpSubmitting") : t(locale, "helpSubmit")}
               </button>

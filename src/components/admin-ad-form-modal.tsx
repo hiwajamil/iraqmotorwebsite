@@ -548,7 +548,7 @@ export function AdminAdFormModal({
                   onClick={() => toggleCity(city.key)}
                   className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                     form.locationIds.includes(city.key)
-                      ? "bg-primary text-on-primary"
+                      ? "bg-primary-fill text-on-primary"
                       : "bg-input text-muted"
                   }`}
                 >
@@ -583,7 +583,7 @@ export function AdminAdFormModal({
                 onClick={() => setLangTab(lang)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold ${
                   langTab === lang
-                    ? "bg-primary text-on-primary"
+                    ? "bg-primary-fill text-on-primary"
                     : "bg-input text-muted"
                 }`}
               >
@@ -811,7 +811,7 @@ export function AdminAdFormModal({
           <button
             type="submit"
             disabled={busy || uploading}
-            className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
+            className="rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
           >
             {uploading
               ? t(locale, "uploadingImage")

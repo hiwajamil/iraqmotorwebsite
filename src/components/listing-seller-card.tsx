@@ -160,7 +160,7 @@ export function ListingSellerCard({
           <>
             <a
               href={telHref(phone)}
-              className="inline-flex items-center justify-center rounded-[12px] bg-primary px-3.5 py-2 text-sm font-semibold text-on-primary"
+              className="inline-flex items-center justify-center rounded-[12px] bg-primary-fill px-3.5 py-2 text-sm font-semibold text-on-primary"
             >
               {t(locale, "phoneCall")}
             </a>
@@ -182,7 +182,7 @@ export function ListingSellerCard({
               <button
                 type="button"
                 onClick={onMessageSeller}
-                className="inline-flex items-center justify-center rounded-[12px] bg-primary px-3.5 py-2 text-sm font-semibold text-on-primary"
+                className="inline-flex items-center justify-center rounded-[12px] bg-primary-fill px-3.5 py-2 text-sm font-semibold text-on-primary"
               >
                 {t(locale, "messageSeller")}
               </button>
@@ -192,7 +192,7 @@ export function ListingSellerCard({
         {sellerId ? (
           <Link
             href={`/cars?sellerId=${encodeURIComponent(sellerId)}`}
-            className="inline-flex items-center justify-center rounded-[12px] px-3.5 py-2 text-sm font-semibold text-primary"
+            className="inline-flex items-center justify-center rounded-[12px] px-3.5 py-2 text-sm font-semibold text-primary-strong"
           >
             {t(locale, "moreFromSeller")}
           </Link>

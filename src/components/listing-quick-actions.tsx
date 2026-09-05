@@ -13,18 +13,23 @@ import { emitToast } from "@/components/site-toast";
 import { t } from "@/lib/i18n";
 
 const fabClass =
-  "flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md backdrop-blur transition hover:scale-105 hover:bg-primary hover:text-on-primary";
+  "flex h-8 w-8 items-center justify-center rounded-full bg-card/90 text-foreground shadow-sm ring-1 ring-outline/70 backdrop-blur transition hover:bg-primary-fill hover:text-on-primary hover:ring-primary-fill";
+
+const compareRevealClass =
+  "[@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100 focus-visible:opacity-100";
 
 export function ListingQuickActions({
   car,
   title,
   onReport,
   reportBusy = false,
+  variant = "grid",
 }: {
   car: Car;
   title: string;
   onReport?: () => void;
   reportBusy?: boolean;
+  variant?: "grid" | "detail";
 }) {
   const { user } = useAuth();
   const router = useRouter();
@@ -110,19 +115,23 @@ export function ListingQuickActions({
         aria-label={
           inCompare ? t(locale, "removeFromCompare") : t(locale, "addToCompare")
         }
-        className={`${fabClass} ${inCompare ? "bg-primary text-on-primary" : ""}`}
+        className={`${fabClass} ${inCompare ? "bg-primary-fill text-on-primary" : ""} ${
+          variant === "grid" && !inCompare ? compareRevealClass : ""
+        }`}
       >
         <Scale size={16} strokeWidth={2} />
       </button>
-      <button
-        type="button"
-        onClick={(e) => void onShare(e)}
-        aria-label={t(locale, "shareListing")}
-        disabled={busyShare}
-        className={fabClass}
-      >
-        <Share2 size={16} strokeWidth={2} />
-      </button>
+      {variant === "detail" ? (
+        <button
+          type="button"
+          onClick={(e) => void onShare(e)}
+          aria-label={t(locale, "shareListing")}
+          disabled={busyShare}
+          className={fabClass}
+        >
+          <Share2 size={16} strokeWidth={2} />
+        </button>
+      ) : null}
       {onReport ? (
         <button
           type="button"

@@ -126,7 +126,7 @@ function ReturnBody() {
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           href="/dashboard"
-          className="rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary"
+          className="rounded-[12px] bg-primary-fill px-4 py-2.5 text-sm font-semibold text-on-primary"
         >
           {t(locale, "paymentGoToDashboard")}
         </Link>

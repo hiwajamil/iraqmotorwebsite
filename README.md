@@ -69,6 +69,10 @@ Test numbers work on `localhost` and production. Real Iraqi numbers (`+9647…`)
 
 Do not commit test codes. Rotate them if they leak.
 
+## Security follow-up (P2)
+
+CSP in `next.config.ts` still allows `script-src 'unsafe-inline'` / `'unsafe-eval'` and `style-src 'unsafe-inline'` (Next, Turnstile, GTM). Tighten with nonces or hashes in a later pass; do not loosen the policy.
+
 ## Routes
 
 ### Public / user

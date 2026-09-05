@@ -218,7 +218,7 @@ export function AuthenticatorSettings() {
             setPassword("");
             setCode("");
           }}
-          className="mt-6 rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary"
+          className="mt-6 rounded-[12px] bg-primary-fill px-4 py-2.5 text-sm font-semibold text-on-primary"
         >
           {t(locale, "adminMfaRecoverySaved")}
         </button>
@@ -273,7 +273,7 @@ export function AuthenticatorSettings() {
               type="button"
               disabled={busy}
               onClick={() => void startEnroll()}
-              className="rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary disabled:opacity-60"
+              className="rounded-[12px] bg-primary-fill px-4 py-2.5 text-sm font-semibold text-on-primary disabled:opacity-60"
             >
               {busy ? t(locale, "pleaseWait") : t(locale, "dashAuthenticatorEnable")}
             </button>
@@ -309,7 +309,7 @@ export function AuthenticatorSettings() {
           <button
             type="submit"
             disabled={busy || code.length !== 6}
-            className="w-full rounded-[12px] bg-primary py-3 text-sm font-semibold text-on-primary disabled:opacity-60"
+            className="w-full rounded-[12px] bg-primary-fill py-3 text-sm font-semibold text-on-primary disabled:opacity-60"
           >
             {busy ? t(locale, "pleaseWait") : t(locale, "adminMfaVerify")}
           </button>
@@ -360,7 +360,7 @@ export function AuthenticatorSettings() {
                   type="button"
                   disabled={busy}
                   onClick={() => void unenroll()}
-                  className="rounded-[12px] bg-primary px-3 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
+                  className="rounded-[12px] bg-primary-fill px-3 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
                 >
                   {busy ? t(locale, "pleaseWait") : t(locale, "dashAuthenticatorUnenroll")}
                 </button>

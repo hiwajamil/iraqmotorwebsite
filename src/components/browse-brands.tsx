@@ -134,7 +134,7 @@ function BrandItem({
       </span>
       <span
         className={`max-w-full truncate text-[11px] font-semibold md:text-xs ${
-          selected ? "text-primary" : "text-muted"
+          selected ? "text-primary-strong" : "text-muted"
         }`}
       >
         {name}
@@ -159,7 +159,7 @@ function ToggleMoreButton({
       onClick={onToggle}
       className="flex w-[70px] shrink-0 flex-col items-center gap-2 md:w-[104px]"
     >
-      <span className="flex h-[70px] w-[70px] items-center justify-center rounded-full bg-input text-lg font-bold leading-none text-primary ring-2 ring-outline/60 transition hover:ring-primary/40 md:h-[88px] md:w-[88px] md:text-xl">
+      <span className="flex h-[70px] w-[70px] items-center justify-center rounded-full bg-input text-lg font-bold leading-none text-primary-strong ring-2 ring-outline/60 transition hover:ring-primary/40 md:h-[88px] md:w-[88px] md:text-xl">
         {expanded ? "−" : "+"}
       </span>
       <span className="text-[11px] font-semibold text-muted md:text-xs">

@@ -87,7 +87,7 @@ export function HomeMarketplace({
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/cars"
-              className="rounded-[12px] bg-primary px-6 py-3 text-sm font-semibold text-on-primary shadow-lg shadow-primary/25 transition hover:brightness-110"
+              className="rounded-[12px] bg-primary-fill px-6 py-3 text-sm font-semibold text-on-primary shadow-lg shadow-primary/25 transition hover:brightness-110"
             >
               {t(locale, "browseCars")}
             </Link>
@@ -124,12 +124,12 @@ export function HomeMarketplace({
             <h2 className="text-xl font-bold md:text-2xl">
               {t(locale, "latestListings")}
             </h2>
-            <Link href="/cars" className="text-sm font-semibold text-primary">
+            <Link href="/cars" className="text-sm font-semibold text-primary-strong">
               {t(locale, "viewAll")}
             </Link>
           </div>
           {loading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
@@ -143,7 +143,7 @@ export function HomeMarketplace({
               <button
                 type="button"
                 onClick={() => void retryCars()}
-                className="mt-4 inline-block text-sm font-semibold text-primary"
+                className="mt-4 inline-block text-sm font-semibold text-primary-strong"
               >
                 {t(locale, "retry")}
               </button>
@@ -153,13 +153,13 @@ export function HomeMarketplace({
               <p className="text-muted">{t(locale, "carsEmptyHint")}</p>
               <Link
                 href="/cars"
-                className="mt-4 inline-block text-sm font-semibold text-primary"
+                className="mt-4 inline-block text-sm font-semibold text-primary-strong"
               >
                 {t(locale, "viewAll")}
               </Link>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {gridItems.map((item) =>
                 item.kind === "car" ? (
                   <CarCard key={item.key} car={item.car} />

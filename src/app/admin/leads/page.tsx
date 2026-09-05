@@ -339,7 +339,7 @@ function AdminLeadsInner() {
             onClick={() => writeFilters({ status: tab.value })}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               status === tab.value
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -431,7 +431,7 @@ function AdminLeadsInner() {
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <a
                         href={`mailto:${item.email}`}
-                        className="block text-primary hover:underline"
+                        className="block text-primary-strong hover:underline"
                       >
                         {item.email}
                       </a>
@@ -607,7 +607,7 @@ function AdminLeadsInner() {
             <p className="mt-3 text-sm">
               <a
                 href={`mailto:${drawer.email}`}
-                className="text-primary hover:underline"
+                className="text-primary-strong hover:underline"
               >
                 {drawer.email}
               </a>
@@ -643,7 +643,7 @@ function AdminLeadsInner() {
                   href={drawer.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-1 block truncate text-sm text-primary hover:underline"
+                  className="mt-1 block truncate text-sm text-primary-strong hover:underline"
                 >
                   {drawer.sourceUrl}
                 </a>
@@ -664,7 +664,7 @@ function AdminLeadsInner() {
               type="button"
               disabled={busyId === drawer.id}
               onClick={() => void saveNotes()}
-              className="mt-3 rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+              className="mt-3 rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
             >
               {t(locale, "save")}
             </button>

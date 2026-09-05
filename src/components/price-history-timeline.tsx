@@ -78,7 +78,7 @@ export function PriceHistoryTimeline({
               ? "bg-teal-600 text-white"
               : up
                 ? "bg-red-500/90 text-white"
-                : "bg-primary text-on-primary";
+                : "bg-primary-fill text-on-primary";
 
             return (
               <li key={event.id || `${index}-${to}`} className="flex gap-3">

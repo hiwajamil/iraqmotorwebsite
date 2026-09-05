@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import type { Car } from "@/lib/api";
 import { useAppSelector } from "@/store/hooks";
@@ -22,10 +22,7 @@ import {
 } from "@/lib/listing-labels";
 import { t, type Locale } from "@/lib/i18n";
 
-const HIGHLIGHT_MAX = 4;
-const HIGHLIGHT_MIN = 3;
-const HIGHLIGHT_INTERVAL_MS = 3000;
-const HIGHLIGHT_SLIDE_MS = 500;
+const HIGHLIGHT_MAX = 3;
 const FULL_OPTION_MIN_FEATURES = 8;
 const FEATURE_LABEL_MAX_LEN = 22;
 const FEATURE_HIGHLIGHT_PRIORITY = [
@@ -85,120 +82,71 @@ function featureHighlightLabels(car: Car, locale: Locale): string[] {
   return labels;
 }
 
-export function carHighlightStrings(car: Car, locale: Locale): string[] {
-  const items: string[] = [];
-  const add = (value: string) => {
-    const next = value.trim();
-    if (!next || items.includes(next) || items.length >= HIGHLIGHT_MAX) return;
-    items.push(next);
+export type CarHighlightKind = "verified" | "showroom" | "feature";
+
+export type CarHighlight = {
+  id: string;
+  label: string;
+  kind: CarHighlightKind;
+};
+
+export function carHighlightItems(car: Car, locale: Locale): CarHighlight[] {
+  const items: CarHighlight[] = [];
+  const add = (id: string, label: string, kind: CarHighlightKind) => {
+    const next = label.trim();
+    if (!next || items.some((item) => item.label === next) || items.length >= HIGHLIGHT_MAX) {
+      return;
+    }
+    items.push({ id, label: next, kind });
   };
 
-  const sold = car.status === "sold";
   const condition = conditionKeyOf(car);
   const features = listingFeatureKeys(car);
 
-  if (!sold && isPriceDropped(car.priceMeta)) add(t(locale, "priceDropped"));
-  if (isNewCondition(condition)) add(t(locale, "newCars"));
-  else if (isLowMileage(car)) add(t(locale, "lowMileage"));
-  for (const label of featureHighlightLabels(car, locale)) add(label);
-  if (isCleanTitleCondition(condition)) add(t(locale, "cleanTitle"));
-  if (features.length >= FULL_OPTION_MIN_FEATURES) add(t(locale, "fullOption"));
-  if (String(car.sellerShowroom ?? "").trim()) add(t(locale, "trustedSeller"));
   if (car.vin?.verifiedStatus === "admin_verified") {
-    add(t(locale, "verifiedListing"));
+    add("verified", t(locale, "verifiedListing"), "verified");
+  }
+  if (String(car.sellerShowroom ?? "").trim()) {
+    add("showroom", t(locale, "trustedSeller"), "showroom");
+  }
+  if (isNewCondition(condition)) add("new", t(locale, "newCars"), "feature");
+  else if (isLowMileage(car)) add("lowMileage", t(locale, "lowMileage"), "feature");
+  if (isCleanTitleCondition(condition)) add("cleanTitle", t(locale, "cleanTitle"), "feature");
+  if (features.length >= FULL_OPTION_MIN_FEATURES) {
+    add("fullOption", t(locale, "fullOption"), "feature");
+  }
+  for (const [index, label] of featureHighlightLabels(car, locale).entries()) {
+    add(`feature-${index}`, label, "feature");
   }
 
-  const fallbacks = [
-    "cleanTitle",
-    "fullOption",
-    "trustedSeller",
-    "greatDeal",
-  ] as const;
-  for (const key of fallbacks) {
-    if (items.length >= HIGHLIGHT_MIN) break;
-    add(t(locale, key));
-  }
-
-  return items.slice(0, HIGHLIGHT_MAX);
+  return items;
 }
 
-function HighlightCarousel({
-  items,
-  compact = false,
-}: {
-  items: string[];
-  compact?: boolean;
-}) {
-  const [index, setIndex] = useState(0);
-  const [animate, setAnimate] = useState(true);
-  const height = compact ? 22 : 24;
-  const canRotate = items.length > 1;
-  const track = canRotate ? [...items, items[0]!] : items;
+export function carHighlightStrings(car: Car, locale: Locale): string[] {
+  return carHighlightItems(car, locale).map((item) => item.label);
+}
 
-  useEffect(() => {
-    setIndex(0);
-    setAnimate(true);
-    if (!canRotate) return;
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (mq.matches) return;
+const CHIP_BASE =
+  "inline-flex max-w-full shrink-0 items-center truncate rounded-full px-2 py-0.5 text-xs font-medium";
 
-    const id = window.setInterval(() => {
-      if (mq.matches) return;
-      setAnimate(true);
-      setIndex((current) => current + 1);
-    }, HIGHLIGHT_INTERVAL_MS);
-    const onChange = () => {
-      if (mq.matches) {
-        window.clearInterval(id);
-        setIndex(0);
-      }
-    };
-    mq.addEventListener("change", onChange);
-    return () => {
-      window.clearInterval(id);
-      mq.removeEventListener("change", onChange);
-    };
-  }, [items, canRotate]);
+const CHIP_KIND: Record<CarHighlightKind, string> = {
+  verified: "bg-sky-600/12 text-sky-900 dark:bg-sky-400/15 dark:text-sky-200",
+  showroom: "bg-input text-foreground ring-1 ring-outline",
+  feature: "bg-input text-muted-strong",
+};
 
-  useEffect(() => {
-    if (!canRotate || index !== items.length) return;
-    const id = window.setTimeout(() => {
-      setAnimate(false);
-      setIndex(0);
-    }, HIGHLIGHT_SLIDE_MS);
-    return () => window.clearTimeout(id);
-  }, [canRotate, index, items.length]);
-
+function HighlightChips({ items }: { items: CarHighlight[] }) {
   if (!items.length) {
-    return <div className="mt-1 w-full shrink-0" style={{ height }} />;
+    return <div className="mt-1 min-h-6 w-full shrink-0" />;
   }
 
   return (
-    <div
-      className="mt-1 w-full shrink-0 overflow-hidden rounded-full bg-primary/10"
-      style={{ height }}
-    >
-      <div
-        className="motion-reduce:transition-none"
-        style={{
-          transform: `translateY(-${index * height}px)`,
-          transition: animate ? `transform ${HIGHLIGHT_SLIDE_MS}ms ease-in-out` : "none",
-        }}
-      >
-        {track.map((text, i) => (
-          <span
-            key={`${text}-${i}`}
-            className={`flex min-w-0 items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap font-medium text-primary ${
-              compact ? "px-2 text-[10px]" : "px-2.5 text-[11px]"
-            }`}
-            style={{ height }}
-            aria-hidden={i !== index}
-            dir="auto"
-          >
-            {text}
-          </span>
-        ))}
-      </div>
+    <div className="mt-1 flex min-h-6 min-w-0 flex-wrap gap-1">
+      {items.map((item) => (
+        <span key={item.id} className={`${CHIP_BASE} ${CHIP_KIND[item.kind]}`} dir="auto">
+          {item.label}
+        </span>
+      ))}
     </div>
   );
 }
@@ -230,13 +178,13 @@ export function CarCard({
   const mileage = formatMileageLabel(locale, car.mileageValue, car.mileageUnit);
   const title = carTitle(car, locale) || t(locale, "carListing");
   const highlights = useMemo(
-    () => carHighlightStrings(car, locale),
+    () => carHighlightItems(car, locale),
     [car, locale],
   );
 
   return (
     <article
-      className={`group flex h-full flex-col overflow-hidden rounded-xl bg-[var(--color-card-low,#f8fafc)] ring-1 ring-outline/40 transition duration-300 hover:-translate-y-0.5 hover:ring-primary/30 dark:bg-card ${
+      className={`group flex h-full flex-col overflow-hidden rounded-xl bg-card shadow-[0_1px_2px_rgb(15_23_42/0.06)] ring-1 ring-outline transition duration-200 hover:ring-primary/40 dark:shadow-none ${
         compact ? "min-w-[272px] max-w-[272px]" : ""
       }`}
     >
@@ -248,7 +196,7 @@ export function CarCard({
             alt={title}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-[1.04]"
+            className="h-full w-full object-cover object-center"
           />
         </Link>
         {sold ? (
@@ -274,7 +222,7 @@ export function CarCard({
         >
           {title}
         </h3>
-        <p className="flex flex-wrap items-center gap-x-3 text-[11px] text-muted md:text-xs">
+        <p className="flex flex-wrap items-center gap-x-3 text-xs text-muted-strong">
           <span dir="auto">{city}</span>
           {mileage ? (
             <span dir="ltr" className="[unicode-bidi:isolate]">
@@ -283,22 +231,17 @@ export function CarCard({
           ) : null}
         </p>
         <p
-          className={`mt-auto text-sm font-bold md:text-lg ${
-            sold ? "text-foreground" : "text-primary"
-          }`}
+          className="mt-auto text-sm font-bold text-foreground md:text-lg"
           dir="auto"
         >
           {sold ? t(locale, "soldFor", { price: displayPrice }) : displayPrice}
         </p>
         {!sold && bidLabel ? (
-          <p
-            className="text-[11px] font-medium text-red-600 dark:text-red-400"
-            dir="auto"
-          >
+          <p className="text-[11px] font-medium text-muted" dir="auto">
             {t(locale, "latestBid", { amount: bidLabel })}
           </p>
         ) : null}
-        <HighlightCarousel items={highlights} compact={compact} />
+        <HighlightChips items={highlights} />
       </Link>
     </article>
   );

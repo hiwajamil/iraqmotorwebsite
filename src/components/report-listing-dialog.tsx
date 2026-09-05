@@ -108,7 +108,7 @@ export function ReportListingDialog({
               aria-pressed={selected}
               className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition disabled:opacity-60 ${
                 selected
-                  ? "bg-primary text-on-primary ring-primary"
+                  ? "bg-primary-fill text-on-primary ring-primary"
                   : "bg-input text-foreground ring-outline"
               }`}
             >

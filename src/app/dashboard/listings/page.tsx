@@ -161,7 +161,7 @@ export default function DashboardListingsPage() {
         </div>
         <Link
           href="/sell"
-          className="rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary"
+          className="rounded-[12px] bg-primary-fill px-4 py-2.5 text-sm font-semibold text-on-primary"
         >
           {t(locale, "dashNewListing")}
         </Link>
@@ -190,7 +190,7 @@ export default function DashboardListingsPage() {
           </p>
           <Link
             href="/sell"
-            className="mt-5 inline-block rounded-[12px] bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary"
+            className="mt-5 inline-block rounded-[12px] bg-primary-fill px-5 py-2.5 text-sm font-semibold text-on-primary"
           >
             {t(locale, "dashCreateListing")}
           </Link>
@@ -308,7 +308,7 @@ function OwnerListingRow({
         <p className="truncate text-sm font-bold" dir="auto">
           {title}
         </p>
-        <p className="mt-1 text-sm font-semibold text-primary" dir="auto">
+        <p className="mt-1 text-sm font-semibold text-primary-strong" dir="auto">
           {price}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">

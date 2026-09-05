@@ -34,7 +34,7 @@ import { t, type Locale } from "@/lib/i18n";
 import { IRAQ_PROVINCE_ORDER, localizeProvince } from "@/lib/iraq-locations";
 import { useAppSelector } from "@/store/hooks";
 
-const MIN_PASSWORD_LENGTH = 6;
+const MIN_PASSWORD_LENGTH = 8;
 
 type ResetPhase = "idle" | "otp";
 type RegisterStep = "phone" | "otp" | "details";
@@ -262,7 +262,11 @@ function AuthForm() {
     // During phone OTP reset / register we briefly hold a phone session — stay.
     if (resetPhase !== "idle") return;
     if (registerInProgress) return;
-    if (me.isSuperAdmin || me.mfaEnrollmentRequired) {
+    if (me.mfaEnrollmentRequired) {
+      router.replace("/dashboard/settings");
+      return;
+    }
+    if (me.isSuperAdmin) {
       router.replace(nextPath.startsWith("/admin") ? nextPath : "/admin");
       return;
     }
@@ -287,7 +291,9 @@ function AuthForm() {
       isSuperAdmin?: boolean;
       mfaEnrollmentRequired?: boolean;
     }>("/users/me");
-    if (session.isSuperAdmin || session.mfaEnrollmentRequired) {
+    if (session.mfaEnrollmentRequired) {
+      router.push("/dashboard/settings");
+    } else if (session.isSuperAdmin) {
       router.push(nextPath.startsWith("/admin") ? nextPath : "/admin");
     } else {
       router.push(nextPath);
@@ -863,13 +869,13 @@ function AuthForm() {
             <button
               type="submit"
               disabled={busy || mfaCode.length !== 6}
-              className="mt-2 w-full rounded-[12px] bg-primary py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
+              className="mt-2 w-full rounded-[12px] bg-primary-fill py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
             >
               {busy ? t(locale, "pleaseWait") : t(locale, "adminMfaVerify")}
             </button>
             <button
               type="button"
-              className="w-full text-center text-sm font-medium text-primary"
+              className="w-full text-center text-sm font-medium text-primary-strong"
               onClick={() => {
                 setError(null);
                 setMfaStep("recovery");
@@ -911,13 +917,13 @@ function AuthForm() {
             <button
               type="submit"
               disabled={busy}
-              className="mt-2 w-full rounded-[12px] bg-primary py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
+              className="mt-2 w-full rounded-[12px] bg-primary-fill py-3.5 text-sm font-semibold text-on-primary disabled:opacity-60"
             >
               {busy ? t(locale, "pleaseWait") : t(locale, "adminMfaRecoverySubmit")}
             </button>
             <button
               type="button"
-              className="w-full text-center text-sm font-medium text-primary"
+              className="w-full text-center text-sm font-medium text-primary-strong"
               onClick={() => {
                 setError(null);
                 setMfaStep("totp");
@@ -1191,7 +1197,7 @@ function AuthForm() {
                   type="button"
                   disabled={busy}
                   onClick={() => void onForgotPassword()}
-                  className="text-xs font-semibold text-muted hover:text-primary disabled:opacity-60"
+                  className="text-xs font-semibold text-muted hover:text-primary-strong disabled:opacity-60"
                 >
                   {t(locale, "authForgotPassword")}
                 </button>
@@ -1239,7 +1245,7 @@ function AuthForm() {
               busy ||
               (showTurnstile && isTurnstileEnabled() && !turnstileToken)
             }
-            className="mt-2 w-full rounded-[12px] bg-primary py-3.5 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110 disabled:opacity-60"
+            className="mt-2 w-full rounded-[12px] bg-primary-fill py-3.5 text-sm font-semibold text-on-primary shadow-sm transition hover:brightness-110 disabled:opacity-60"
           >
             {submitLabel}
           </button>
@@ -1249,7 +1255,7 @@ function AuthForm() {
         {mfaStep === "idle" && showResetOtp ? (
           <button
             type="button"
-            className="mt-5 w-full text-center text-sm font-medium text-primary"
+            className="mt-5 w-full text-center text-sm font-medium text-primary-strong"
             onClick={() => {
               void (async () => {
                 const auth = getFirebaseAuth();
@@ -1271,7 +1277,7 @@ function AuthForm() {
         ) : showRegisterOtp || showRegisterDetails ? (
           <button
             type="button"
-            className="mt-5 w-full text-center text-sm font-medium text-primary"
+            className="mt-5 w-full text-center text-sm font-medium text-primary-strong"
             onClick={() => {
               void (async () => {
                 const auth = getFirebaseAuth();
@@ -1295,7 +1301,7 @@ function AuthForm() {
         ) : (
           <button
             type="button"
-            className="mt-5 w-full text-center text-sm font-medium text-primary"
+            className="mt-5 w-full text-center text-sm font-medium text-primary-strong"
             onClick={() => {
               const next = mode === "login" ? "register" : "login";
               setMode(next);

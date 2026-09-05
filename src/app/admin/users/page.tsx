@@ -191,7 +191,7 @@ export default function AdminUsersPage() {
           </button>
           <Link
             href="/admin/showrooms"
-            className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold text-primary"
+            className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold text-primary-strong"
           >
             {t(locale, "showrooms")}
           </Link>
@@ -215,7 +215,7 @@ export default function AdminUsersPage() {
         />
         <button
           type="submit"
-          className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary"
+          className="rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-xs font-semibold text-on-primary"
         >
           {t(locale, "filter")}
         </button>
@@ -223,7 +223,7 @@ export default function AdminUsersPage() {
           <button
             type="button"
             onClick={() => setCityFilter(null)}
-            className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+            className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary-strong"
           >
             {t(locale, "cityFilterChip", {
               name:
@@ -349,7 +349,7 @@ export default function AdminUsersPage() {
                             <button
                               type="button"
                               disabled={busyId === u.uid}
-                              className="text-xs font-semibold text-primary disabled:opacity-50"
+                              className="text-xs font-semibold text-primary-strong disabled:opacity-50"
                               onClick={() => void saveEdit(u.uid)}
                             >
                               {t(locale, "save")}
@@ -374,7 +374,7 @@ export default function AdminUsersPage() {
                         <button
                           type="button"
                           disabled={busyId === u.uid}
-                          className="text-xs font-semibold text-primary disabled:opacity-50"
+                          className="text-xs font-semibold text-primary-strong disabled:opacity-50"
                           onClick={() => void toggleBan(u)}
                         >
                           {u.banned ? t(locale, "unban") : t(locale, "ban")}

@@ -315,7 +315,7 @@ function AdminServicesInner() {
               onClick={() => writeFilters({ status: tab.value })}
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
                 status === tab.value
-                  ? "bg-primary text-on-primary"
+                  ? "bg-primary-fill text-on-primary"
                   : "bg-input text-muted"
               }`}
             >
@@ -329,7 +329,7 @@ function AdminServicesInner() {
                 {pill}
                 <Link
                   href="/services"
-                  className="text-[11px] font-semibold text-primary hover:underline"
+                  className="text-[11px] font-semibold text-primary-strong hover:underline"
                 >
                   {t(locale, "servicesViewDirectory")}
                 </Link>
@@ -374,7 +374,7 @@ function AdminServicesInner() {
                 {t(locale, "servicesEmptyPendingHint", {
                   count: counts.approved,
                 })}{" "}
-                <Link href="/services" className="font-semibold text-primary">
+                <Link href="/services" className="font-semibold text-primary-strong">
                   {t(locale, "servicesViewDirectory")}
                 </Link>
               </p>
@@ -437,7 +437,7 @@ function AdminServicesInner() {
                     >
                       <a
                         href={`tel:${item.phone}`}
-                        className="text-primary hover:underline"
+                        className="text-primary-strong hover:underline"
                         dir="ltr"
                       >
                         {item.phone}
@@ -574,7 +574,7 @@ function AdminServicesInner() {
               </p>
               <Link
                 href={`/admin/listings?sellerId=${encodeURIComponent(drawer.userId)}`}
-                className="mt-1 block font-semibold text-primary hover:underline"
+                className="mt-1 block font-semibold text-primary-strong hover:underline"
               >
                 {submitterLabel(drawer)}
               </Link>
@@ -606,7 +606,7 @@ function AdminServicesInner() {
                   type="button"
                   disabled={busyId === drawer.id}
                   onClick={() => void patchStatus(drawer, "approved")}
-                  className="flex-1 rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+                  className="flex-1 rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
                 >
                   {t(locale, "approve")}
                 </button>

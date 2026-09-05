@@ -262,7 +262,7 @@ function AnalyticsInner() {
             onClick={() => applyPreset(days)}
             className={`rounded-full px-3 py-1 text-xs font-semibold disabled:opacity-50 ${
               activePreset === days
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -299,7 +299,7 @@ function AnalyticsInner() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+          className="rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
         >
           {loading ? t(locale, "loading") : t(locale, "generateReport")}
         </button>

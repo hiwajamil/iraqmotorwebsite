@@ -27,8 +27,12 @@ export default function AdminLayout({
     if (loading) return;
     if (!user) {
       router.replace("/auth");
+      return;
     }
-  }, [loading, user, router]);
+    if (me && !me.isSuperAdmin && me.isAllowlistedSuperAdmin) {
+      router.replace("/dashboard/settings");
+    }
+  }, [loading, user, me, router]);
 
   async function resendVerification() {
     const current = getFirebaseAuth()?.currentUser;
@@ -81,7 +85,7 @@ export default function AdminLayout({
               type="button"
               disabled={verifyBusy}
               onClick={() => void resendVerification()}
-              className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
+              className="rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
             >
               {verifyBusy
                 ? t(locale, "sending")
@@ -92,17 +96,23 @@ export default function AdminLayout({
             ) : null}
           </div>
         ) : null}
-        <Link href="/auth" className="mt-6 inline-block text-sm font-semibold text-primary">
+        <Link href="/auth" className="mt-6 inline-block text-sm font-semibold text-primary-strong">
           {t(locale, "signIn")}
         </Link>
       </div>
     );
   }
 
-  // Allowlisted admins keep /admin during Settings-first TOTP enroll.
-  // isSuperAdmin is false on the same session after enroll (no second factor
-  // on the token yet). Next login still requires authenticator via Firebase.
-  if (!me.isSuperAdmin && !me.isAllowlistedSuperAdmin) {
+  // Privileged /admin/* APIs require isSuperAdmin (allowlist + TOTP on token).
+  // Allowlisted users without MFA enroll from Account Settings, not here.
+  if (!me.isSuperAdmin) {
+    if (me.isAllowlistedSuperAdmin) {
+      return (
+        <p className="px-4 py-16 text-center text-muted">
+          {t(locale, "loading")}
+        </p>
+      );
+    }
     return (
       <div className="mx-auto max-w-lg px-[4%] pb-16 pt-24 text-center">
         <h1 className="text-2xl font-bold">{t(locale, "adminAccessDenied")}</h1>
@@ -118,7 +128,7 @@ export default function AdminLayout({
               type="button"
               disabled={verifyBusy}
               onClick={() => void resendVerification()}
-              className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
+              className="rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
             >
               {verifyBusy
                 ? t(locale, "sending")
@@ -129,7 +139,7 @@ export default function AdminLayout({
             ) : null}
           </div>
         ) : null}
-        <Link href="/" className="mt-6 inline-block text-sm font-semibold text-primary">
+        <Link href="/" className="mt-6 inline-block text-sm font-semibold text-primary-strong">
           {t(locale, "adminBackToHome")}
         </Link>
       </div>
@@ -154,7 +164,7 @@ export default function AdminLayout({
                 href={item.href}
                 className={`shrink-0 rounded-[var(--radius-control)] px-3 py-2 text-sm font-medium transition-colors whitespace-nowrap lg:block ${
                   active
-                    ? "bg-primary text-on-primary"
+                    ? "bg-primary-fill text-on-primary"
                     : "hover:bg-input"
                 }`}
               >

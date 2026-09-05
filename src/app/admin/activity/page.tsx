@@ -157,7 +157,7 @@ function AdminActivityInner() {
             onClick={() => writeType(tab.value)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               type === tab.value
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -239,7 +239,7 @@ function AdminActivityInner() {
                           {log.carId ? (
                             <Link
                               href={`/cars/${log.carId}`}
-                              className="font-semibold text-primary"
+                              className="font-semibold text-primary-strong"
                             >
                               {t(locale, "activityViewListing")}
                               {" · "}
@@ -251,7 +251,7 @@ function AdminActivityInner() {
                           {log.userId ? (
                             <Link
                               href={`/admin/listings?sellerId=${encodeURIComponent(log.userId)}`}
-                              className="font-semibold text-primary"
+                              className="font-semibold text-primary-strong"
                             >
                               {t(locale, "activityViewSeller")}
                             </Link>
@@ -259,7 +259,7 @@ function AdminActivityInner() {
                           {log.ticketId ? (
                             <Link
                               href={`/admin/messages?id=${encodeURIComponent(log.ticketId)}`}
-                              className="font-semibold text-primary"
+                              className="font-semibold text-primary-strong"
                             >
                               {t(locale, "ticketFallback")}
                             </Link>
@@ -267,7 +267,7 @@ function AdminActivityInner() {
                           {log.flagId ? (
                             <Link
                               href="/admin/flagged"
-                              className="font-semibold text-primary"
+                              className="font-semibold text-primary-strong"
                             >
                               {t(locale, "flagReportFallback")}
                             </Link>
@@ -275,7 +275,7 @@ function AdminActivityInner() {
                           {log.adId ? (
                             <Link
                               href="/admin/ads"
-                              className="font-semibold text-primary"
+                              className="font-semibold text-primary-strong"
                             >
                               {t(locale, "activityViewAd")}
                               {" · "}

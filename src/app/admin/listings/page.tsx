@@ -656,7 +656,7 @@ function AdminListingsInner() {
               onClick={() => writeFilters({ status: s.value })}
               className={`rounded-full px-3 py-1 text-xs font-semibold ${
                 status === s.value
-                  ? "bg-primary text-on-primary"
+                  ? "bg-primary-fill text-on-primary"
                   : "bg-input text-muted"
               }`}
             >
@@ -716,7 +716,7 @@ function AdminListingsInner() {
           <button
             type="button"
             onClick={() => writeFilters({ sellerId: null })}
-            className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+            className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary-strong"
           >
             {t(locale, "sellerFilterChip", { id: sellerId.slice(0, 10) })}
           </button>
@@ -804,7 +804,7 @@ function AdminListingsInner() {
                   <div className="min-w-0 flex-1">
                     <button
                       type="button"
-                      className="text-left text-sm font-semibold capitalize hover:text-primary"
+                      className="text-left text-sm font-semibold capitalize hover:text-primary-strong"
                       onClick={() => setReview(car)}
                     >
                       {carTitle(car)}
@@ -821,7 +821,7 @@ function AdminListingsInner() {
                     {car.sellerId ? (
                       <button
                         type="button"
-                        className="mt-0.5 text-left text-xs text-primary hover:underline"
+                        className="mt-0.5 text-left text-xs text-primary-strong hover:underline"
                         onClick={() => writeFilters({ sellerId: car.sellerId })}
                       >
                         {sellerPrimary(car)}
@@ -898,7 +898,7 @@ function AdminListingsInner() {
                         <td className="px-3 py-2">
                           <button
                             type="button"
-                            className="text-left font-semibold capitalize hover:text-primary"
+                            className="text-left font-semibold capitalize hover:text-primary-strong"
                             onClick={() => setReview(car)}
                           >
                             {carTitle(car)}
@@ -911,7 +911,7 @@ function AdminListingsInner() {
                           {car.sellerId ? (
                             <button
                               type="button"
-                              className="text-left hover:text-primary"
+                              className="text-left hover:text-primary-strong"
                               onClick={() =>
                                 writeFilters({ sellerId: car.sellerId })
                               }

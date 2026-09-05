@@ -94,7 +94,7 @@ function chipClass(on: boolean) {
   return [
     "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition",
     on
-      ? "bg-primary text-on-primary"
+      ? "bg-primary-fill text-on-primary"
       : "bg-input text-foreground hover:ring-1 hover:ring-outline",
   ].join(" ");
 }
@@ -402,7 +402,7 @@ export function EvMapClient() {
               <SlidersHorizontal size={14} />
               <span className="hidden sm:inline">{t(locale, "evMapMoreFilters")}</span>
               {sheetFilterCount ? (
-                <span className="rounded-full bg-primary px-1.5 text-[10px] text-on-primary">
+                <span className="rounded-full bg-primary-fill px-1.5 text-[10px] text-on-primary">
                   {sheetFilterCount}
                 </span>
               ) : null}
@@ -758,7 +758,7 @@ export function EvMapClient() {
               <button
                 type="button"
                 onClick={() => setFiltersOpen(false)}
-                className="flex-1 rounded-[12px] bg-primary px-3 py-2.5 text-sm font-semibold text-on-primary"
+                className="flex-1 rounded-[12px] bg-primary-fill px-3 py-2.5 text-sm font-semibold text-on-primary"
               >
                 {t(locale, "evMapApplyFilters")}
               </button>
@@ -829,7 +829,7 @@ function EvStationListRow({
             {locText(locale, marker.status)}
           </span>
           {marker.maxPowerKw != null ? (
-            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary-strong">
               {t(locale, "evMapPower", { kw: Math.round(marker.maxPowerKw) })}
             </span>
           ) : null}
@@ -1131,7 +1131,7 @@ function StationPanel({
                   {locText(locale, detail.accessType)}
                 </span>
                 {detail.maxPowerKw != null ? (
-                  <span className="rounded-full bg-primary/15 px-2.5 py-1 text-primary">
+                  <span className="rounded-full bg-primary/15 px-2.5 py-1 text-primary-strong">
                     {t(locale, "evMapPower", {
                       kw: Math.round(detail.maxPowerKw),
                     })}
@@ -1308,7 +1308,7 @@ function StationPanel({
                   href={waHref(actions.whatsapp)}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-primary px-3 py-2.5 text-sm font-semibold text-on-primary"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-primary-fill px-3 py-2.5 text-sm font-semibold text-on-primary"
                 >
                   {t(locale, "whatsapp")}
                 </a>

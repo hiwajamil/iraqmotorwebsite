@@ -284,7 +284,7 @@ export function AdReviewModal({
               type="button"
               disabled={saving || busy}
               onClick={() => void saveEdit()}
-              className="rounded-[var(--radius-control)] bg-primary px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
+              className="rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
             >
               {saving ? t(locale, "saving") : t(locale, "saveChanges")}
             </button>
@@ -369,7 +369,7 @@ export function AdReviewModal({
           {localCar.sellerId ? (
             <Link
               href={`/admin/listings?sellerId=${encodeURIComponent(localCar.sellerId)}`}
-              className="mt-2 inline-block text-xs font-semibold text-primary"
+              className="mt-2 inline-block text-xs font-semibold text-primary-strong"
             >
               {t(locale, "viewSellerListings")}
             </Link>
@@ -388,7 +388,7 @@ export function AdReviewModal({
               type="button"
               disabled={busy}
               onClick={onApprove}
-              className="rounded-[var(--radius-control)] bg-primary px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
+              className="rounded-[var(--radius-control)] bg-primary-fill px-3 py-2 text-xs font-semibold text-on-primary disabled:opacity-50"
             >
               {localCar.status === "pending"
                 ? t(locale, "approve")

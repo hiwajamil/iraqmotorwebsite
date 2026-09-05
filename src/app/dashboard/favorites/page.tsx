@@ -70,7 +70,7 @@ export default function DashboardFavoritesPage() {
           </p>
           <Link
             href="/cars"
-            className="mt-5 inline-block rounded-[12px] bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary"
+            className="mt-5 inline-block rounded-[12px] bg-primary-fill px-5 py-2.5 text-sm font-semibold text-on-primary"
           >
             {t(locale, "dashBrowseCars")}
           </Link>

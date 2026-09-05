@@ -20,7 +20,7 @@ export default function SellPage() {
         <button
           type="button"
           onClick={() => router.push("/auth?next=/sell")}
-          className="mt-6 rounded-[12px] bg-primary px-6 py-3 text-sm font-semibold text-on-primary"
+          className="mt-6 rounded-[12px] bg-primary-fill px-6 py-3 text-sm font-semibold text-on-primary"
         >
           {t(locale, "signIn")}
         </button>

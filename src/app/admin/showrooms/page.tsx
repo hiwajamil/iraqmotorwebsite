@@ -359,13 +359,13 @@ export default function AdminShowroomsPage() {
     const href = listingsHref(u.uid);
     if (!hasListingCounts(u) || !u.listingCounts) {
       return (
-        <Link href={href} className="text-xs font-semibold text-primary hover:underline">
+        <Link href={href} className="text-xs font-semibold text-primary-strong hover:underline">
           {t(locale, "listingsLink")}
         </Link>
       );
     }
     return (
-      <Link href={href} className="text-xs font-semibold text-primary hover:underline">
+      <Link href={href} className="text-xs font-semibold text-primary-strong hover:underline">
         {t(locale, "showroomsInventoryActive", {
           count: u.listingCounts.active,
         })}
@@ -398,7 +398,7 @@ export default function AdminShowroomsPage() {
         </div>
         <Link
           href="/showrooms"
-          className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold text-primary"
+          className="rounded-[var(--radius-control)] bg-input px-3 py-2 text-xs font-semibold text-primary-strong"
         >
           {t(locale, "publicDirectoryLink")}
         </Link>
@@ -436,7 +436,7 @@ export default function AdminShowroomsPage() {
               }}
               className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
                 active
-                  ? "bg-primary text-on-primary"
+                  ? "bg-primary-fill text-on-primary"
                   : "bg-card ring-1 ring-outline"
               }`}
             >
@@ -466,7 +466,7 @@ export default function AdminShowroomsPage() {
             onClick={() => setStatus(value)}
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               status === value
-                ? "bg-primary text-on-primary"
+                ? "bg-primary-fill text-on-primary"
                 : "bg-input text-muted"
             }`}
           >
@@ -496,7 +496,7 @@ export default function AdminShowroomsPage() {
                 }
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                   active
-                    ? "bg-primary text-on-primary"
+                    ? "bg-primary-fill text-on-primary"
                     : "bg-input text-muted"
                 }`}
               >
@@ -632,7 +632,7 @@ export default function AdminShowroomsPage() {
                               <button
                                 type="button"
                                 disabled={busyId === u.uid}
-                                className="text-xs font-semibold text-primary disabled:opacity-50"
+                                className="text-xs font-semibold text-primary-strong disabled:opacity-50"
                                 onClick={() => void saveCity(u.uid)}
                               >
                                 {t(locale, "save")}

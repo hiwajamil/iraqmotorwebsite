@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --seed: #ff6b00;
   --primary: #ea580c;
-  --primary-dark: #ff7a00;
+  --primary-strong: #c2410c;
+  --primary-fill: #c2410c;
+  --primary-bright: #ff7a00;
   --on-primary: #ffffff;
   --surface: #fafbfd;
   --card: #ffffff;
@@ -11,6 +12,7 @@
   --input: #f1f5f9;
   --on-surface: #0f172a;
   --muted: #64748b;
+  --muted-strong: #475569;
   --outline: #e2e8f0;
   --radius-control: 12px;
   --radius-card: 16px;
@@ -19,13 +21,16 @@
 }
 
 .dark {
-  --primary: #ff7a00;
+  --primary: var(--primary-bright);
+  --primary-strong: #fb923c;
+  --primary-fill: #c2410c;
   --surface: #0a0a0c;
   --card: #121215;
   --card-low: #16161a;
   --input: #1e1e22;
   --on-surface: #f8fafc;
   --muted: #94a3b8;
+  --muted-strong: #94a3b8;
   --outline: #27272a;
   --background: var(--surface);
   --foreground: var(--on-surface);
@@ -35,11 +40,14 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-fill: var(--primary-fill);
   --color-on-primary: var(--on-primary);
   --color-surface: var(--surface);
   --color-card: var(--card);
   --color-input: var(--input);
   --color-muted: var(--muted);
+  --color-muted-strong: var(--muted-strong);
   --color-outline: var(--outline);
   --font-sans: var(--font-display);
   --radius-control: var(--radius-control);
@@ -53,10 +61,10 @@ body {
 }
 
 /* Native <select> options inherit the trigger color (often white on the
-   immersive header). Force an opaque, high-contrast popup in all themes. */
+   immersive header). Force an opaque, theme-aware popup. */
 .lang-select option {
-  background-color: #ffffff;
-  color: #0f172a;
+  background-color: var(--card);
+  color: var(--on-surface);
   opacity: 1;
 }
 

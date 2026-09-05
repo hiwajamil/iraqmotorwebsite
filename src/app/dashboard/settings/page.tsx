@@ -78,6 +78,10 @@ export default function DashboardSettingsPage() {
   }
 
   async function changePassword() {
+    if (newPassword.length < 8) {
+      setError(t(locale, "authWeakPassword"));
+      return;
+    }
     if (newPassword !== confirmPassword) {
       setError(t(locale, "dashPasswordMismatch"));
       return;
@@ -189,7 +193,7 @@ export default function DashboardSettingsPage() {
               type="button"
               disabled={saving}
               onClick={() => void saveProfile()}
-              className="rounded-[12px] bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary disabled:opacity-60"
+              className="rounded-[12px] bg-primary-fill px-4 py-2.5 text-sm font-semibold text-on-primary disabled:opacity-60"
             >
               {saving ? t(locale, "saving") : t(locale, "dashSaveProfile")}
             </button>
@@ -230,6 +234,7 @@ export default function DashboardSettingsPage() {
             />
             <input
               type="password"
+              minLength={8}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder={t(locale, "dashNewPassword")}
@@ -254,7 +259,7 @@ export default function DashboardSettingsPage() {
                 type="button"
                 disabled={saving}
                 onClick={() => void changePassword()}
-                className="rounded-[12px] bg-primary px-3 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
+                className="rounded-[12px] bg-primary-fill px-3 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
               >
                 {t(locale, "dashUpdatePassword")}
               </button>

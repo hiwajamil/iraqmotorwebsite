@@ -249,7 +249,7 @@ export default function CarDetailClient({
         </p>
         <button
           type="button"
-          className="mt-4 text-sm font-semibold text-primary"
+          className="mt-4 text-sm font-semibold text-primary-strong"
           onClick={() => window.location.reload()}
         >
           {t(locale, "retry")}
@@ -358,6 +358,7 @@ export default function CarDetailClient({
               <ListingQuickActions
                 car={car}
                 title={title}
+                variant="detail"
                 onReport={showReport ? openReport : undefined}
                 reportBusy={reportOpen}
               />
@@ -379,7 +380,7 @@ export default function CarDetailClient({
           <div className="flex flex-wrap items-center gap-2">
             <p
               className={`text-2xl font-semibold ${
-                sold ? "text-foreground" : "text-primary"
+                sold ? "text-foreground" : "text-primary-strong"
               }`}
               dir="ltr"
             >
@@ -474,7 +475,7 @@ export default function CarDetailClient({
                   type="button"
                   disabled={bidding || !bid.trim()}
                   onClick={() => void placeBid()}
-                  className="rounded-[12px] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
+                  className="rounded-[12px] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-60"
                 >
                   {bidding ? "…" : t(locale, "bid")}
                 </button>

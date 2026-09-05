@@ -244,7 +244,7 @@ export default function AdminSettingsPage() {
           <button
             type="button"
             disabled={saving}
-            className="text-xs font-semibold text-primary disabled:opacity-50"
+            className="text-xs font-semibold text-primary-strong disabled:opacity-50"
             onClick={() =>
               setAdmins((list) => [...list, { email: "", phone: "", name: "" }])
             }
@@ -365,7 +365,7 @@ export default function AdminSettingsPage() {
         type="button"
         disabled={saving}
         onClick={requestSave}
-        className="mt-6 rounded-[var(--radius-control)] bg-primary px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
+        className="mt-6 rounded-[var(--radius-control)] bg-primary-fill px-4 py-2 text-sm font-semibold text-on-primary disabled:opacity-50"
       >
         {saving ? t(locale, "saving") : t(locale, "saveSettings")}
       </button>
@@ -373,7 +373,7 @@ export default function AdminSettingsPage() {
       <div className="mt-10">
         <button
           type="button"
-          className="text-sm font-semibold text-primary"
+          className="text-sm font-semibold text-primary-strong"
           onClick={() => setShowJson((v) => !v)}
         >
           {showJson
