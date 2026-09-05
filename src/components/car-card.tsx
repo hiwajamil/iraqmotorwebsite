@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Car } from "@/lib/api";
 import { useAppSelector } from "@/store/hooks";
@@ -11,11 +12,176 @@ import {
   soldDisplayPrice,
 } from "@/lib/car-pricing-trust";
 import { formatCarTitle } from "@/lib/listing-display";
-import { formatMileageLabel, localizeCity } from "@/lib/listing-labels";
+import {
+  formatMileageLabel,
+  listingFeatureKeys,
+  localizeCity,
+  localizeOption,
+  normalizeOptionKey,
+  stringField,
+} from "@/lib/listing-labels";
 import { t, type Locale } from "@/lib/i18n";
+
+const HIGHLIGHT_MAX = 4;
+const HIGHLIGHT_MIN = 3;
+const HIGHLIGHT_INTERVAL_MS = 3000;
+const FULL_OPTION_MIN_FEATURES = 8;
+const FEATURE_LABEL_MAX_LEN = 22;
+const FEATURE_HIGHLIGHT_PRIORITY = [
+  "feature_sunroof",
+  "feature_panoramic_roof",
+  "feature_apple_carplay",
+  "feature_rear_camera",
+  "feature_smart_key",
+  "feature_cruise_control",
+  "feature_radar",
+  "feature_awd",
+  "feature_xenon_light",
+  "feature_wireless_charger",
+  "feature_seat_heater",
+  "feature_abs",
+];
 
 export function carTitle(car: Car, locale: Locale = "en") {
   return formatCarTitle(car, locale);
+}
+
+function conditionKeyOf(car: Car): string {
+  return normalizeOptionKey(stringField(car, "conditionKey", "condition"));
+}
+
+function isNewCondition(key: string): boolean {
+  return key === "condition_new" || key === "new" || key === "brand_new";
+}
+
+function isCleanTitleCondition(key: string): boolean {
+  return key === "condition_clean_title" || key === "clean_title";
+}
+
+function isLowMileage(car: Car): boolean {
+  const amount = Number(car.mileageValue);
+  if (!Number.isFinite(amount) || amount < 0) return false;
+  const unit = String(car.mileageUnit ?? "km").toLowerCase();
+  return amount <= (unit.includes("mi") ? 10000 : 15000);
+}
+
+function featureHighlightLabels(car: Car, locale: Locale): string[] {
+  const keys = listingFeatureKeys(car).map(normalizeOptionKey);
+  if (!keys.length) return [];
+  const set = new Set(keys);
+  const ordered = [
+    ...FEATURE_HIGHLIGHT_PRIORITY.filter((key) => set.has(key)),
+    ...keys.filter((key) => !FEATURE_HIGHLIGHT_PRIORITY.includes(key)),
+  ];
+  const labels: string[] = [];
+  for (const key of ordered) {
+    const label = localizeOption(locale, key).trim();
+    if (!label || label.length > FEATURE_LABEL_MAX_LEN) continue;
+    if (labels.includes(label)) continue;
+    labels.push(label);
+    if (labels.length >= 2) break;
+  }
+  return labels;
+}
+
+export function carHighlightStrings(car: Car, locale: Locale): string[] {
+  const items: string[] = [];
+  const add = (value: string) => {
+    const next = value.trim();
+    if (!next || items.includes(next) || items.length >= HIGHLIGHT_MAX) return;
+    items.push(next);
+  };
+
+  const sold = car.status === "sold";
+  const condition = conditionKeyOf(car);
+  const features = listingFeatureKeys(car);
+
+  if (!sold && isPriceDropped(car.priceMeta)) add(t(locale, "priceDropped"));
+  if (isNewCondition(condition)) add(t(locale, "newCars"));
+  else if (isLowMileage(car)) add(t(locale, "lowMileage"));
+  for (const label of featureHighlightLabels(car, locale)) add(label);
+  if (isCleanTitleCondition(condition)) add(t(locale, "cleanTitle"));
+  if (features.length >= FULL_OPTION_MIN_FEATURES) add(t(locale, "fullOption"));
+  if (String(car.sellerShowroom ?? "").trim()) add(t(locale, "trustedSeller"));
+  if (car.vin?.verifiedStatus === "admin_verified") {
+    add(t(locale, "verifiedListing"));
+  }
+
+  const fallbacks = [
+    "cleanTitle",
+    "fullOption",
+    "trustedSeller",
+    "greatDeal",
+  ] as const;
+  for (const key of fallbacks) {
+    if (items.length >= HIGHLIGHT_MIN) break;
+    add(t(locale, key));
+  }
+
+  return items.slice(0, HIGHLIGHT_MAX);
+}
+
+function HighlightCarousel({
+  items,
+  compact = false,
+}: {
+  items: string[];
+  compact?: boolean;
+}) {
+  const [index, setIndex] = useState(0);
+  const height = compact ? 22 : 24;
+
+  useEffect(() => {
+    setIndex(0);
+    if (items.length < 2) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (mq.matches) return;
+
+    const tick = () => {
+      if (mq.matches) return;
+      setIndex((current) => (current + 1) % items.length);
+    };
+    const id = window.setInterval(tick, HIGHLIGHT_INTERVAL_MS);
+    const onChange = () => {
+      if (mq.matches) {
+        window.clearInterval(id);
+        setIndex(0);
+      }
+    };
+    mq.addEventListener("change", onChange);
+    return () => {
+      window.clearInterval(id);
+      mq.removeEventListener("change", onChange);
+    };
+  }, [items]);
+
+  if (!items.length) {
+    return <div className="mt-1 w-full shrink-0" style={{ height }} />;
+  }
+
+  return (
+    <div
+      className="relative mt-1 w-full shrink-0 overflow-hidden rounded-full bg-primary/10"
+      style={{ height }}
+    >
+      {items.map((text, i) => (
+        <span
+          key={text}
+          className={`absolute inset-0 flex min-w-0 items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap font-medium text-primary transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none ${
+            compact ? "px-2 text-[10px]" : "px-2.5 text-[11px]"
+          } ${
+            i === index
+              ? "translate-y-0 opacity-100"
+              : "translate-y-1.5 opacity-0"
+          }`}
+          aria-hidden={i !== index}
+          dir="auto"
+        >
+          {text}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 export function CarCard({
@@ -44,6 +210,10 @@ export function CarCard({
     t(locale, "iraq");
   const mileage = formatMileageLabel(locale, car.mileageValue, car.mileageUnit);
   const title = carTitle(car, locale) || t(locale, "carListing");
+  const highlights = useMemo(
+    () => carHighlightStrings(car, locale),
+    [car, locale],
+  );
 
   return (
     <article
@@ -109,6 +279,7 @@ export function CarCard({
             {t(locale, "latestBid", { amount: bidLabel })}
           </p>
         ) : null}
+        <HighlightCarousel items={highlights} compact={compact} />
       </Link>
     </article>
   );
